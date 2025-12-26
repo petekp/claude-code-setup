@@ -1,6 +1,6 @@
 # Claude Code Skills
 
-A collection of reusable skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
+A curated collection of high-quality skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
 
 ## What are Skills?
 
@@ -14,35 +14,167 @@ Copy the skill folder(s) you want into your Claude Code skills directory:
 # Clone this repo
 git clone https://github.com/petekp/claude-skills.git
 
-# Copy a skill to your Claude Code skills directory
-cp -r claude-skills/skills/model-first-reasoning ~/.claude/skills/
-```
+# Copy all skills
+cp -r claude-skills/skills/* ~/.claude/skills/
 
-Or copy individual skills manually into `~/.claude/skills/`.
+# Or copy individual skills
+cp -r claude-skills/skills/tutorial ~/.claude/skills/
+```
 
 ## Available Skills
 
-### Model-First Reasoning (MFR)
+### Thinking Toolkit
+
+#### Skeptic
+
+Stress-test ideas, find failure modes, and challenge assumptions constructively.
+
+**Location:** `skills/skeptic/`
+
+**Triggers on:** evaluating proposals, identifying risks, playing devil's advocate, pre-mortems, finding holes in plans
+
+**Key features:**
+- Pre-mortem technique framework
+- Common failure patterns (planning fallacies, assumption traps, complexity blindness)
+- Stress tests (10x test, adversary test, scalability test, time test)
+- Red flags checklist for communication, planning, reasoning, and teams
+
+---
+
+#### Dreamer
+
+Think expansively and imaginatively without practical constraints.
+
+**Location:** `skills/dreamer/`
+
+**Triggers on:** brainstorming ambitious ideas, exploring possibilities, challenging assumptions, envisioning ideal futures, breaking out of incremental thinking
+
+**Key features:**
+- Expansion techniques (10x question, time travel, inversion, combination)
+- Vision articulation methods (ideal day, newspaper test, the demo)
+- Constraint-breaking frameworks
+- Balances with Skeptic for "dream/evaluate" oscillation
+
+---
+
+#### Model-First Reasoning (MFR)
 
 A rigorous code-generation methodology that requires constructing an explicit problem model before any implementation.
 
 **Location:** `skills/model-first-reasoning/`
 
-**Triggers on:**
-- Requests for "model-first", "MFR", "formal modeling"
-- Tasks involving complex logic, state machines, or constraint systems
-- Any implementation requiring formal correctness guarantees
+**Triggers on:** "model-first", "MFR", "formal modeling", complex logic, state machines, constraint systems
 
 **What it does:**
 1. **Phase 1 (Model):** Creates a formal JSON model with entities, constraints, actions, and test oracles
 2. **Phase 1.5 (Audit):** Verifies coverage, operability, consistency, and testability
 3. **Phase 2 (Implement):** Codes strictly within the frozen model contract
 
-**Example usage:**
+**Example:**
 ```
 Using model-first reasoning, build a shopping cart that enforces:
 max 10 items, no duplicate SKUs, total can't exceed $1000
 ```
+
+---
+
+### Learning & Teaching
+
+#### Tutorial
+
+Generate comprehensive implementation tutorial documents with deep background, context, rationale, and step-by-step milestones.
+
+**Location:** `skills/tutorial/`
+
+**Triggers on:** "create a tutorial for", "implementation guide", "teach me how to implement"
+
+**Philosophy:** Addresses the pain point of reviewing AI-generated PRs—feeling disconnected from the work. Instead:
+1. AI researches deeply and produces a comprehensive tutorial document
+2. Human implements following the guide, staying connected to decisions
+3. Result: Faster than pure manual work, but you understand what you built
+
+**Output:** A markdown document with milestones, verification steps, and codebase-grounded references—NOT direct code changes.
+
+---
+
+### Design & UX
+
+#### UX Writer
+
+Write clear, helpful, human interface copy.
+
+**Location:** `skills/ux-writer/`
+
+**Triggers on:** microcopy, error messages, button labels, empty states, onboarding flows, tooltips, voice and tone guidance
+
+**Key features:**
+- Button and action patterns (with pairing table)
+- Error message structure (what happened → why → how to fix)
+- Empty state templates
+- Quality tests: readback, screenshot, stress, translation, truncation
+- Capitalization and punctuation rules
+- Accessibility writing guidelines
+
+---
+
+#### Typographer
+
+Apply professional typography principles to create readable, hierarchical, and aesthetically refined interfaces.
+
+**Location:** `skills/typographer/`
+
+**Triggers on:** type scales, font selection, spacing, text-heavy layouts, readability, font pairing, line height, measure
+
+**Key features:**
+- Modular scale ratios with practical examples
+- Optimal line length (measure) guidelines
+- Line height by context (body, headings, UI labels, buttons)
+- Letter spacing rules including all-caps handling
+- Font selection with system font stacks and safe web font recommendations
+- Dark mode typography adjustments
+- Accessibility minimums and considerations
+
+---
+
+#### Interaction Design
+
+Apply interaction design principles to create intuitive, responsive interfaces.
+
+**Location:** `skills/interaction-design/`
+
+**Triggers on:** component behaviors, micro-interactions, loading states, transitions, user flows, accessibility patterns, animation timing
+
+**Key features:**
+- State transition timing (hover, focus, active, disabled, loading)
+- Animation timing by scale (micro → large)
+- Easing function recommendations
+- User flow patterns (navigation, onboarding, error recovery, empty states)
+- Component behaviors (forms, modals, dropdowns, drag & drop)
+- Accessibility patterns (keyboard navigation, screen readers, motion preferences)
+- Loading and progress state guidelines
+
+---
+
+### Product & Strategy
+
+#### Successful Repeat Founder
+
+Apply hard-won startup wisdom to product, strategy, and execution decisions.
+
+**Location:** `skills/successful-repeat-founder/`
+
+**Triggers on:** evaluating business ideas, prioritizing features, build-vs-buy decisions, go-to-market, hiring, fundraising, scope/timeline reality checks
+
+**Key features:**
+- Product thinking frameworks (finding PMF, what to build first, feature prioritization)
+- Build vs. buy decision criteria
+- Go-to-market reality (distribution, pricing, early customers)
+- Hiring signals and timing
+- Fundraising guidance (when to raise, investor selection, term sheet reality)
+- Decision frameworks ("Should we build this?", "Should we pursue this market?")
+- Common founder mistakes by stage
+
+---
 
 ## Skill Structure
 
@@ -82,6 +214,8 @@ description: Use when the user asks about X, mentions Y, or needs Z. [Describe t
 2. Add your skill in `skills/your-skill-name/SKILL.md`
 3. Update this README with your skill's documentation
 4. Submit a pull request
+
+**Quality bar:** We aim for skills that provide deep, actionable guidance—not surface-level principles. Each skill should offer something Claude doesn't do well by default.
 
 ## License
 
