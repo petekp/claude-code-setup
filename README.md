@@ -18,18 +18,18 @@ git clone https://github.com/petekp/claude-skills.git
 cp -r claude-skills/skills/* ~/.claude/skills/
 
 # Or copy individual skills
-cp -r claude-skills/skills/tutorial ~/.claude/skills/
+cp -r claude-skills/skills/tutorial-writing ~/.claude/skills/
 ```
 
 ## Available Skills
 
 ### Thinking Toolkit
 
-#### Skeptic
+#### Stress-Testing
 
 Stress-test ideas, find failure modes, and challenge assumptions constructively.
 
-**Location:** `skills/skeptic/`
+**Location:** `skills/stress-testing/`
 
 **Triggers on:** evaluating proposals, identifying risks, playing devil's advocate, pre-mortems, finding holes in plans
 
@@ -41,11 +41,11 @@ Stress-test ideas, find failure modes, and challenge assumptions constructively.
 
 ---
 
-#### Dreamer
+#### Dreaming
 
 Think expansively and imaginatively without practical constraints.
 
-**Location:** `skills/dreamer/`
+**Location:** `skills/dreaming/`
 
 **Triggers on:** brainstorming ambitious ideas, exploring possibilities, challenging assumptions, envisioning ideal futures, breaking out of incremental thinking
 
@@ -53,7 +53,7 @@ Think expansively and imaginatively without practical constraints.
 - Expansion techniques (10x question, time travel, inversion, combination)
 - Vision articulation methods (ideal day, newspaper test, the demo)
 - Constraint-breaking frameworks
-- Balances with Skeptic for "dream/evaluate" oscillation
+- Balances with Stress-Testing for "dream/evaluate" oscillation
 
 ---
 
@@ -80,11 +80,11 @@ max 10 items, no duplicate SKUs, total can't exceed $1000
 
 ### Learning & Teaching
 
-#### Tutorial
+#### Tutorial-Writing
 
 Generate comprehensive implementation tutorial documents with deep background, context, rationale, and step-by-step milestones.
 
-**Location:** `skills/tutorial/`
+**Location:** `skills/tutorial-writing/`
 
 **Triggers on:** "create a tutorial for", "implementation guide", "teach me how to implement"
 
@@ -99,11 +99,11 @@ Generate comprehensive implementation tutorial documents with deep background, c
 
 ### Design & UX
 
-#### UX Writer
+#### UX Writing
 
 Write clear, helpful, human interface copy.
 
-**Location:** `skills/ux-writer/`
+**Location:** `skills/ux-writing/`
 
 **Triggers on:** microcopy, error messages, button labels, empty states, onboarding flows, tooltips, voice and tone guidance
 
@@ -117,11 +117,11 @@ Write clear, helpful, human interface copy.
 
 ---
 
-#### Typographer
+#### Typography
 
 Apply professional typography principles to create readable, hierarchical, and aesthetically refined interfaces.
 
-**Location:** `skills/typographer/`
+**Location:** `skills/typography/`
 
 **Triggers on:** type scales, font selection, spacing, text-heavy layouts, readability, font pairing, line height, measure
 
@@ -136,11 +136,11 @@ Apply professional typography principles to create readable, hierarchical, and a
 
 ---
 
-#### Interaction Design
+#### Interaction Designing
 
 Apply interaction design principles to create intuitive, responsive interfaces.
 
-**Location:** `skills/interaction-design/`
+**Location:** `skills/interaction-designing/`
 
 **Triggers on:** component behaviors, micro-interactions, loading states, transitions, user flows, accessibility patterns, animation timing
 

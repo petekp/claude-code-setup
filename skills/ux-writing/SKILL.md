@@ -1,5 +1,5 @@
 ---
-name: ux-writer
+name: ux-writing
 description: Write clear, helpful, human interface copy. Use when crafting microcopy, error messages, button labels, empty states, onboarding flows, tooltips, or when the user needs guidance on voice, tone, and how words shape the user experience.
 ---
 

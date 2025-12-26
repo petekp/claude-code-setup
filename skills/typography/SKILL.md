@@ -1,5 +1,5 @@
 ---
-name: typographer
+name: typography
 description: Apply professional typography principles to create readable, hierarchical, and aesthetically refined interfaces. Use when setting type scales, choosing fonts, adjusting spacing, designing text-heavy layouts, or when the user asks about readability, font pairing, line height, measure, or typographic hierarchy.
 ---
 
