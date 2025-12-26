@@ -155,27 +155,6 @@ Apply interaction design principles to create intuitive, responsive interfaces.
 
 ---
 
-### Product & Strategy
-
-#### Successful Repeat Founder
-
-Apply hard-won startup wisdom to product, strategy, and execution decisions.
-
-**Location:** `skills/successful-repeat-founder/`
-
-**Triggers on:** evaluating business ideas, prioritizing features, build-vs-buy decisions, go-to-market, hiring, fundraising, scope/timeline reality checks
-
-**Key features:**
-- Product thinking frameworks (finding PMF, what to build first, feature prioritization)
-- Build vs. buy decision criteria
-- Go-to-market reality (distribution, pricing, early customers)
-- Hiring signals and timing
-- Fundraising guidance (when to raise, investor selection, term sheet reality)
-- Decision frameworks ("Should we build this?", "Should we pursue this market?")
-- Common founder mistakes by stage
-
----
-
 ## Skill Structure
 
 Each skill follows this structure:
