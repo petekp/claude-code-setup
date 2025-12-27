@@ -7,6 +7,58 @@ description: Apply interaction design principles to create intuitive, responsive
 
 Guide for designing intuitive, responsive, and accessible user interactions.
 
+## Output Contract
+
+For interaction specifications, structure your response as:
+
+```markdown
+## Interaction Spec: [Component Name]
+
+### States
+| State | Visual Treatment | Transition |
+|-------|------------------|------------|
+| Default | [appearance] | — |
+| Hover | [changes] | 150ms ease-out |
+| Focus | [focus ring/outline] | immediate |
+| Active | [pressed appearance] | 50ms |
+| Disabled | [muted appearance] | — |
+| Loading | [skeleton/spinner] | [timing] |
+
+### Keyboard
+- Tab: [focus behavior]
+- Enter/Space: [activation]
+- Escape: [dismissal behavior]
+- Arrows: [navigation, if applicable]
+
+### Motion
+- Duration: [timing in ms]
+- Easing: [curve name]
+- Reduced motion: [fallback behavior]
+
+### Accessibility
+- Focus indicator: [visible, high-contrast description]
+- Screen reader: [announcements, aria-labels]
+- Touch target: [minimum size]
+
+### Edge Cases
+- [Scenario]: [behavior]
+```
+
+For flow/journey analysis:
+
+```markdown
+## Flow Analysis: [Journey Name]
+
+### Steps
+1. [Step] → [Expected interaction]
+
+### Friction Points
+- [Issue]: [recommendation]
+
+### Missing States
+- [State that needs design]
+```
+
 ## Core Principles
 
 ### Feedback & Responsiveness
@@ -161,9 +213,19 @@ Guide for designing intuitive, responsive, and accessible user interactions.
 - Indicate when more content is loading
 - Handle connection interruptions
 
-## Reference Materials
+## Theoretical Foundations
 
-See additional files in this skill directory for:
-- Seminal interaction design literature and excerpts
-- Platform-specific guidelines
-- Case studies and examples
+This skill draws from foundational interaction design research:
+
+### Direct Manipulation
+The principles in this skill build on Shneiderman's direct manipulation framework:
+- Visibility of objects of interest
+- Rapid, reversible, incremental actions
+- Replacement of command syntax with direct object manipulation
+
+See: [Direct Manipulation - A Step Beyond Programming Languages.md](Direct%20Manipulation%20-%20A%20Step%20Beyond%20Programming%20Languages.md)
+
+### Instrumental Interaction
+Beaudouin-Lafon's model extends direct manipulation to post-WIMP interfaces, framing interaction as mediated by "instruments" (tools) that operate on domain objects.
+
+See: [Instrumental Interaction - an interaction model for designing post WIMP user interfaces.md](Instrumental%20Interaction%20-%20an%20interaction%20model%20for%20designing%20post%20WIMP%20user%20interfaces.md)
