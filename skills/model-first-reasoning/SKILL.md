@@ -5,15 +5,21 @@ description: Apply Model-First Reasoning (MFR) to code generation tasks. Use whe
 
 # Model-First Reasoning (MFR)
 
-A rigorous code-generation methodology that REQUIRES constructing an explicit problem MODEL before any implementation. The model becomes a frozen contract that governs all code.
+A rigorous methodology that REQUIRES constructing an explicit problem MODEL before any reasoning or implementation. The model becomes a frozen contract that governs all downstream work.
 
-For the full research and rationale behind this methodology, see the co-located file: `Model-First Reasoning LLM Agents.md`
+> Based on Kumar & Rana (2025), "Model-First Reasoning LLM Agents: Reducing Hallucinations through Explicit Problem Modeling" (arXiv:2512.14474)
+
+## Why MFR Works
+
+**Hallucination is not merely the generation of false statements—it is a symptom of reasoning performed without a clearly defined model of the problem space.**
+
+Reasoning does not create structure; it operates on structure. When that structure is implicit or unstable, reasoning becomes unreliable. MFR provides "soft symbolic grounding"—enough structure to stabilize reasoning without imposing rigid formalism.
 
 ## Core Principle
 
-**Phase 1 produces the MODEL. Phase 2 implements ONLY what the model specifies.**
+**Phase 1 produces the MODEL. Phase 2 reasons/implements ONLY within the model.**
 
-This prevents the common failure mode where implementation introduces ad-hoc decisions, missing constraints, or invented behavior not grounded in requirements.
+This prevents the common failure mode where reasoning introduces ad-hoc decisions, missing constraints, or invented behavior not grounded in the problem definition.
 
 ## Non-Negotiable Rules
 
@@ -45,11 +51,26 @@ If later you discover missing info during implementation:
 1. Emit a `MODEL PATCH` (minimal change)
 2. Restart Phase 2 from scratch using the updated model
 
+## Validation
+
+After creating the model, write it to `model.json` and run the validator:
+
+```bash
+python scripts/validate-model.py model.json
+```
+
+Exit codes:
+- `0` = Valid, ready for Phase 2
+- `1` = Invalid structure (fix and retry)
+- `2` = Valid but has unknowns (STOP after Phase 1)
+
 ## Output Format
 
 ### Phase 1: MODEL
 
-Return ONLY JSON with these keys:
+The model may be expressed in natural language, semi-structured text, or JSON. Flexibility improves compliance—what matters is that the representation is **explicit, inspectable, and stable**.
+
+For code generation tasks, the structured format below is recommended. Use [MODEL_TEMPLATE.json](MODEL_TEMPLATE.json) as a reference:
 
 ```json
 {
@@ -148,12 +169,24 @@ For each constraint, document:
 
 MFR is most valuable for:
 
-- **Complex state machines** - where transitions must be valid
-- **Business logic with invariants** - rules that must never be violated
-- **Data transformations** - where input/output contracts matter
-- **Multi-step workflows** - with dependencies between steps
-- **Safety-critical features** - where bugs have high cost
-- **Collaborative specifications** - where the model serves as documentation
+- **Complex state machines** — where transitions must be valid
+- **Business logic with invariants** — rules that must never be violated
+- **Data transformations** — where input/output contracts matter
+- **Multi-step workflows** — with dependencies between steps
+- **Safety-critical features** — where bugs have high cost
+- **Collaborative specifications** — where the model serves as documentation
+
+**When NOT to use:** Simple, single-step tasks where the overhead of explicit modeling exceeds its benefit.
+
+## Relationship to Other Reasoning Strategies
+
+MFR is **complementary**, not competing:
+
+- **With Chain-of-Thought**: Use CoT within Phase 2 for step-by-step reasoning over the model
+- **With ReAct**: Treat the model as persistent state that actions operate on
+- **With planning agents**: The model provides the domain specification that planners reason over
+
+MFR provides a foundational layer that improves robustness of any reasoning strategy in constraint-heavy domains.
 
 ## Example Workflow
 
@@ -193,6 +226,8 @@ You: [PHASE 1: MODEL]
 
 ## Remember
 
-The model is not overhead—it IS the specification. Code without a model is code without a contract. When implementation diverges from requirements, it's usually because the requirements were never made explicit.
+The model is not overhead—it IS the specification. Most failures in complex reasoning are **representational, not inferential**: the reasoning was fine, but it operated on an incomplete or unstable understanding of the problem.
 
-**Model first. Then code. Never invert this.**
+By externalizing the model, we make assumptions inspectable, constraints enforceable, and errors diagnosable. The model becomes the contract between intent and implementation.
+
+**Model first. Then reason. Never invert this.**

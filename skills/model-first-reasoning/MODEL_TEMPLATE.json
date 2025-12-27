@@ -1,0 +1,64 @@
+{
+  "deliverable": {
+    "description": "What we're building",
+    "files_expected": ["path/to/file.ts"]
+  },
+  "entities": [
+    {
+      "name": "EntityName",
+      "description": "What this entity represents",
+      "properties": ["prop1", "prop2"]
+    }
+  ],
+  "state_variables": [
+    {
+      "name": "variableName",
+      "type": "string | number | boolean | etc",
+      "initial": "initial value",
+      "description": "What this tracks"
+    }
+  ],
+  "actions": [
+    {
+      "name": "actionName",
+      "description": "What this action does",
+      "parameters": ["param1", "param2"],
+      "preconditions": ["condition that must be true before"],
+      "effects": ["what changes after this action"]
+    }
+  ],
+  "constraints": [
+    {
+      "id": "C1",
+      "statement": "Invariant or rule that must always hold",
+      "type": "invariant | precondition | postcondition"
+    }
+  ],
+  "initial_state": [
+    "Description of starting conditions"
+  ],
+  "goal": [
+    "Acceptance criterion 1",
+    "Acceptance criterion 2"
+  ],
+  "assumptions": [
+    "Things we assume to be true"
+  ],
+  "unknowns": [
+    "Questions that must be answered before proceeding"
+  ],
+  "requirement_trace": [
+    {
+      "requirement": "Verbatim requirement from user",
+      "represented_as": "goal | constraint | action",
+      "ref": "C1 | action_name | goal_item"
+    }
+  ],
+  "test_oracles": [
+    {
+      "id": "T1",
+      "maps_to": ["C1"],
+      "description": "How to verify the constraint"
+    }
+  ]
+}
