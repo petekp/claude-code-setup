@@ -3,9 +3,56 @@ name: typography
 description: Apply professional typography principles to create readable, hierarchical, and aesthetically refined interfaces. Use when setting type scales, choosing fonts, adjusting spacing, designing text-heavy layouts, or when the user asks about readability, font pairing, line height, measure, or typographic hierarchy.
 ---
 
-# Typographer
+# Typography
 
-Guide for applying professional typography principles to user interfaces.
+Professional typography for user interfaces.
+
+## Output Contract
+
+For type system recommendations:
+
+```markdown
+## Type System
+
+### Scale
+- Base: [size, e.g., 16px]
+- Ratio: [e.g., Minor Third 1.200]
+- Rationale: [why this ratio]
+
+### Hierarchy
+| Level | Size | Weight | Line Height | Letter Spacing | Use |
+|-------|------|--------|-------------|----------------|-----|
+| Display | ... | ... | ... | ... | Hero, marketing |
+| H1 | ... | ... | ... | ... | Page titles |
+| H2 | ... | ... | ... | ... | Section heads |
+| Body | ... | ... | ... | ... | Paragraphs |
+| Small | ... | ... | ... | ... | Captions, labels |
+
+### Fonts
+- Primary: [font] - [rationale]
+- Secondary: [font, if applicable]
+- Mono: [font, if applicable]
+
+### Implementation
+```css
+/* Ready-to-use CSS variables */
+```
+```
+
+For typography audits:
+
+```markdown
+## Typography Audit
+
+### Issues
+| Element | Problem | Recommendation |
+|---------|---------|----------------|
+| ... | ... | ... |
+
+### Quick Wins
+- [Immediate improvement 1]
+- [Immediate improvement 2]
+```
 
 ## Core Principles
 

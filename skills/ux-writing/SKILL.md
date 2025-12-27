@@ -7,6 +7,52 @@ description: Write clear, helpful, human interface copy. Use when crafting micro
 
 Words are interface. Every string is a design decision.
 
+## Output Contract
+
+For copy audits, structure your analysis as:
+
+```markdown
+## Copy Audit
+
+### Voice Check
+- Current voice: [description of detected voice/tone]
+- Target voice: [if specified or inferred]
+- Adjustments needed: [specific changes, or "None—voice is consistent"]
+
+### Issues
+| Location | Current Copy | Problem | Suggested Copy |
+|----------|--------------|---------|----------------|
+| [Button/label/message] | "..." | [Why it fails] | "..." |
+
+### Patterns to Establish
+- Buttons: [verb + object pattern]
+- Errors: [structure: what happened → how to fix]
+- Empty states: [structure used]
+- Success: [tone and length]
+
+### Quick Wins
+- [Most impactful change]
+- [Second priority]
+```
+
+For individual copy requests:
+
+```markdown
+## Copy: [Element Type]
+
+### Context
+[Where this appears, user state, stakes]
+
+### Recommendation
+[The copy]
+
+### Rationale
+- [Why this wording]
+
+### Variations
+- [Alternative if needed]
+```
+
 ## Core Principles
 
 ### Clarity Over Cleverness

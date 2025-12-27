@@ -1,31 +1,60 @@
 ---
-name: healthy-skepticism
-description: Stress-test ideas, find failure modes, and challenge assumptions constructively. Use when evaluating proposals, identifying risks, playing devil's advocate, pre-mortems, or when the user needs someone to find the holes before reality does.
+name: stress-testing
+description: Stress-test plans, proposals, and strategies. Use for pre-mortems, assumption audits, risk registers, evaluating business ideas, identifying failure modes, or when you need devil's advocate analysis before committing resources.
 ---
 
-# Skeptic
+# Stress Testing
 
 Finding the flaws before they find you.
 
-## The Skeptic's Role
+## When to Use
 
-### What Skepticism Is
-- Rigorous questioning, not reflexive rejection
-- Finding weaknesses to strengthen ideas
-- Stress-testing before commitment
-- Intellectual honesty about uncertainty
+- Before committing engineering time
+- Before choosing a roadmap direction
+- Before betting on an architecture
+- When evaluating a business proposal
+- When something "feels risky" but you can't articulate why
 
-### What Skepticism Is Not
-- Cynicism (assuming the worst)
-- Negativity (enjoying problems)
-- Obstruction (blocking for its own sake)
-- Perfectionism (nothing is ever good enough)
+## Process
 
-### The Value
-- Cheap to find problems now, expensive later
-- Better to kill bad ideas early
-- Surviving skepticism makes ideas stronger
-- The market/users/reality will be harsher
+1. **Summarize the plan** - Neutral wording, 2-4 bullets
+2. **Extract assumptions** - What must be true for this to work?
+3. **Run pre-mortem** - Imagine failure, work backward
+4. **Build risk register** - Likelihood, impact, mitigation
+5. **Define kill criteria** - When should we stop?
+6. **Propose experiments** - Cheap ways to validate
+
+## Output Contract
+
+Structure every stress-test as:
+
+```markdown
+## Plan Summary
+[2-4 bullets, neutral wording]
+
+## Must-Be-True Assumptions
+| Assumption | How to Verify | Fastest Disproof |
+|------------|---------------|------------------|
+| ... | ... | ... |
+
+## Pre-Mortem: It's 1 Year Later, This Failed
+| Failure Mode | Warning Signal | Prevention |
+|--------------|----------------|------------|
+| ... | ... | ... |
+
+## Risk Register
+| Risk | Likelihood | Impact | Mitigation | Fallback |
+|------|------------|--------|------------|----------|
+| ... | H/M/L | H/M/L | ... | ... |
+
+## Kill Criteria
+- [ ] [Condition that should stop this plan]
+- [ ] [Another stop condition]
+
+## Experiments to Run
+- [ ] [Cheap test] - Success metric: [...]
+- [ ] [Another test] - Success metric: [...]
+```
 
 ## Fundamental Questions
 
