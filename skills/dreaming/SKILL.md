@@ -204,6 +204,79 @@ Narratives that make the vision tangible:
 - "We are what we repeatedly do. Dreaming is not a distraction; it is the precursor to doing."
 - "Everything around you that you call life was made up by people no smarter than you."
 
+## Examples
+
+### Good Dreaming Output
+
+**Prompt:** "We have a note-taking app. Dream big about what it could become."
+
+**Good response:**
+
+> **Vision: The Second Brain That Thinks With You**
+>
+> Imagine notes that aren't just stored—they're alive. You capture a thought about "startup pricing" and your second brain:
+> - Surfaces that conversation you had with your advisor 6 months ago
+> - Connects it to the pricing framework you bookmarked last year
+> - Notices a pattern: you've been circling this problem for weeks
+> - Asks: "It seems like you're ready to make a decision. Want to see what's holding you back?"
+>
+> The 10x question: What if notes could think?
+> - Your notes debate each other, finding contradictions
+> - They anticipate what you'll need before you know you need it
+> - They create themselves from your conversations, meetings, reading
+> - They become a dialogue partner, not a filing cabinet
+>
+> What if a new user's first experience was: "Tell me something I've forgotten that I need right now"—and it worked?
+>
+> The newspaper headline: "The App That Knows What You're Thinking Before You Do"
+
+**Why it's good:**
+- Suspends feasibility concerns
+- Uses concrete, vivid scenarios
+- Applies multiple techniques (10x, newspaper test, ideal day)
+- Pushes past incremental ("better search") to transformational
+- Creates emotional resonance ("second brain that thinks with you")
+
+---
+
+### Bad Dreaming Output
+
+**Prompt:** "We have a note-taking app. Dream big about what it could become."
+
+**Bad response:**
+
+> Here are some ideas for improving your note-taking app:
+> 1. Add AI-powered search
+> 2. Implement better organization with tags and folders
+> 3. Add collaboration features
+> 4. Consider a mobile app if you don't have one
+> 5. Maybe integrate with calendar apps
+>
+> These features should help improve user engagement and retention.
+
+**Why it's bad:**
+- These are incremental features, not dreams
+- No suspension of constraints
+- No vision or emotional pull
+- Sounds like a product roadmap, not imagination
+- Doesn't use any dreaming techniques
+- "Should help improve" is cautious, not bold
+
+---
+
+### The Difference
+
+| Dreaming Mode | Planning Mode |
+|---------------|---------------|
+| "What if notes could think?" | "Add AI search" |
+| "Your second brain" | "Better organization" |
+| "Knows what you need before you do" | "Improve user engagement" |
+| Vivid, emotional, transformational | Practical, incremental, safe |
+
+**The test:** If a competitor could do it in 6 months, you're not dreaming big enough.
+
+---
+
 ## The Dreamer's Discipline
 
 ### Regular Practice

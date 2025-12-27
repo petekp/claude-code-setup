@@ -25,19 +25,20 @@ cp -r claude-skills/skills/tutorial-writing ~/.claude/skills/
 
 ### Thinking Toolkit
 
-#### Healthy Skepticism
+#### Stress Testing
 
-Stress-test ideas, find failure modes, and challenge assumptions constructively.
+Stress-test plans, proposals, and strategies before committing resources.
 
-**Location:** `skills/healthy-skepticism/`
+**Location:** `skills/stress-testing/`
 
-**Triggers on:** evaluating proposals, identifying risks, playing devil's advocate, pre-mortems, finding holes in plans
+**Triggers on:** pre-mortems, assumption audits, risk registers, evaluating business ideas, identifying failure modes, devil's advocate analysis
 
 **Key features:**
 - Pre-mortem technique framework
 - Common failure patterns (planning fallacies, assumption traps, complexity blindness)
 - Stress tests (10x test, adversary test, scalability test, time test)
 - Red flags checklist for communication, planning, reasoning, and teams
+- Kill criteria and experiment design
 
 ---
 
@@ -53,7 +54,25 @@ Think expansively and imaginatively without practical constraints.
 - Expansion techniques (10x question, time travel, inversion, combination)
 - Vision articulation methods (ideal day, newspaper test, the demo)
 - Constraint-breaking frameworks
-- Balances with Healthy Skepticism for "dream/evaluate" oscillation
+- Balances with Stress Testing for "dream/evaluate" oscillation
+- Good vs. bad output examples
+
+---
+
+#### Wise Novice
+
+Approach problems with beginner's mind while asking penetrating questions.
+
+**Location:** `skills/wise-novice/`
+
+**Triggers on:** seeking fresh perspectives, cutting through complexity, challenging expert assumptions, simplifying explanations, when deep domain knowledge may be creating blind spots
+
+**Key features:**
+- Foundation questions ("What problem does this actually solve?")
+- Simplification techniques ("What's the simplest version that would work?")
+- The "Shoshin" (beginner's mind) framework
+- Strategic naivety—knowing when to stay naive and when to learn
+- Common novice insights across technology, business, and design
 
 ---
 
@@ -152,6 +171,114 @@ Apply interaction design principles to create intuitive, responsive interfaces.
 - Component behaviors (forms, modals, dropdowns, drag & drop)
 - Accessibility patterns (keyboard navigation, screen readers, motion preferences)
 - Loading and progress state guidelines
+
+---
+
+#### Design Critique
+
+Critique UI/UX designs for clarity, hierarchy, interaction, accessibility, and craft.
+
+**Location:** `skills/design-critique/`
+
+**Triggers on:** design reviews, PR feedback on UI changes, evaluating mockups, checking if a component is ship-ready, honest feedback on quality
+
+**Key features:**
+- Structured output contract (verdict → issues → accessibility → what's working)
+- Severity levels (P0 blocking through P3 polish)
+- Quick-pass checklist for fast reviews
+- Deep principles reference for thorough critiques
+- Platform-specific guidance (iOS HIG, etc.)
+
+---
+
+#### Cognitive Foundations
+
+Apply cognitive science and HCI research to design decisions.
+
+**Location:** `skills/cognitive-foundations/`
+
+**Triggers on:** explaining _why_ a design works, understanding perception/memory/attention limits, evaluating cognitive load, predicting performance with Fitts's/Hick's Law, grounding decisions in research
+
+**Key features:**
+- Quick reference for predictive laws (Fitts's, Hick-Hyman, Steering, Power Law)
+- Nielsen's 10 heuristics with quick tests
+- Working memory guidelines (~4 chunks, not 7)
+- Preattentive features for critical information
+- Cognitive load checklist
+- Deep reference files for psychology and HCI theory
+
+---
+
+### Strategy & Product
+
+#### Startup Wisdom
+
+Apply startup execution wisdom to product, strategy, and business decisions.
+
+**Location:** `skills/startup-wisdom/`
+
+**Triggers on:** feature prioritization, build-vs-buy decisions, go-to-market planning, pricing, hiring, scope/timeline reality checks, product-market fit evaluation
+
+**Key features:**
+- First principles (speed over perfection, focus, cash is oxygen)
+- Product thinking (finding PMF, what to build first, feature prioritization)
+- Decision frameworks ("Should we build this?", "Should we pursue this market?")
+- Common founder mistakes by stage
+- Hard truths about ideas, yourself, and the market
+
+---
+
+#### OSS Product Manager
+
+Navigate open source product strategy, community dynamics, and sustainable maintenance.
+
+**Location:** `skills/oss-product-manager/`
+
+**Triggers on:** planning OSS releases, managing contributors, handling community expectations, balancing commercial and community interests, building in the open
+
+**Key features:**
+- Project lifecycle guidance (early → growth → mature)
+- Community management (contributor pipeline, communication channels)
+- Governance models (BDFL, core team, foundation)
+- Sustainability (funding models, avoiding burnout, bus factor)
+- Legal and licensing considerations
+
+---
+
+### Development
+
+#### Unix/macOS Engineer
+
+Expert Unix and macOS systems engineering.
+
+**Location:** `skills/unix-macos-engineer/`
+
+**Triggers on:** Unix commands, shell scripts, macOS system configuration, launchd, Homebrew, process management, networking, troubleshooting system issues
+
+**Key features:**
+- Shell script template with best practices
+- launchd plist templates and launchctl commands
+- Networking patterns (curl, SSH, diagnostics)
+- File system operations (permissions, ACLs, extended attributes, find patterns)
+- macOS-specific commands (defaults, mdfind, security, Homebrew)
+- Debugging and diagnostics tools
+
+---
+
+#### Next.js Boilerplate
+
+Bootstrap a production-ready Next.js project with modern tooling.
+
+**Location:** `skills/nextjs-boilerplate/`
+
+**Triggers on:** "create a new Next.js project", "bootstrap Next.js with shadcn", "set up a Next.js app", "create an AI chat app", "start a new React project with Tailwind"
+
+**Key features:**
+- Step-by-step setup process (Next.js + Tailwind + shadcn/ui)
+- assistant-ui integration for AI chat interfaces
+- Project structure recommendations
+- Common patterns (theme provider, cn() utility, forms with react-hook-form + zod)
+- Verification checklist and troubleshooting
 
 ---
 
