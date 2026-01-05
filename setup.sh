@@ -148,7 +148,8 @@ else
     echo "Done!"
     echo ""
     echo "Notes:"
-    echo "  • settings.json is NOT copied (contains machine-specific paths)"
-    echo "  • Copy manually if needed: cp $REPO_DIR/settings.json $CLAUDE_DIR/"
+    echo "  • settings.example.json is for reference only (contains hardcoded paths)"
     echo "  • See templates/ for settings.local.json and .mcp.json examples"
+    echo ""
+    echo "First time? See FORKING.md for customization guide."
 fi

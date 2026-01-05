@@ -1,10 +1,21 @@
-# My Claude Code Setup
+# Claude Code Setup
 
-Personal Claude Code configuration: skills, commands, agents, hooks, and statusline.
+A ready-to-fork Claude Code configuration with skills, commands, agents, and hooks.
 
-## Setup
+## Quick Start
 
-Clone the repo and run the setup script to symlink everything to `~/.claude`:
+### Forking (Recommended)
+
+1. **Fork this repo** on GitHub
+2. **Clone your fork:**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/claude-code-setup.git ~/Code/claude-code-setup
+   cd ~/Code/claude-code-setup
+   ./setup.sh
+   ```
+3. **Make it yours** — see [FORKING.md](FORKING.md) for customization guide
+
+### Direct Clone (For Personal Use)
 
 ```bash
 git clone https://github.com/petekp/claude-code-setup.git ~/Code/claude-code-setup
@@ -12,7 +23,53 @@ cd ~/Code/claude-code-setup
 ./setup.sh
 ```
 
-This creates symlinks and copies files:
+## What's Included
+
+### Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `cognitive-foundations` | User psychology, attention, memory limits, HCI research |
+| `design-critique` | UI/UX reviews with severity ratings and accessibility checks |
+| `dreaming` | Expansive thinking, 10x questions, breaking constraints |
+| `interaction-design` | Component behaviors, micro-interactions, state transitions |
+| `model-first-reasoning` | Formal logic, state machines, constraint systems |
+| `nextjs-boilerplate` | Next.js + Tailwind + shadcn/ui project setup |
+| `oss-product-manager` | Open source strategy, community dynamics, governance |
+| `react-component-dev` | React patterns, forwardRef, accessibility, composition |
+| `startup-wisdom` | Product strategy, PMF, prioritization, founder decisions |
+| `stress-testing` | Pre-mortems, risk analysis, assumption audits |
+| `tutorial-writing` | Educational content, step-by-step implementation guides |
+| `typography` | Type scales, font selection, hierarchy, readability |
+| `unix-macos-engineer` | Shell scripts, CLI tools, launchd, system admin |
+| `ux-writing` | Microcopy, error messages, empty states, voice/tone |
+| `wise-novice` | Fresh perspectives, naive questions, challenging assumptions |
+
+### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/commit-and-push` | Generate conventional commit and push to remote |
+| `/interview` | Gather context for planning with suggested answers |
+| `/squad` | Deploy multiple skills on a single request |
+| `/synthesize-feedback` | Consolidate feedback from multiple LLMs |
+| `/verify` | Run lint and typecheck before committing |
+
+### Agents
+
+| Agent | Purpose |
+|-------|---------|
+| `playwright-qa-tester` | Focused QA testing with Playwright |
+
+### Hooks
+
+| Hook | Purpose |
+|------|---------|
+| `pre-commit-verify` | Reminder to verify before committing |
+
+## How It Works
+
+Running `./setup.sh` creates symlinks:
 
 | Source | Target | Method |
 |--------|--------|--------|
@@ -22,77 +79,54 @@ This creates symlinks and copies files:
 | `hooks/` | `~/.claude/hooks` | symlink |
 | `statusline-command.sh` | `~/.claude/statusline-command.sh` | copy |
 
-## What's Included
+Edits in either location update the same files. Just commit and push to sync.
 
-| File/Dir | Purpose |
-|----------|---------|
-| `skills/` | Custom skills for Claude Code |
-| `commands/` | Custom slash commands |
-| `agents/` | Custom agent definitions |
-| `hooks/` | Event-triggered automation |
-| `statusline-command.sh` | Git-aware statusline script |
-| `CLAUDE.md` | Global instructions for Claude |
-| `settings.json` | Reference permissions/plugins config |
-| `templates/` | Example configs for manual setup |
+## Customizing
 
-## Syncing
+After forking, see [FORKING.md](FORKING.md) for how to:
 
-Since directories are symlinked, just commit and push:
+- Edit `CLAUDE.md` with your coding conventions
+- Add/remove skills and commands
+- Update the `/squad` catalog
+- Handle permissions
+
+## Reference Files
+
+These files are **not symlinked** — they're for reference or manual setup:
+
+| File | Purpose | Action |
+|------|---------|--------|
+| `settings.example.json` | Example permissions config | Review for patterns, don't copy directly |
+| `templates/settings.local.json.template` | Machine-specific permissions | Copy to `~/.claude/` and edit |
+| `templates/.mcp.json.template` | MCP server config | Copy to `~/.claude/` and edit |
+| `CLAUDE.md` | Coding conventions | Edit to match your style |
+
+### Why settings.example.json?
+
+The example settings file contains:
+- Hardcoded paths specific to the original author
+- Plugin preferences that may not match yours
+- Permission patterns you might want to adopt
+
+**Don't copy it directly.** Instead, review it for patterns and build your own permissions through normal Claude Code usage.
+
+## Syncing Changes
+
+Since everything is symlinked:
 
 ```bash
 cd ~/Code/claude-code-setup
 git add -A && git commit -m "Update config" && git push
 ```
 
-To pull updates on another machine:
-
-```bash
-cd ~/Code/claude-code-setup
-git pull
-```
-
-## Manual Configuration
-
-Some files need manual setup since they contain machine-specific values:
-
-### settings.json
-
-Contains absolute paths and machine-specific permissions. Review and copy if needed:
-
-```bash
-cp settings.json ~/.claude/settings.json
-```
-
-### settings.local.json
-
-For machine-specific permissions (system commands, etc.). See the template:
-
-```bash
-cp templates/settings.local.json.template ~/.claude/settings.local.json
-```
-
-### .mcp.json
-
-For MCP server configurations. See the template:
-
-```bash
-cp templates/.mcp.json.template ~/.claude/.mcp.json
-```
-
 ## Undo
-
-To remove symlinks and restore any backed-up directories:
 
 ```bash
 ./setup.sh --undo
 ```
 
-## What's NOT Backed Up
+This removes symlinks and restores any backed-up directories.
 
-These files are machine-specific or regenerated automatically:
+## License
 
-- `hud.json` - Pinned projects (absolute paths)
-- `settings.local.json` - Machine-specific permissions
-- `history.jsonl` - Chat history
-- `projects/` - Project-specific settings
-- `plugins/installed_plugins.json` - Reinstall via `/plugins install`
+MIT
