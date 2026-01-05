@@ -1,46 +1,98 @@
-# Pete's Claude Code Skills
+# My Claude Code Setup
 
-A collection of personal skills I use and continue to refine.
+Personal Claude Code configuration: skills, commands, agents, hooks, and statusline.
 
-## Installation
+## Setup
 
-```bash
-git clone https://github.com/petekp/claude-skills.git
-cp -r claude-skills/skills/* ~/.claude/skills/
-```
-
-Or copy individual skills:
+Clone the repo and run the setup script to symlink everything to `~/.claude`:
 
 ```bash
-cp -r claude-skills/skills/design-critique ~/.claude/skills/
+git clone https://github.com/petekp/claude-code-setup.git ~/Code/claude-code-setup
+cd ~/Code/claude-code-setup
+./setup.sh
 ```
 
-## Skills
+This creates symlinks and copies files:
 
-- `cognitive-foundations`<br>Grounds design decisions in HCI research: Fitts's Law, working memory limits, attention theory. The scientific "why" behind usability.
+| Source | Target | Method |
+|--------|--------|--------|
+| `skills/` | `~/.claude/skills` | symlink |
+| `commands/` | `~/.claude/commands` | symlink |
+| `agents/` | `~/.claude/agents` | symlink |
+| `hooks/` | `~/.claude/hooks` | symlink |
+| `statusline-command.sh` | `~/.claude/statusline-command.sh` | copy |
 
-- `design-critique`<br>Structured UI feedback with severity levels (P0–P3), not vague opinions. Includes checklists and deep principles.
+## What's Included
 
-- `dreaming`<br>Suspends Claude's practical instincts. 10x questions, constraint-breaking, vision articulation. Includes good/bad output examples.
+| File/Dir | Purpose |
+|----------|---------|
+| `skills/` | Custom skills for Claude Code |
+| `commands/` | Custom slash commands |
+| `agents/` | Custom agent definitions |
+| `hooks/` | Event-triggered automation |
+| `statusline-command.sh` | Git-aware statusline script |
+| `CLAUDE.md` | Global instructions for Claude |
+| `settings.json` | Reference permissions/plugins config |
+| `templates/` | Example configs for manual setup |
 
-- `interaction-design`<br>Specific timing values, easing curves, state transitions. Grounded in direct manipulation theory.
+## Syncing
 
-- `model-first-reasoning`<br>Forces formal modeling before code. Entities, constraints, test oracles—then implementation. Prevents premature coding.
+Since directories are symlinked, just commit and push:
 
-- `nextjs-boilerplate`<br>Opinionated setup: Next.js 14 + Tailwind + shadcn/ui + assistant-ui. From zero to production-ready.
+```bash
+cd ~/Code/claude-code-setup
+git add -A && git commit -m "Update config" && git push
+```
 
-- `oss-product-manager`<br>Community dynamics, governance models, sustainability. Hard-won wisdom on building in the open.
+To pull updates on another machine:
 
-- `startup-wisdom`<br>Cuts through startup BS. PMF signals, prioritization frameworks, founder mistakes by stage.
+```bash
+cd ~/Code/claude-code-setup
+git pull
+```
 
-- `stress-testing`<br>Structured pre-mortems with kill criteria and assumption audits. Find flaws before they find you.
+## Manual Configuration
 
-- `tutorial-writing`<br>Produces teaching documents, not code. Deep research → milestones → you implement. Stay connected to your work.
+Some files need manual setup since they contain machine-specific values:
 
-- `typography`<br>Specific values: line heights, modular scales, measure. Dark mode, accessibility. Not vague principles.
+### settings.json
 
-- `unix-macos-engineer`<br>macOS-specific expertise: launchd, defaults, Keychain, TCC. Plus defensive shell scripting.
+Contains absolute paths and machine-specific permissions. Review and copy if needed:
 
-- `ux-writing`<br>Patterns for every UI text situation. Error messages, empty states, button pairs. Quality tests included.
+```bash
+cp settings.json ~/.claude/settings.json
+```
 
-- `wise-novice`<br>Beginner's mind as a tool. Penetrating questions that cut through expert blind spots.
+### settings.local.json
+
+For machine-specific permissions (system commands, etc.). See the template:
+
+```bash
+cp templates/settings.local.json.template ~/.claude/settings.local.json
+```
+
+### .mcp.json
+
+For MCP server configurations. See the template:
+
+```bash
+cp templates/.mcp.json.template ~/.claude/.mcp.json
+```
+
+## Undo
+
+To remove symlinks and restore any backed-up directories:
+
+```bash
+./setup.sh --undo
+```
+
+## What's NOT Backed Up
+
+These files are machine-specific or regenerated automatically:
+
+- `hud.json` - Pinned projects (absolute paths)
+- `settings.local.json` - Machine-specific permissions
+- `history.jsonl` - Chat history
+- `projects/` - Project-specific settings
+- `plugins/installed_plugins.json` - Reinstall via `/plugins install`
