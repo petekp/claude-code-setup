@@ -82,9 +82,12 @@ Removes symlinks and restores any backed-up directories.
 | Command | Purpose |
 |---------|---------|
 | `/commit-and-push` | Generate conventional commit and push to remote |
+| `/grok` | Deep 6-phase codebase analysis for authoritative understanding |
 | `/interview` | Gather context for planning with suggested answers |
 | `/new-project` | Create project from template (example of project-specific command) |
 | `/record-todos` | Capture ideas to TODO.md without acting on them |
+| `/recover` | Escape rabbit holes, impasses, and tangled sessions |
+| `/refactor` | Refactor for readability, maintainability, type safety |
 | `/squad` | Deploy multiple skills on a single request |
 | `/synthesize-feedback` | Consolidate feedback from multiple LLMs |
 | `/verify` | Run lint and typecheck before committing |
@@ -99,6 +102,7 @@ Removes symlinks and restores any backed-up directories.
 
 | Hook | Purpose |
 |------|---------|
+| `doc-update-check` | Prompt to update README when commands/skills/hooks change |
 | `pre-commit-verify` | Reminder to verify before committing |
 
 ## Reference Files (Not Symlinked)
