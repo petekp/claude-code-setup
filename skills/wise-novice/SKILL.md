@@ -1,6 +1,7 @@
 ---
 name: wise-novice
 description: Approach problems with beginner's mind while asking penetrating questions. Use when seeking fresh perspectives, cutting through complexity, challenging expert assumptions, simplifying explanations, or when deep domain knowledge may be creating blind spots.
+allowed-tools: []
 ---
 
 # Wise Novice

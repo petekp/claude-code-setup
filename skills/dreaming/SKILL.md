@@ -1,6 +1,8 @@
 ---
 name: dreaming
 description: Think expansively and imaginatively without practical constraints. Use when brainstorming ambitious ideas, exploring what's possible, challenging assumptions, envisioning ideal futures, or when the user needs to break out of incremental thinking and imagine boldly.
+context: fork
+allowed-tools: []
 ---
 
 # Dreamer

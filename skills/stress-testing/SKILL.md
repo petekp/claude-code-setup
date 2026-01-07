@@ -1,6 +1,12 @@
 ---
 name: stress-testing
 description: Stress-test plans, proposals, and strategies. Use for pre-mortems, assumption audits, risk registers, evaluating business ideas, identifying failure modes, or when you need devil's advocate analysis before committing resources.
+allowed-tools:
+  - Read
+  - Glob
+  - Grep
+  - WebFetch
+  - WebSearch
 ---
 
 # Stress Testing

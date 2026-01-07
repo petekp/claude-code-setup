@@ -1,6 +1,12 @@
 ---
 name: design-critique
 description: Critique UI/UX designs for clarity, hierarchy, interaction, accessibility, and craft. Use for design reviews, PR feedback on UI changes, evaluating mockups, checking if a component is ship-ready, or when honest feedback is needed on whether something meets a high bar.
+allowed-tools:
+  - Read
+  - Glob
+  - Grep
+  - WebFetch
+  - mcp__claude-in-chrome__*
 ---
 
 # Design Critique
