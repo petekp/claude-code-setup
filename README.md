@@ -5,8 +5,8 @@ My portable, version-controlled Claude Code configuration. Fork it, customize it
 ## Quick Start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/claude-code-setup.git ~/Code/claude-code-setup
-~/Code/claude-code-setup/setup.sh
+git clone https://github.com/YOUR_USERNAME/claude-code-setup.git
+cd claude-code-setup && ./setup.sh
 ```
 
 That's it. Your Claude Code now uses this repo's skills and commands.
@@ -17,11 +17,11 @@ This repo symlinks into `~/.claude/`, so your Claude Code configuration lives in
 
 ```
 ~/.claude/
-├── skills/   → ~/Code/claude-code-setup/skills/
-├── commands/ → ~/Code/claude-code-setup/commands/
-├── agents/   → ~/Code/claude-code-setup/agents/
-├── hooks/    → ~/Code/claude-code-setup/hooks/
-└── scripts/  → ~/Code/claude-code-setup/scripts/
+├── skills/   → <repo>/skills/
+├── commands/ → <repo>/commands/
+├── agents/   → <repo>/agents/
+├── hooks/    → <repo>/hooks/
+└── scripts/  → <repo>/scripts/
 ```
 
 Edit files in either location — they're the same files. Commit and push to sync across machines.
@@ -33,26 +33,25 @@ Edit files in either location — they're the same files. Commit and push to syn
 1. Fork this repo on GitHub
 2. Clone and run setup:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/claude-code-setup.git ~/Code/claude-code-setup
-   cd ~/Code/claude-code-setup
-   ./setup.sh
+   git clone https://github.com/YOUR_USERNAME/claude-code-setup.git
+   cd claude-code-setup && ./setup.sh
    ```
 3. Customize — see [FORKING.md](FORKING.md)
 
 ### Direct Clone
 
 ```bash
-git clone https://github.com/petekp/claude-code-setup.git ~/Code/claude-code-setup
-cd ~/Code/claude-code-setup
-./setup.sh
+git clone https://github.com/petekp/claude-code-setup.git
+cd claude-code-setup && ./setup.sh
 ```
 
-> **Note:** You can clone this repo anywhere. The setup script detects its own location and creates symlinks accordingly. `~/Code/claude-code-setup` is just a convention.
+Clone it wherever you keep projects — the setup script detects its own location.
 
 ## Syncing Changes
 
+From the repo directory:
+
 ```bash
-cd ~/Code/claude-code-setup
 git add -A && git commit -m "Update config" && git push
 ```
 

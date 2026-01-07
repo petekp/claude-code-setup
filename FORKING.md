@@ -7,8 +7,8 @@ How to make this repo your own.
 1. Click **Fork** on the GitHub repo page
 2. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/claude-code-setup.git ~/Code/claude-code-setup
-   cd ~/Code/claude-code-setup
+   git clone https://github.com/YOUR_USERNAME/claude-code-setup.git
+   cd claude-code-setup
    ```
 
 ## Step 2: Run Setup
@@ -122,8 +122,9 @@ See [templates/README.md](templates/README.md) for more details.
 
 ## Syncing Your Changes
 
+From the repo directory:
+
 ```bash
-cd ~/Code/claude-code-setup
 git add -A
 git commit -m "Customize for my workflow"
 git push
