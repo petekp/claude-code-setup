@@ -7,6 +7,7 @@
 #   ~/.claude/commands → repo/commands
 #   ~/.claude/agents   → repo/agents
 #   ~/.claude/hooks    → repo/hooks
+#   ~/.claude/scripts  → repo/scripts
 #   ~/.claude/statusline-command.sh ← repo/statusline-command.sh (copied)
 #
 # After running this, edits in either location are the same file.
@@ -22,7 +23,7 @@ set -e
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
 
-DIRS_TO_LINK=(skills commands agents hooks)
+DIRS_TO_LINK=(skills commands agents hooks scripts)
 
 FILES_TO_COPY=(statusline-command.sh)
 

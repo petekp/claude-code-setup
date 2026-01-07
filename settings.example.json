@@ -1,4 +1,16 @@
 {
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/generate-hud-status.sh"
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "WebSearch",
@@ -77,7 +89,7 @@
     "plugin-dev@claude-plugins-official": true,
     "pr-review-toolkit@claude-code-plugins": false,
     "pr-review-toolkit@claude-plugins-official": true,
-    "ralph-wiggum@claude-code-plugins": true,
+    "ralph-wiggum@claude-code-plugins": false,
     "ralph-wiggum@claude-plugins-official": true,
     "supabase@claude-plugins-official": true,
     "swift-lsp@claude-plugins-official": true,
