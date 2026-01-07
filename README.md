@@ -114,14 +114,16 @@ Removes symlinks and restores any backed-up directories.
 | ------------------- | --------------------------------------------------------- |
 | `doc-update-check`  | Prompt to update README when commands/skills/hooks change |
 | `pre-commit-verify` | Reminder to verify before committing                      |
+| `say-ready`         | Speak project name when Claude is ready for input         |
 
 The `doc-update-check` hook makes this repo self-maintaining: when Claude adds or removes commands, skills, or hooks, it's prompted to update this README before finishing. No more stale docs.
 
 ### Scripts
 
-| Script        | Purpose                        |
-| ------------- | ------------------------------ |
-| `validate.sh` | Validate frontmatter in skills, commands, agents, and hooks |
+| Script         | Purpose                                                      |
+| -------------- | ------------------------------------------------------------ |
+| `say-ready.sh` | Speak project name aloud (with 10s debounce)                 |
+| `validate.sh`  | Validate frontmatter in skills, commands, agents, and hooks  |
 
 ## Reference Files (Not Symlinked)
 
