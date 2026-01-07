@@ -84,7 +84,7 @@ If you keep the `/squad` command, update the skill catalog in `commands/squad.md
 
 ## Step 5: Handle Permissions
 
-The `settings.example.json` is **reference only**. It contains:
+The `templates/settings.json.reference` is **reference only**. It contains:
 - Hardcoded paths (`/Users/petepetrash/...`)
 - Plugin preferences specific to the original author
 
@@ -95,8 +95,8 @@ Just use Claude Code. Accept or deny permissions as they come up. Your settings 
 
 ### Option B: Copy Specific Patterns
 ```bash
-# View the example
-cat settings.example.json
+# View the reference
+cat templates/settings.json.reference
 
 # Open your settings
 code ~/.claude/settings.json
@@ -105,6 +105,8 @@ code ~/.claude/settings.json
 # "Bash(git add:*)"
 # "Bash(pnpm:*)"
 ```
+
+See [templates/README.md](templates/README.md) for more details.
 
 ## What to Customize
 
@@ -116,7 +118,7 @@ code ~/.claude/settings.json
 | Agents | `agents/` | Add/remove as needed |
 | Hooks | `hooks/` | Add/remove as needed |
 | Statusline | `statusline-command.sh` | Customize or delete |
-| Permissions | `settings.example.json` | Reference only |
+| Permissions | `templates/settings.json.reference` | Reference only |
 
 ## Syncing Your Changes
 

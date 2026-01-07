@@ -14,11 +14,33 @@
 # Commit and push from this repo as usual.
 #
 # Usage:
-#   ./setup.sh         # Create symlinks (backs up existing dirs)
-#   ./setup.sh --undo  # Remove symlinks and restore backups
+#   ./setup.sh           # Create symlinks (backs up existing dirs)
+#   ./setup.sh --dry-run # Preview changes without making them
+#   ./setup.sh --undo    # Remove symlinks and restore backups
 #
 
 set -e
+
+case "$(uname -s)" in
+    Linux*|Darwin*)
+        ;;
+    MINGW*|CYGWIN*|MSYS*)
+        echo "Windows detected. Please run in WSL or set up symlinks manually."
+        echo "See README.md#windows-users for details."
+        exit 1
+        ;;
+    *)
+        echo "Unknown platform: $(uname -s)"
+        echo "This script requires macOS or Linux."
+        exit 1
+        ;;
+esac
+
+DRY_RUN=false
+if [[ "$1" == "--dry-run" ]]; then
+    DRY_RUN=true
+    shift
+fi
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
@@ -51,12 +73,20 @@ link_dir() {
 
     if [[ -d "$target" ]]; then
         local backup="$target.backup.$(date +%Y%m%d-%H%M%S)"
-        echo "  📦 Backing up $name → $backup"
-        mv "$target" "$backup"
+        if $DRY_RUN; then
+            echo "  [dry-run] Would backup $name → $backup"
+        else
+            echo "  📦 Backing up $name → $backup"
+            mv "$target" "$backup"
+        fi
     fi
 
-    ln -s "$source" "$target"
-    echo "  ✓  $name → $source"
+    if $DRY_RUN; then
+        echo "  [dry-run] Would link: $name → $source"
+    else
+        ln -s "$source" "$target"
+        echo "  ✓  $name → $source"
+    fi
 }
 
 unlink_dir() {
@@ -93,14 +123,22 @@ copy_file() {
             return
         else
             local backup="$target.backup.$(date +%Y%m%d-%H%M%S)"
-            echo "  📦 Backing up $name → $backup"
-            cp "$target" "$backup"
+            if $DRY_RUN; then
+                echo "  [dry-run] Would backup $name → $backup"
+            else
+                echo "  📦 Backing up $name → $backup"
+                cp "$target" "$backup"
+            fi
         fi
     fi
 
-    cp "$source" "$target"
-    chmod +x "$target"
-    echo "  ✓  $name (copied)"
+    if $DRY_RUN; then
+        echo "  [dry-run] Would copy: $name"
+    else
+        cp "$source" "$target"
+        chmod +x "$target"
+        echo "  ✓  $name (copied)"
+    fi
 }
 
 remove_file() {
@@ -134,7 +172,11 @@ if [[ "$1" == "--undo" ]]; then
         remove_file "$file"
     done
 else
-    echo "Setting up Claude Code configuration..."
+    if $DRY_RUN; then
+        echo "Previewing Claude Code configuration setup (no changes will be made)..."
+    else
+        echo "Setting up Claude Code configuration..."
+    fi
     echo ""
     echo "Symlinking directories:"
     for dir in "${DIRS_TO_LINK[@]}"; do
@@ -146,11 +188,14 @@ else
         copy_file "$file"
     done
     echo ""
-    echo "Done!"
-    echo ""
-    echo "Notes:"
-    echo "  • settings.example.json is for reference only (contains hardcoded paths)"
-    echo "  • See templates/ for settings.local.json and .mcp.json examples"
-    echo ""
-    echo "First time? See FORKING.md for customization guide."
+    if $DRY_RUN; then
+        echo "Dry run complete. Run without --dry-run to apply changes."
+    else
+        echo "Done!"
+        echo ""
+        echo "Notes:"
+        echo "  • See templates/ for settings and MCP config examples"
+        echo ""
+        echo "First time? See FORKING.md for customization guide."
+    fi
 fi

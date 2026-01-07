@@ -2,6 +2,15 @@
 
 My portable, version-controlled Claude Code configuration. Fork it, customize it, sync it across machines.
 
+## Quick Start
+
+```bash
+git clone https://github.com/YOUR_USERNAME/claude-code-setup.git ~/Code/claude-code-setup
+~/Code/claude-code-setup/setup.sh
+```
+
+That's it. Your Claude Code now uses this repo's skills and commands.
+
 ## How It Works
 
 This repo symlinks into `~/.claude/`, so your Claude Code configuration lives in a git repo you control.
@@ -37,6 +46,8 @@ git clone https://github.com/petekp/claude-code-setup.git ~/Code/claude-code-set
 cd ~/Code/claude-code-setup
 ./setup.sh
 ```
+
+> **Note:** You can clone this repo anywhere. The setup script detects its own location and creates symlinks accordingly. `~/Code/claude-code-setup` is just a convention.
 
 ## Syncing Changes
 
@@ -107,16 +118,52 @@ Removes symlinks and restores any backed-up directories.
 
 The `doc-update-check` hook makes this repo self-maintaining: when Claude adds or removes commands, skills, or hooks, it's prompted to update this README before finishing. No more stale docs.
 
+### Scripts
+
+| Script        | Purpose                        |
+| ------------- | ------------------------------ |
+| `validate.sh` | Validate frontmatter in skills, commands, agents, and hooks |
+
 ## Reference Files (Not Symlinked)
 
-These files are for reference or manual setup:
+These files are for reference or manual setup. See [templates/README.md](templates/README.md) for details.
 
-| File                                     | Purpose                                                        |
-| ---------------------------------------- | -------------------------------------------------------------- |
-| `settings.example.json`                  | Example permissions — review for patterns, don't copy directly |
-| `templates/settings.local.json.template` | Machine-specific permissions template                          |
-| `templates/.mcp.json.template`           | MCP server config template                                     |
-| `CLAUDE.md`                              | Coding conventions — edit to match your style                  |
+| File                                      | Purpose                                                        |
+| ----------------------------------------- | -------------------------------------------------------------- |
+| `templates/settings.json.reference`       | Example permissions — review for patterns, don't copy directly |
+| `templates/settings.local.json.template`  | Machine-specific permissions template                          |
+| `templates/.mcp.json.template`            | MCP server config template                                     |
+| `CLAUDE.md`                               | Coding conventions — edit to match your style                  |
+
+## Troubleshooting
+
+### Skills/commands not appearing
+
+1. Check symlinks exist: `ls -la ~/.claude/skills`
+2. Validate frontmatter: `./scripts/validate.sh`
+3. Restart Claude Code
+
+### "Permission denied" on setup.sh
+
+```bash
+chmod +x setup.sh && ./setup.sh
+```
+
+### Preview changes before running
+
+```bash
+./setup.sh --dry-run
+```
+
+### Restoring after breaking changes
+
+```bash
+./setup.sh --undo  # Restores from timestamped backups
+```
+
+### Windows users
+
+This script requires a Unix shell. Use WSL (Windows Subsystem for Linux) or set up symlinks manually.
 
 ## License
 
