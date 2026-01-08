@@ -67,7 +67,8 @@
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
       "/Users/petepetrash/Dropbox/Screenshots",
-      "~/.claude/skills"
+      "~/.claude/skills",
+      "~/Code"
     ]
   },
   "statusLine": {
