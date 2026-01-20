@@ -48,6 +48,24 @@ pub enum Priority { P0, P1, P2, P3 }
 pub enum Effort { Small, Medium, Large, Xl }
 ```
 
+### Lookup by Primary Key
+
+When resolving data, use the result's primary key for subsequent lookups—not secondary attributes that could match different records:
+
+```rust
+// BAD: Secondary lookup could return different record
+let resolved = resolve_state(&store, project_path)?;
+let record = store.find_by_cwd(&resolved.cwd);  // Could match Session B!
+
+// GOOD: Use the resolved session_id for lookup
+let resolved = resolve_state(&store, project_path)?;
+let record = resolved.session_id
+    .as_deref()
+    .and_then(|id| store.get_by_session_id(id));  // Always correct session
+```
+
+This is critical in multi-session scenarios where multiple records share the same secondary attribute (e.g., same working directory).
+
 ### Versioned Data With Serde
 
 When adding fields to serialized structures, old data won't have them. Model explicitly:

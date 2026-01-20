@@ -1,11 +1,11 @@
 ---
 name: capture-learning
-description: This skill should be used when the user asks to "capture this learning", "update the docs with this", "remember this for next time", "document this issue", "add this to CLAUDE.md", "save this knowledge", "update project knowledge", or when the user has just resolved an issue and wants to prevent it from happening again. Analyzes recent session context and updates project knowledge files.
+description: This skill should be used when the user asks to "capture this learning", "update the docs with this", "remember this for next time", "document this issue", "add this to CLAUDE.md", "save this knowledge", "update project knowledge", or when the user has just resolved an issue and wants to prevent it from happening again. Analyzes recent session context and updates either project knowledge files (for project-specific learnings) or skills/commands/subagents (for general learnings that apply across projects).
 ---
 
 # Capture Learning
 
-Analyze recent conversation context and update project knowledge files with learnings to prevent recurring issues and document discoveries.
+Analyze recent conversation context and capture learnings—either to project knowledge files or to skills/commands/subagents for cross-project reuse.
 
 ## When to Use
 
@@ -40,7 +40,36 @@ is required due to React 18 peer dependency conflicts.
 Had some issues with npm install, fixed it eventually.
 ```
 
-### Step 2: Scan for Knowledge Files
+### Step 2: Determine Learning Scope
+
+Before deciding where to capture, ask: **Is this learning project-specific or general?**
+
+| Scope | Characteristics | Capture Target |
+|-------|-----------------|----------------|
+| **Project-specific** | Involves this codebase's architecture, conventions, dependencies, or local setup | Project knowledge files (`.claude/CLAUDE.md`, `.claude/docs/`) |
+| **General** | Applies across all projects—language patterns, framework best practices, tool usage, API quirks | Skills, commands, or subagents |
+
+**Decision questions:**
+1. Would this help in *other* projects using the same language/framework?
+2. Is this a general technique vs. this repo's specific implementation?
+3. Does an existing skill already cover this domain?
+
+**Examples:**
+
+| Learning | Scope | Target |
+|----------|-------|--------|
+| "This repo uses `ApiError` class for error handling" | Project-specific | `.claude/CLAUDE.md` |
+| "SwiftUI `matchedGeometryEffect` should only apply to background shapes, not content" | General | `swiftui-excellence` skill |
+| "Run `npm install --legacy-peer-deps` for this project" | Project-specific | `.claude/CLAUDE.md` |
+| "React Server Components can't use `useState`" | General | `react-component-dev` skill or similar |
+| "The CI pipeline requires `NODE_ENV=test`" | Project-specific | `.claude/docs/setup.md` |
+| "Playwright's `page.waitForSelector` times out silently without proper error handling" | General | `playwright-qa-tester` agent or new skill |
+
+**If general:** Navigate to the appropriate skill/command/subagent file and update it following its existing structure. Then confirm with user before saving.
+
+**If project-specific:** Continue to Step 3.
+
+### Step 3: Scan for Knowledge Files (Project-Specific Learnings)
 
 Detect existing knowledge files in the project's `.claude/` directory:
 
@@ -63,7 +92,7 @@ Detect existing knowledge files in the project's `.claude/` directory:
 3. `.claude/docs/setup.md` - If exists, for environment/build issues
 4. Create new file only if user requests it
 
-### Step 3: Categorize the Learning
+### Step 4: Categorize the Learning
 
 Determine which section the learning belongs in:
 
@@ -77,7 +106,7 @@ Determine which section the learning belongs in:
 
 If the target section doesn't exist, propose creating it in a logical location.
 
-### Step 4: Draft the Update
+### Step 5: Draft the Update
 
 Format the learning for documentation:
 
@@ -111,7 +140,7 @@ Keep entries:
 - **Actionable** - Provide concrete steps or commands
 - **Contextual** - Explain *why*, not just *what*
 
-### Step 5: Present Changes for Confirmation
+### Step 6: Present Changes for Confirmation
 
 Before modifying any file, show the user:
 
@@ -135,7 +164,7 @@ Should I apply this update?
 
 Wait for explicit user approval before writing.
 
-### Step 6: Apply the Update
+### Step 7: Apply the Update
 
 After confirmation:
 
@@ -292,7 +321,11 @@ If a learning involves secrets, document the *pattern* without the actual values
 
 **Trigger phrases:** "capture this", "remember this", "update docs", "document this", "add to CLAUDE.md", "save this knowledge"
 
-**Target files:** `.claude/CLAUDE.md` (primary), `.claude/docs/*.md` (secondary)
+**First question:** Is this project-specific or general?
+
+**Project-specific targets:** `.claude/CLAUDE.md` (primary), `.claude/docs/*.md` (secondary)
+
+**General targets:** Skills (`~/.claude/skills/`), commands (`~/.claude/commands/`), subagents (plugin agents)
 
 **Always confirm:** Show exact changes before writing
 

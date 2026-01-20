@@ -1,5 +1,5 @@
 ---
-name: Tuning Panel
+name: tuning-panel
 description: This skill should be used when the user asks to "create a tuning panel", "add parameter controls", "build a debug panel", "tweak parameters visually", "fine-tune values", "dial in the settings", "adjust parameters interactively", or when the user is iteratively tuning animations, layouts, colors, typography, physics, or any numeric/visual parameters. Also triggers when user mentions "leva", "dat.GUI", "tweakpane", or similar parameter GUI libraries.
 version: 0.1.0
 ---
@@ -201,6 +201,52 @@ const changed = Object.entries(config).filter(([k, v]) =>
 );
 ```
 
+#### Swift/SwiftUI Pattern
+
+For SwiftUI tuning panels, use a tuple array to compare defaults against current values:
+
+```swift
+func exportForLLM() -> String {
+    // Tuple: (category, paramName, defaultValue, currentValue)
+    let allParams: [(String, String, Double, Double)] = [
+        ("Animation", "duration", 0.3, duration),
+        ("Animation", "springResponse", 0.2, springResponse),
+        ("Animation", "springDamping", 0.8, springDamping),
+        ("Visual", "opacity", 1.0, opacity),
+        ("Visual", "cornerRadius", 12.0, cornerRadius),
+    ]
+
+    // Filter to only changed values (with floating-point tolerance)
+    let changed = allParams.filter { abs($0.2 - $0.3) > 0.001 }
+
+    if changed.isEmpty {
+        return "## Parameters\n\nNo changes from defaults."
+    }
+
+    // Group by category for readable output
+    var grouped: [String: [(String, Double, Double)]] = [:]
+    for (category, name, defaultVal, currentVal) in changed {
+        grouped[category, default: []].append((name, defaultVal, currentVal))
+    }
+
+    var output = "## Parameters\n\n### Changed Values\n```swift\n"
+    for category in grouped.keys.sorted() {
+        output += "// \(category)\n"
+        for (name, defaultVal, currentVal) in grouped[category]! {
+            output += "\(name): \(String(format: "%.2f", defaultVal)) → \(String(format: "%.2f", currentVal))\n"
+        }
+    }
+    output += "```"
+    return output
+}
+```
+
+**Key benefits of the tuple array approach:**
+- Single source of truth for defaults (no separate `defaults` dictionary to maintain)
+- Category grouping built into the data structure
+- Easy to add/remove parameters
+- Works well with Swift's strong typing
+
 The export should include:
 - All current values in a code-ready format
 - **Only changed values** in the diff section (critical!)
@@ -312,32 +358,40 @@ const Component = () => {
 
 ## Export Format Specification
 
+**Token efficiency is critical.** Export only changed values to minimize clipboard size and LLM context consumption. A panel with 100+ parameters should produce ~5 lines of output if only 3 values changed.
+
 The LLM export should produce markdown that another Claude instance can immediately act on:
 
+**When nothing changed:**
+```markdown
+## Parameters
+
+No changes from defaults.
+```
+
+**When values were tuned:**
 ```markdown
 ## Tuned Parameters for [ComponentName]
 
-I've dialed in these values for the [animation/layout/etc.]:
+### Changed Values
+```swift
+// Animation
+springResponse: 0.20 → 0.15
+springDamping: 0.80 → 0.65
 
-### Final Values
-```typescript
-const config = {
-  duration: 450,
-  easing: [0.32, 0.72, 0, 1],
-  stiffness: 180,
-  damping: 24,
-};
+// Visual
+cornerRadius: 12.00 → 16.00
 ```
-
-### Changes from Defaults
-| Parameter | Default | Tuned | Reason |
-|-----------|---------|-------|--------|
-| duration | 300ms | 450ms | Slower feels more premium |
-| damping | 20 | 24 | Reduces overshoot |
 
 ### Apply These Values
-Update the component at `src/components/Card.tsx:42` with the config above.
+Update the component at `src/components/Card.tsx:42` with the values above.
 ```
+
+**Why this matters:**
+- A tuning panel might expose 140+ parameters
+- Exporting all values wastes tokens and obscures what actually changed
+- The `default → current` format makes diffs immediately scannable
+- Grouped output keeps related changes together
 
 ## Additional Resources
 
