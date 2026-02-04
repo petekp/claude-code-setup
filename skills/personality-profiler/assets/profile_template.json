@@ -1,0 +1,149 @@
+{
+  "version": "1.0",
+  "generated_at": "",
+  "data_sources": [],
+  "profile": {
+    "summary": "",
+    "dimensions": {
+      "communication_style": {
+        "confidence": 0.0,
+        "traits": {
+          "formality": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (very casual) to 1.0 (very formal)",
+            "evidence": []
+          },
+          "verbosity": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (very concise) to 1.0 (very elaborate)",
+            "evidence": []
+          },
+          "directness": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (indirect/diplomatic) to 1.0 (very direct)",
+            "evidence": []
+          },
+          "humor": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (serious) to 1.0 (frequently humorous)",
+            "evidence": []
+          }
+        },
+        "patterns": [],
+        "recommendations_for_ai": ""
+      },
+      "interests_expertise": {
+        "confidence": 0.0,
+        "traits": {
+          "primary_topics": [],
+          "expertise_depth": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (generalist) to 1.0 (deep specialist)"
+          },
+          "curiosity_breadth": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (focused) to 1.0 (wide-ranging)"
+          }
+        },
+        "topic_evolution": [],
+        "patterns": [],
+        "recommendations_for_ai": ""
+      },
+      "values_beliefs": {
+        "confidence": 0.0,
+        "traits": {
+          "core_values": [],
+          "advocacy_topics": [],
+          "worldview_indicators": []
+        },
+        "patterns": [],
+        "recommendations_for_ai": ""
+      },
+      "social_patterns": {
+        "confidence": 0.0,
+        "traits": {
+          "engagement_style": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (responder/reactor) to 1.0 (initiator/creator)"
+          },
+          "network_orientation": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (tight community) to 1.0 (broad reach)"
+          },
+          "interaction_tone": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (challenging/critical) to 1.0 (supportive/encouraging)"
+          }
+        },
+        "patterns": [],
+        "recommendations_for_ai": ""
+      },
+      "emotional_expression": {
+        "confidence": 0.0,
+        "traits": {
+          "emotional_range": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (reserved) to 1.0 (expressive)"
+          },
+          "valence_tendency": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (negative/critical) to 1.0 (positive/optimistic)"
+          },
+          "emotional_vocabulary": []
+        },
+        "triggers": {
+          "positive": [],
+          "negative": []
+        },
+        "patterns": [],
+        "recommendations_for_ai": ""
+      },
+      "cognitive_style": {
+        "confidence": 0.0,
+        "traits": {
+          "reasoning_approach": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (intuitive/narrative) to 1.0 (analytical/data-driven)"
+          },
+          "complexity_preference": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (straightforward) to 1.0 (nuanced/complex)"
+          },
+          "openness_to_change": {
+            "value": 0.0,
+            "description": "Scale: -1.0 (traditional) to 1.0 (experimental)"
+          }
+        },
+        "patterns": [],
+        "recommendations_for_ai": ""
+      },
+      "professional_identity": {
+        "confidence": 0.0,
+        "traits": {
+          "industry": "",
+          "role_type": "",
+          "expertise_areas": [],
+          "career_stage": "",
+          "aspirations": []
+        },
+        "patterns": [],
+        "recommendations_for_ai": ""
+      },
+      "temporal_patterns": {
+        "confidence": 0.0,
+        "traits": {
+          "activity_times": [],
+          "posting_frequency": "",
+          "seasonal_patterns": []
+        },
+        "growth_trajectory": "",
+        "patterns": [],
+        "recommendations_for_ai": ""
+      }
+    },
+    "notable_quotes": [],
+    "keywords": [],
+    "topics_ranked": []
+  },
+  "extensions": {}
+}
