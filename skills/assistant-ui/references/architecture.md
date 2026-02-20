@@ -57,16 +57,16 @@ React hooks for accessing runtime:
 
 ```tsx
 // Modern API (recommended)
-import { useAssistantApi, useAssistantState, useAssistantEvent } from "@assistant-ui/react";
+import { useAui, useAuiState, useAuiEvent } from "@assistant-ui/react";
 
 // Get API for imperative actions
-const api = useAssistantApi();
+const api = useAui();
 
 // Subscribe to state changes
-const messages = useAssistantState(s => s.thread.messages);
+const messages = useAuiState(s => s.thread.messages);
 
 // Listen to events
-useAssistantEvent("message-added", (e) => console.log(e));
+useAuiEvent("composer.send", (e) => console.log(e));
 ```
 
 ### Layer 4: Primitives (UI)

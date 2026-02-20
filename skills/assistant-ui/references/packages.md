@@ -15,7 +15,6 @@
 | @assistant-ui/react-data-stream | Data stream utilities |
 | @assistant-ui/react-markdown | Markdown rendering |
 | @assistant-ui/react-syntax-highlighter | Code highlighting |
-| @assistant-ui/styles | Pre-built CSS (no Tailwind) |
 | @assistant-ui/store | State management |
 | @assistant-ui/react-devtools | Developer tools |
 | @assistant-ui/react-hook-form | React Hook Form integration |
@@ -43,8 +42,9 @@ npm install @assistant-ui/react
 
 **Exports:**
 - Primitives: `ThreadPrimitive`, `MessagePrimitive`, `ComposerPrimitive`, `ActionBarPrimitive`, `BranchPickerPrimitive`, `AttachmentPrimitive`, `ThreadListPrimitive`
-- Pre-built: `Thread`, `ThreadList`, `AssistantModal`
-- Hooks: `useAssistantApi`, `useAssistantState`, `useAssistantEvent`
+- Pre-built components are added via project templates in:
+  `@/components/assistant-ui/thread` and `@/components/assistant-ui/thread-list`
+- Hooks: `useAui`, `useAuiState`, `useAuiEvent`
 - Runtime: `useLocalRuntime`, `useExternalStoreRuntime`
 - Tools: `makeAssistantTool`, `makeAssistantToolUI`, `useAssistantTool`, `useAssistantToolUI`
 - Provider: `AssistantRuntimeProvider`
@@ -128,18 +128,6 @@ Code block syntax highlighting.
 npm install @assistant-ui/react-syntax-highlighter
 ```
 
-### @assistant-ui/styles
-
-Pre-built CSS styles (no Tailwind required).
-
-```bash
-npm install @assistant-ui/styles
-```
-
-**Styles:**
-- `@assistant-ui/styles/default.css` - Full thread styles
-- `@assistant-ui/styles/modal.css` - Modal popup styles
-
 ## Package Selection Guide
 
 | Scenario | Packages |
@@ -148,7 +136,6 @@ npm install @assistant-ui/styles
 | LangGraph | `@assistant-ui/react`, `@assistant-ui/react-langgraph` |
 | Custom backend | `@assistant-ui/react`, `assistant-stream` |
 | With markdown | Add `@assistant-ui/react-markdown` |
-| No Tailwind | Add `@assistant-ui/styles` |
 | Production | Add `assistant-cloud` |
 
 ## Version Compatibility
