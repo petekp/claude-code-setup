@@ -17,7 +17,7 @@ How to make this repo your own.
 ./setup.sh
 ```
 
-This symlinks `skills/`, `commands/`, `agents/`, and `hooks/` to `~/.claude/`.
+This symlinks directories into `~/.claude/`, links skills into `~/.codex/`, and assembles system instructions for both tools.
 
 ## Step 3: Detach from Upstream (Optional)
 
@@ -112,12 +112,17 @@ See [templates/README.md](templates/README.md) for more details.
 
 | Item | Location | Action |
 |------|----------|--------|
-| Coding conventions | `CLAUDE.md` | Replace with your preferences |
+| Shared instructions | `instructions/common.md` | Rules for both Claude Code and Codex |
+| Claude-only instructions | `instructions/claude-only.md` | Claude Code-specific rules |
+| Codex-only instructions | `instructions/codex-only.md` | Codex-specific rules |
+| Coding conventions | `CLAUDE.md` (repo root) | Per-project preferences (not assembled) |
 | Skills | `skills/` | Add/remove as needed |
 | Commands | `commands/` | Add/remove as needed |
 | Agents | `agents/` | Add/remove as needed |
 | Hooks | `hooks/` | Add/remove as needed |
+| Codex exclusions | `codex-exclude` | Skills to skip for Codex |
 | Statusline | `statusline-command.sh` | Customize or delete |
+| MCP servers | `.mcp.json` | Claude Code servers (Codex: manual) |
 | Permissions | `templates/settings.json.reference` | Reference only |
 
 ## Syncing Your Changes

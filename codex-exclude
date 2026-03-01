@@ -8,3 +8,10 @@ assistant-ui
 find-skills
 ai-sdk
 skill-creator
+
+# Claude-specific skills (reference Claude-only tools/paths)
+checkpoint
+claude-md-author
+skill-auditor
+capture-learning
+hud-manual-testing

@@ -12,6 +12,8 @@
 #   ~/.claude/statusline-command.sh ← repo/statusline-command.sh (copied)
 #   ~/.mcp.json            → repo/.mcp.json
 #   ~/.codex/skills/<each> → repo/skills/<each> (individual symlinks)
+#   ~/.claude/CLAUDE.md    ← repo/instructions/common.md + claude-only.md (assembled)
+#   ~/.codex/AGENTS.md     ← repo/instructions/common.md + codex-only.md (assembled)
 #
 # After running this, edits in either location are the same file.
 # Commit and push from this repo as usual.
@@ -283,6 +285,82 @@ unlink_home_file() {
     fi
 }
 
+assemble_instructions() {
+    local instructions_dir="$REPO_DIR/instructions"
+
+    if [[ ! -d "$instructions_dir" ]]; then
+        echo "  ⏭  No instructions/ directory in repo, skipping"
+        return
+    fi
+
+    local -a targets=(
+        "$CLAUDE_DIR/CLAUDE.md:common.md:claude-only.md"
+        "$CODEX_DIR/AGENTS.md:common.md:codex-only.md"
+    )
+
+    for entry in "${targets[@]}"; do
+        IFS=: read -r target_file common_file specific_file <<< "$entry"
+        local target_dir=$(dirname "$target_file")
+        local target_name=$(basename "$target_file")
+
+        if [[ ! -d "$target_dir" ]]; then
+            echo "  ⏭  $target_dir not found, skipping $target_name"
+            continue
+        fi
+
+        local common="$instructions_dir/$common_file"
+        local specific="$instructions_dir/$specific_file"
+
+        if [[ ! -f "$common" ]]; then
+            echo "  ⏭  $common_file not found, skipping $target_name"
+            continue
+        fi
+
+        # One-time backup (sentinel prevents overwriting original)
+        local sentinel="$target_dir/.backup-pre-assembly"
+        if [[ -f "$target_file" && ! -f "$sentinel" ]]; then
+            if $DRY_RUN; then
+                echo "  [dry-run] Would backup $target_name → $target_name.backup-pre-assembly"
+            else
+                cp "$target_file" "$sentinel"
+                echo "  📦 Backed up $target_name (original saved for --undo)"
+            fi
+        fi
+
+        # Assemble: common + specific (if it has content)
+        if $DRY_RUN; then
+            echo "  [dry-run] Would assemble $target_name from $common_file + $specific_file"
+        else
+            cat "$common" > "$target_file"
+            if [[ -f "$specific" ]] && grep -q '[^[:space:]#]' "$specific" 2>/dev/null; then
+                printf '\n' >> "$target_file"
+                cat "$specific" >> "$target_file"
+            fi
+            echo "  ✓  $target_name assembled from $common_file + $specific_file"
+        fi
+    done
+}
+
+disassemble_instructions() {
+    local -a targets=(
+        "$CLAUDE_DIR/CLAUDE.md"
+        "$CODEX_DIR/AGENTS.md"
+    )
+
+    for target_file in "${targets[@]}"; do
+        local target_dir=$(dirname "$target_file")
+        local target_name=$(basename "$target_file")
+        local sentinel="$target_dir/.backup-pre-assembly"
+
+        if [[ -f "$sentinel" ]]; then
+            mv "$sentinel" "$target_file"
+            echo "  ✓  Restored $target_name from pre-assembly backup"
+        else
+            echo "  ⏭  $target_name (no pre-assembly backup found)"
+        fi
+    done
+}
+
 link_codex_skills() {
     local skills_source="$REPO_DIR/skills"
     local exclude_file="$REPO_DIR/codex-exclude"
@@ -403,6 +481,9 @@ if [[ "$1" == "--undo" ]]; then
     echo ""
     echo "Codex skills:"
     unlink_codex_skills
+    echo ""
+    echo "System instructions:"
+    disassemble_instructions
 else
     if $DRY_RUN; then
         echo "Previewing Claude Code + Codex configuration setup (no changes will be made)..."
@@ -432,6 +513,9 @@ else
     echo ""
     echo "Codex skills (individual symlinks):"
     link_codex_skills
+    echo ""
+    echo "System instructions:"
+    assemble_instructions
     echo ""
     if $DRY_RUN; then
         echo "Dry run complete. Run without --dry-run to apply changes."
