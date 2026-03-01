@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+      "passed": false,
+      "evidence": "No CHARTER.md or equivalent. The migration plan has goals but no explicit invariants or non-goals. Risk register identifies risks but these are not formalized as boundary constraints"
+    },
+    {
+      "text": "Inventories all three state management approaches with specific counts or categorization",
+      "passed": true,
+      "evidence": "Migration plan opens with a clear inventory table: Redux (12 feature slices with analytics middleware), Context API (6 providers with nested composition and shared state), Zustand (4 newest features). Counts match the prompt"
+    },
+    {
+      "text": "Defines CI ratchets with numeric budgets for state management patterns to eliminate",
+      "passed": false,
+      "evidence": "No mention of ratchets, budgets, or CI guards. Testing strategy mentions CI integration but for test validation, not pattern counting. Zero grep matches for 'ratchet' or 'budget'"
+    },
+    {
+      "text": "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+      "passed": false,
+      "evidence": "Plan uses 5 horizontal phases grouped by complexity (Infrastructure → Simple Redux → Complex Redux → Context → Cleanup). Within phases, individual migrations are mentioned but not structured as named slices with contracts, dependencies, or verification criteria"
+    },
+    {
+      "text": "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+      "passed": false,
+      "evidence": "Phase 4 mentions 'Remove all migration scaffolding' and dependency cleanup but deletion targets are not pre-defined per migration unit. Cleanup is deferred to the final phase"
+    },
+    {
+      "text": "Produces a MAP.csv or equivalent file-level inventory tracking every affected component",
+      "passed": false,
+      "evidence": "The audit checklist has a 'component fan-out' section for individual assessments but no comprehensive file-level inventory mapping all affected components with ownership and status"
+    },
+    {
+      "text": "Defines denylist patterns for removed state management imports (redux, createContext for state)",
+      "passed": false,
+      "evidence": "No denylist patterns defined. Zero grep matches for 'denylist'. The testing strategy mentions 'per-PR checks' but provides no specific pattern enforcement"
+    },
+    {
+      "text": "Includes session handoff protocol or explicit multi-session continuity guidance",
+      "passed": false,
+      "evidence": "No mention of session continuity, handoff protocol, or multi-session safety across any output file"
+    },
+    {
+      "text": "Handles cross-cutting concerns explicitly — analytics middleware and shared Context state are identified as decision points, not ignored",
+      "passed": true,
+      "evidence": "Phase 0.1 is dedicated to building the analytics middleware replacement. Context nesting is addressed with a thin wrapper strategy for gradual migration. The risk register rates 'Analytics event parity loss' as the highest-risk item (score 20). Migration plan includes detailed analytics middleware code patterns"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 7,
+    "total": 9,
+    "pass_rate": 0.22
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "eval_id": 2,
+  "eval_name": "database-standardization",
+  "prompt": "Our Django app has raw SQL in some views, the Django ORM in most models, and SQLAlchemy in 3 endpoints that were ported from Flask. About 150 queries across 35 files. We want to standardize on the Django ORM. Some of the raw SQL does things the ORM can't easily express, so we'll need to figure out those cases. How do we approach this systematically?",
+  "assertions": [
+    "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+    "Categorizes database access into distinct patterns (raw SQL, Django ORM, SQLAlchemy) with estimated counts",
+    "Defines CI ratchets with numeric budgets for each database access pattern to eliminate",
+    "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+    "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+    "Produces a MAP.csv or equivalent file-level inventory tracking every affected file",
+    "Defines denylist patterns for removed database patterns (SQLAlchemy imports, raw SQL patterns)",
+    "Includes session handoff protocol or explicit multi-session continuity guidance",
+    "Explicitly addresses 'hard cases' where raw SQL does things the ORM can't easily express — proposes a decision framework rather than ignoring them"
+  ]
+}

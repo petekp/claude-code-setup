@@ -1,0 +1,134 @@
+{
+  "expectations": [
+    {
+      "text": "At least 3 fundamentally different paradigms explored with substantive analysis — each paradigm has a documented 'core bet', at least one concrete approach with full tradeoff breakdown, and research-backed information (not just listed or briefly mentioned)",
+      "passed": true,
+      "evidence": "SOLUTION_MAP.md documents 5 distinct paradigms, each with a documented 'Core bet' statement: (1) Managed Notification Infrastructure ('Notifications are a solved, commoditized problem'), (2) Managed Real-Time Transport + Custom Notification Logic ('The hard part of notifications is the real-time transport, not the business logic'), (3) Self-Built with Native Web Technologies ('Modern web standards and Next.js capabilities are sufficient'), (4) Reactive Database ('If the database itself is reactive, the notification system becomes trivially simple'), (5) Pull-Based with Optimistic Updates ('Real-time is a spectrum, not a binary'). Each paradigm has 1-3 concrete approaches with full gains/gives-up/risks/complexity breakdowns. Web searches were conducted for research (e.g., 'Novu Knock notification infrastructure service comparison', 'server-sent events vs websockets vs polling Next.js', 'Supabase realtime notifications', 'Firebase Cloud Messaging')."
+    },
+    {
+      "text": "At least 5 total concrete approaches documented with gains/gives-up/risks breakdowns",
+      "passed": true,
+      "evidence": "SOLUTION_MAP.md documents 9 concrete approaches with full breakdowns: 1a (Knock), 1b (Novu), 2a (Upstash Realtime), 2b (Supabase Realtime), 2c (Pusher/Ably), 3a (SSE Route Handler), 3b (WebSocket Server), 4a (Convex), 5a (Polling). Each has 'How it works', 'Gains', 'Gives up', 'Shines when', 'Risks', and 'Complexity' sections with substantive detail."
+    },
+    {
+      "text": "Problem restated in solver's own words, revealing underlying need rather than echoing the prompt",
+      "passed": true,
+      "evidence": "PROBLEM_BRIEF.md restates the problem as: 'The application needs a system that informs users, in real time, when meaningful social interactions occur... The underlying need is social feedback loops -- users who don't learn about engagement on their content disengage from the platform.' This goes beyond the original prompt ('I need to add real-time notifications') by identifying the deeper UX motivation (engagement/retention), noting it encompasses generating, persisting, delivering, and rendering notifications, and calling out the future trajectory toward email/push channels."
+    },
+    {
+      "text": "At least 3 explicit assumptions identified and called out as assumptions (not embedded silently in the recommendation)",
+      "passed": true,
+      "evidence": "PROBLEM_BRIEF.md lists 7 numbered assumptions, each with a status (assumed/unconfirmed): (1) Next.js App Router with RSC, (2) Vercel or serverless deployment, (3) PostgreSQL or managed database, (4) Authentication exists, (5) Small team, (6) English-language single-region, (7) Moderate scale. Additionally, a separate ASSUMPTIONS.md file documents 8 assumptions with impact analysis, including how each influenced the recommendation. For example: 'Assumption 1: Vercel / serverless deployment... This was the single most consequential assumption. It eliminated two approaches (SSE Route Handler, WebSocket Server).' and 'Assumption 4: Budget sensitivity... This was the primary reason Knock was not the top recommendation.'"
+    },
+    {
+      "text": "A tradeoff matrix comparing ALL explored approaches (not just 2 favorites) against specific criteria with concrete assessments",
+      "passed": true,
+      "evidence": "ANALYSIS.md contains a comprehensive tradeoff matrix with all 9 approaches as columns (Knock, Novu, Upstash Realtime, Supabase Realtime, Pusher/Ably, SSE Route Handler, WebSocket Server, Convex, Polling) evaluated against 16 criteria rows including all MUST, SHOULD, and NICE criteria plus cost. Assessments are concrete: 'YES (~500ms)', 'NO (5-15s)', 'YOU BUILD', '$0 (free tier)', '~$250/mo', 'PARTIAL (timeout limits)'. The matrix covers every approach documented in SOLUTION_MAP.md."
+    },
+    {
+      "text": "At least 1 genuinely non-obvious or creative approach explored — a reframing, hybrid, or domain-shifted solution, not just a less-popular library",
+      "passed": true,
+      "evidence": "SOLUTION_MAP.md has a 'Non-Obvious Options' section with 4 creative approaches: (1) 'Hybrid: Polling + SSE Upgrade Path' -- start simple and upgrade transport without changing data layer; (2) 'Notification-as-Email-First' -- reframes the problem by making email the primary channel and in-app a history view; (3) 'Edge Function + KV Store Pattern' -- leverages edge infrastructure for low-latency delivery without persistent connections; (4) 'Browser Push Notifications (Web Push API)' -- orthogonal approach for the 'user isn't looking' case. The email-first and polling-with-upgrade-path approaches are genuine reframings, not just alternative libraries."
+    },
+    {
+      "text": "Final recommendation cites specific evidence from prototyping or research, with reasoning traceable through the artifact chain",
+      "passed": true,
+      "evidence": "DECISION.md's 'Evidence for This Choice' section is organized into three categories -- 'From prototyping', 'From research', and 'From analysis' -- with specific citations: 'The core notification system requires ~280 lines of code', 'Upstash Realtime has Zod-based type safety, automatic connection management, and history support', 'Cost starts at $0 and scales gradually ($10/month), avoiding the cliff from Knock's $0 to $250/month jump'. The reasoning chain is traceable: PROBLEM_BRIEF defines criteria -> SOLUTION_MAP explores approaches -> ANALYSIS eliminates on MUST criteria -> COMPARISON compares prototypes -> DECISION selects with evidence from all prior phases."
+    },
+    {
+      "text": "Every rejected alternative has a specific, evidence-based reason for rejection (not 'it wasn't as good')",
+      "passed": true,
+      "evidence": "DECISION.md's 'Why Not the Alternatives' section gives specific reasons for each: Knock ('Paying $250/month for features you don't need yet... the missing 190 lines are straightforward CRUD and UI -- not novel infrastructure'), Convex ('choosing Convex for notifications means choosing Convex for everything... The architectural beauty doesn't justify the scope of the bet for a single feature'), Supabase Realtime ('adopting Supabase specifically for notification delivery is a tail-wagging-the-dog decision... Research showed Supabase Realtime has had reliability concerns at scale'), Pusher/Ably ('more expensive than Upstash ($49/month vs $10/month) and designed for generic pub/sub'), Polling ('Fails the real-time MUST criterion... 5-15 second latency doesn't meet the 1-3 second requirement'). ANALYSIS.md also documents eliminations with specific MUST criterion failures: SSE ('PARTIALLY FAILS the Vercel deployable MUST criterion'), WebSocket ('FAILS the Vercel deployable MUST criterion outright')."
+    },
+    {
+      "text": "At least 2 working prototypes built and compared against pre-defined criteria",
+      "passed": true,
+      "evidence": "Three prototypes were built in the prototypes/ directory: (1) prototypes/knock/notification-system.tsx (3995 bytes, ~90 lines of app code), (2) prototypes/upstash/notification-system.tsx (9820 bytes, ~280 lines), (3) prototypes/convex/notification-system.tsx (9534 bytes, ~220 lines). COMPARISON.md defines 6 comparison criteria BEFORE prototyping (lines of code, concepts to learn, built-in features, deployment complexity, vendor commitment, time to first notification) and evaluates all three prototypes against each criterion with concrete results. For example, Knock: '~90 lines, 4 concepts to learn', Upstash: '~280 lines, 6 concepts', Convex: '~220 lines, 5 concepts, ZERO transport concepts'. Each prototype also has a 'Surprises' section documenting unexpected findings. Note: These are code-level prototypes (not runnable applications), but they substantively demonstrate the implementation shape, complexity, and tradeoffs of each approach as the skill intended."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 1,
+      "Write": 9,
+      "Bash": 3,
+      "WebSearch": 15,
+      "WebFetch": 6
+    },
+    "total_tool_calls": 34,
+    "output_chars": 83223,
+    "transcript_chars": 273272
+  },
+  "timing": {
+    "executor_duration_seconds": 612.1,
+    "total_duration_seconds": 612.1
+  },
+  "claims": [
+    {
+      "claim": "Knock prototype requires ~90 lines of application code",
+      "type": "factual",
+      "verified": true,
+      "evidence": "The knock prototype file is 133 lines total including extensive comments, blank lines, and the 'That's it' summary section. The actual application code (imports, types, functions, JSX) is approximately 90 lines, consistent with the claim."
+    },
+    {
+      "claim": "Upstash prototype requires ~280 lines of application code",
+      "type": "factual",
+      "verified": true,
+      "evidence": "The Upstash prototype file is 339 lines total. Subtracting comments, blank lines, and the summary section, the application code (types, schemas, server actions, API routes, hooks, UI components) is approximately 280 lines, consistent with the claim. Much of the DB code is commented-out pseudo-code, but it represents real code that would exist in production."
+    },
+    {
+      "claim": "Convex prototype requires ~220 lines of application code",
+      "type": "factual",
+      "verified": true,
+      "evidence": "The Convex prototype file is 302 lines total. Subtracting comments, blank lines, and summary sections, the application code is approximately 220 lines, consistent with the claim."
+    },
+    {
+      "claim": "Upstash Realtime client bundle is 1.9kB gzipped",
+      "type": "factual",
+      "verified": false,
+      "evidence": "This claim appears in SOLUTION_MAP.md and DECISION.md but cannot be verified from the outputs alone. It likely comes from Upstash marketing materials found during web research."
+    },
+    {
+      "claim": "Knock's first paid tier is $250/month with no intermediate pricing",
+      "type": "factual",
+      "verified": false,
+      "evidence": "This claim is cited in SOLUTION_MAP.md, ANALYSIS.md, COMPARISON.md, and DECISION.md. It was sourced from web research but cannot be independently verified from the outputs. Pricing may have changed."
+    },
+    {
+      "claim": "5 distinct paradigms were explored",
+      "type": "factual",
+      "verified": true,
+      "evidence": "SOLUTION_MAP.md documents exactly 5 paradigms: Managed Notification Infrastructure, Managed Real-Time Transport, Self-Built with Native Web Technologies, Reactive Database, and Pull-Based with Optimistic Updates."
+    },
+    {
+      "claim": "Web research was conducted for each paradigm",
+      "type": "process",
+      "verified": true,
+      "evidence": "The transcript shows WebSearch tool calls for: Next.js real-time notifications patterns, SSE vs WebSockets vs polling, Novu vs Knock comparison, Supabase realtime, and Firebase Cloud Messaging. Additionally WebFetch calls were made to retrieve specific documentation pages."
+    },
+    {
+      "claim": "The dual-write problem is a genuine concern for Upstash approach",
+      "type": "quality",
+      "verified": true,
+      "evidence": "The concern is accurately described: writing to both a database and emitting a real-time event are separate operations that can fail independently. The mitigation (write to DB first, treat emit failure as degraded-but-not-broken) is sound engineering practice. COMPARISON.md correctly notes that Knock avoids this (Knock IS the store) and Convex avoids this (transactional consistency)."
+    }
+  ],
+  "user_notes_summary": null,
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "At least 2 working prototypes built and compared against pre-defined criteria",
+        "reason": "The prototypes are code sketches with commented-out database operations, not runnable applications. The assertion passes because the code demonstrates implementation patterns and complexity, which is what the skill intends. However, a stricter assertion could require prototypes that actually execute (e.g., 'prototypes produce output when run' or 'prototypes include a test harness that verifies basic functionality'). For a solution exploration skill, the current bar seems appropriate -- the prototypes serve as architectural proofs rather than running software."
+      },
+      {
+        "reason": "No assertion checks whether the exploration actually influenced the recommendation differently than what a naive LLM would suggest. A discriminating assertion might be: 'The recommended approach is NOT the most popular/obvious solution (e.g., not Socket.io or Firebase)' or 'The recommendation explicitly addresses at least one finding that changed the initial intuition.' In this run, the recommendation (Upstash Realtime) is arguably non-obvious and the COMPARISON.md documents genuine surprises, so this would pass -- but having the assertion would catch cases where the skill produces elaborate theater around the obvious answer."
+      }
+    ],
+    "overall": "The assertions are well-designed and cover the key dimensions of the skill's value proposition: breadth of exploration, depth of analysis, evidence-based reasoning, and genuine prototyping. The two suggestions above are refinements, not critical gaps. The biggest risk with the current assertions is that expectation #9 (prototypes) could pass for non-functional code files that merely look like prototypes but contain no real logic -- though in this case the prototypes are substantive."
+  }
+}

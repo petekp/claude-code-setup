@@ -1,0 +1,56 @@
+{
+  "skill_name": "audit-and-migrate",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a Next.js API where auth middleware is copy-pasted across 8 route files in `src/api/`. Each file has its own slightly different JWT validation. Tests in `__tests__/` are mostly snapshot tests that break on every prop change. I want to consolidate auth into a single middleware and migrate tests to behavioral testing. Help me set up the migration.",
+      "expected_output": "A comprehensive migration plan including all 5 control plane artifacts (CHARTER.md, DECISIONS.md, SLICES.yaml, MAP.csv, guard script pattern), anti-pattern measurements, CI ratchets, and properly designed vertical slices",
+      "files": [],
+      "expectations": [
+        "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+        "Identifies specific anti-patterns with concrete grep-able patterns (e.g., duplicated JWT validation, snapshot test patterns)",
+        "Defines CI ratchets with numeric budgets based on current anti-pattern counts",
+        "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+        "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+        "Produces a MAP.csv or equivalent file-level inventory tracking every affected file",
+        "Defines denylist patterns for code that should not be reintroduced after deletion",
+        "Includes session handoff protocol or explicit multi-session continuity guidance",
+        "Slices are dependency-ordered — auth consolidation before test migration (tests depend on the new auth interface)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Our Django app has raw SQL in some views, the Django ORM in most models, and SQLAlchemy in 3 endpoints that were ported from Flask. About 150 queries across 35 files. We want to standardize on the Django ORM. Some of the raw SQL does things the ORM can't easily express, so we'll need to figure out those cases. How do we approach this systematically?",
+      "expected_output": "A systematic audit and migration plan with inventory of all database access patterns, anti-pattern counts, CI ratchets, and slices that properly handle the 'hard cases' where raw SQL might need custom ORM expressions",
+      "files": [],
+      "expectations": [
+        "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+        "Categorizes database access into distinct patterns (raw SQL, Django ORM, SQLAlchemy) with estimated counts",
+        "Defines CI ratchets with numeric budgets for each database access pattern to eliminate",
+        "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+        "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+        "Produces a MAP.csv or equivalent file-level inventory tracking every affected file",
+        "Defines denylist patterns for removed database patterns (SQLAlchemy imports, raw SQL patterns)",
+        "Includes session handoff protocol or explicit multi-session continuity guidance",
+        "Explicitly addresses 'hard cases' where raw SQL does things the ORM can't easily express — proposes a decision framework rather than ignoring them"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Our React codebase has Redux in the older modules (about 12 feature slices), Context API in the middle-era code (6 providers), and Zustand in the 4 newest features. We want everything on Zustand. The Redux stores have middleware for analytics tracking and the Context providers share some state through nested composition. Help me plan this migration so nothing falls through the cracks.",
+      "expected_output": "A migration plan that inventories all state management approaches, handles cross-cutting concerns (analytics middleware, shared state), designs slices with proper dependency ordering, and ensures nothing falls through the cracks via MAP.csv and guard scripts",
+      "files": [],
+      "expectations": [
+        "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+        "Inventories all three state management approaches with specific counts or categorization",
+        "Defines CI ratchets with numeric budgets for state management patterns to eliminate",
+        "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+        "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+        "Produces a MAP.csv or equivalent file-level inventory tracking every affected component",
+        "Defines denylist patterns for removed state management imports (redux, createContext for state)",
+        "Includes session handoff protocol or explicit multi-session continuity guidance",
+        "Handles cross-cutting concerns explicitly — analytics middleware and shared Context state are identified as decision points, not ignored"
+      ]
+    }
+  ]
+}

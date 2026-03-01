@@ -1,0 +1,47 @@
+{
+  "eval_id": 1,
+  "eval_name": "real-time-notifications",
+  "prompt": "I need to add real-time notifications to our Next.js app. Users should get notified when someone comments on their post, likes their content, or follows them.",
+  "assertions": [
+    {
+      "id": "paradigm_count",
+      "text": "At least 3 fundamentally different paradigms explored (e.g., polling vs SSE vs WebSockets vs push notifications — not just 3 WebSocket libraries)",
+      "type": "quantitative"
+    },
+    {
+      "id": "approach_count",
+      "text": "At least 5 total concrete approaches documented across paradigms",
+      "type": "quantitative"
+    },
+    {
+      "id": "problem_reframing",
+      "text": "Problem is restated or reframed in the solver's own words, not just echoed back verbatim",
+      "type": "qualitative"
+    },
+    {
+      "id": "assumption_surfacing",
+      "text": "At least 2 explicit assumptions identified and called out (e.g., scale expectations, persistence requirements, mobile support)",
+      "type": "quantitative"
+    },
+    {
+      "id": "tradeoff_matrix",
+      "text": "A structured comparison (table or matrix) comparing approaches against specific criteria",
+      "type": "qualitative"
+    },
+    {
+      "id": "non_obvious",
+      "text": "At least 1 non-obvious or creative approach explored (e.g., event-driven architecture, notification aggregation patterns, hybrid approaches)",
+      "type": "qualitative"
+    },
+    {
+      "id": "evidence_based_selection",
+      "text": "Final recommendation cites specific tradeoffs or evidence, not just popularity or familiarity",
+      "type": "qualitative"
+    },
+    {
+      "id": "rejection_reasoning",
+      "text": "Rejected alternatives have documented reasons for why they were not chosen",
+      "type": "qualitative"
+    }
+  ]
+}

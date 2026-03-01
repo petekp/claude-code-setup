@@ -1,0 +1,829 @@
+# Migration Slices
+# Status lifecycle: proposed -> in_progress -> done
+#
+# Migration order rationale (see Decision 4):
+#   Phase A (slices 001-003): Infrastructure and analytics middleware
+#   Phase B (slices 004-009): Context API providers (simpler, no middleware)
+#   Phase C (slices 010-021): Redux feature slices (leaf-to-root)
+#   Phase D (slices 022-023): Cleanup and package removal
+
+slices:
+
+  # ============================================================
+  # PHASE A: Infrastructure
+  # ============================================================
+
+  - id: slice-001
+    name: "Zustand analytics middleware"
+    status: proposed
+    dependencies: []
+    touched_paths:
+      - src/stores/middleware/trackAnalytics.ts
+      - src/stores/middleware/trackAnalytics.test.ts
+      - src/stores/middleware/analyticsEventMap.ts
+      - src/redux/middleware/analytics.ts          # read-only reference for parity
+    contracts:
+      added:
+        - src/stores/middleware/trackAnalytics.ts
+        - src/stores/middleware/trackAnalytics.test.ts
+        - src/stores/middleware/analyticsEventMap.ts
+      changed: []
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []    # analytics middleware deleted later in slice-022
+    replay_scenarios:
+      - "Fire addToCart action in Redux, capture analytics payload. Fire equivalent Zustand action, compare payloads."
+    smoke_scenarios:
+      - "User adds item to cart -> analytics event fires with correct properties"
+    risks:
+      - "Redux analytics middleware may have implicit dependencies on action shapes that are hard to discover without reading every action creator"
+    notes: >
+      This is foundational — all Redux slices with analytics need this middleware
+      before they can be migrated. Build the middleware, test it in isolation against
+      the existing Redux analytics middleware's behavior. Do NOT delete the Redux
+      middleware yet (it's still in use).
+
+  - id: slice-002
+    name: "Zustand devtools and persistence middleware setup"
+    status: proposed
+    dependencies: []
+    touched_paths:
+      - src/stores/middleware/devtools.ts
+      - src/stores/middleware/devtools.test.ts
+      - src/stores/middleware/index.ts
+    contracts:
+      added:
+        - src/stores/middleware/devtools.ts
+        - src/stores/middleware/devtools.test.ts
+        - src/stores/middleware/index.ts
+      changed: []
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Open Redux DevTools -> Zustand stores appear with named actions"
+    risks:
+      - "Redux DevTools extension may conflict if both Redux and Zustand are registered simultaneously"
+    notes: >
+      Set up the shared Zustand middleware stack that all migrated stores will use.
+      Includes devtools integration and any persistence middleware needed (check if
+      any Redux slices use redux-persist).
+
+  - id: slice-003
+    name: "Zustand test utilities and store factory"
+    status: proposed
+    dependencies: []
+    touched_paths:
+      - src/test-utils/createMockStore.ts
+      - src/test-utils/createMockStore.test.ts
+      - src/test-utils/renderWithStores.tsx
+      - src/test-utils/renderWithStores.test.tsx
+    contracts:
+      added:
+        - src/test-utils/createMockStore.ts
+        - src/test-utils/renderWithStores.tsx
+      changed: []
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    replay_scenarios: []
+    smoke_scenarios: []
+    risks: []
+    notes: >
+      Build test utilities for Zustand stores so that every subsequent slice has
+      a clean pattern for testing. Includes a mock store factory and a
+      renderWithStores helper for component integration tests. Existing Redux
+      test utils (renderWithRedux, etc.) are NOT deleted yet — they're still in use.
+
+  # ============================================================
+  # PHASE B: Context API Providers -> Zustand
+  # ============================================================
+
+  - id: slice-004
+    name: "Migrate ThemeProvider context to Zustand"
+    status: proposed
+    dependencies: [slice-003]
+    touched_paths:
+      - src/contexts/ThemeContext.tsx
+      - src/contexts/ThemeContext.test.tsx
+      - src/stores/useThemeStore.ts
+      - src/stores/useThemeStore.test.ts
+      - src/components/**/*Theme*        # consumers
+    contracts:
+      added:
+        - src/stores/useThemeStore.ts
+        - src/stores/useThemeStore.test.ts
+      changed:
+        - "All components importing from ThemeContext"
+      removed:
+        - src/contexts/ThemeContext.tsx
+        - src/contexts/ThemeContext.test.tsx
+    denylist_patterns:
+      - "import.*from.*contexts/ThemeContext"
+      - "ThemeContext\\.Provider"
+      - "useThemeContext"
+    deletion_targets:
+      - src/contexts/ThemeContext.tsx
+      - src/contexts/ThemeContext.test.tsx
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Toggle dark/light mode -> UI updates correctly"
+      - "Theme preference persists across page reload (if currently persisted)"
+    risks:
+      - "ThemeContext may be consumed in deeply nested components not found by grep"
+    notes: >
+      Theme is typically a leaf context with no dependencies on other contexts.
+      Good first context migration to establish the pattern.
+
+  - id: slice-005
+    name: "Migrate LocaleProvider context to Zustand"
+    status: proposed
+    dependencies: [slice-003]
+    touched_paths:
+      - src/contexts/LocaleContext.tsx
+      - src/contexts/LocaleContext.test.tsx
+      - src/stores/useLocaleStore.ts
+      - src/stores/useLocaleStore.test.ts
+      - src/components/**/*Locale*
+      - src/components/**/*i18n*
+    contracts:
+      added:
+        - src/stores/useLocaleStore.ts
+        - src/stores/useLocaleStore.test.ts
+      changed:
+        - "All components importing from LocaleContext"
+      removed:
+        - src/contexts/LocaleContext.tsx
+        - src/contexts/LocaleContext.test.tsx
+    denylist_patterns:
+      - "import.*from.*contexts/LocaleContext"
+      - "LocaleContext\\.Provider"
+      - "useLocaleContext"
+    deletion_targets:
+      - src/contexts/LocaleContext.tsx
+      - src/contexts/LocaleContext.test.tsx
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Switch locale -> all translated strings update"
+    risks: []
+    notes: >
+      Locale is also typically a leaf context. Can be done in parallel with slice-004
+      since they touch different files.
+
+  - id: slice-006
+    name: "Migrate NotificationProvider context to Zustand"
+    status: proposed
+    dependencies: [slice-003]
+    touched_paths:
+      - src/contexts/NotificationContext.tsx
+      - src/contexts/NotificationContext.test.tsx
+      - src/stores/useNotificationStore.ts
+      - src/stores/useNotificationStore.test.ts
+      - src/components/Notifications/**
+    contracts:
+      added:
+        - src/stores/useNotificationStore.ts
+        - src/stores/useNotificationStore.test.ts
+      changed:
+        - "All components importing from NotificationContext"
+      removed:
+        - src/contexts/NotificationContext.tsx
+        - src/contexts/NotificationContext.test.tsx
+    denylist_patterns:
+      - "import.*from.*contexts/NotificationContext"
+      - "NotificationContext\\.Provider"
+      - "useNotificationContext"
+    deletion_targets:
+      - src/contexts/NotificationContext.tsx
+      - src/contexts/NotificationContext.test.tsx
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Trigger notification -> toast appears -> auto-dismisses"
+      - "Multiple notifications stack correctly"
+    risks:
+      - "Notification context may be consumed by error boundaries or API interceptors outside the component tree"
+    notes: >
+      Notification context is likely consumed widely but has a simple interface
+      (show/dismiss). Good candidate for parallel work with slices 004-005.
+
+  - id: slice-007
+    name: "Migrate ModalProvider context to Zustand"
+    status: proposed
+    dependencies: [slice-003]
+    touched_paths:
+      - src/contexts/ModalContext.tsx
+      - src/contexts/ModalContext.test.tsx
+      - src/stores/useModalStore.ts
+      - src/stores/useModalStore.test.ts
+      - src/components/Modal/**
+    contracts:
+      added:
+        - src/stores/useModalStore.ts
+        - src/stores/useModalStore.test.ts
+      changed:
+        - "All components importing from ModalContext"
+      removed:
+        - src/contexts/ModalContext.tsx
+        - src/contexts/ModalContext.test.tsx
+    denylist_patterns:
+      - "import.*from.*contexts/ModalContext"
+      - "ModalContext\\.Provider"
+      - "useModalContext"
+    deletion_targets:
+      - src/contexts/ModalContext.tsx
+      - src/contexts/ModalContext.test.tsx
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Open modal -> close modal -> state resets"
+      - "Nested modals work correctly"
+    risks: []
+    notes: >
+      Modal state management. May have a queue or stack pattern for nested modals
+      that needs careful migration.
+
+  - id: slice-008
+    name: "Migrate AuthProvider context to Zustand"
+    status: proposed
+    dependencies: [slice-003]
+    touched_paths:
+      - src/contexts/AuthContext.tsx
+      - src/contexts/AuthContext.test.tsx
+      - src/stores/useAuthStore.ts
+      - src/stores/useAuthStore.test.ts
+      - src/components/**/*Auth*
+      - src/components/**/*Protected*
+      - src/hooks/useAuth.ts
+    contracts:
+      added:
+        - src/stores/useAuthStore.ts
+        - src/stores/useAuthStore.test.ts
+      changed:
+        - "All components importing from AuthContext"
+        - src/hooks/useAuth.ts
+      removed:
+        - src/contexts/AuthContext.tsx
+        - src/contexts/AuthContext.test.tsx
+    denylist_patterns:
+      - "import.*from.*contexts/AuthContext"
+      - "AuthContext\\.Provider"
+      - "useAuthContext"
+    deletion_targets:
+      - src/contexts/AuthContext.tsx
+      - src/contexts/AuthContext.test.tsx
+    replay_scenarios:
+      - "Log in -> auth state populated -> protected routes accessible -> log out -> auth state cleared -> protected routes redirect"
+    smoke_scenarios:
+      - "Full login/logout cycle"
+      - "Token refresh flow"
+      - "Protected route redirect when unauthenticated"
+    risks:
+      - "AuthContext is likely the outermost provider. Other contexts and Redux slices may depend on auth state. Need to verify no Redux selectors read from auth context."
+      - "Auth state may be referenced by API interceptors (axios/fetch wrappers) outside of React"
+    notes: >
+      Auth is a root-level dependency. Other contexts likely nest inside it and
+      may consume its state. This must be migrated carefully. If Redux slices
+      depend on auth state, they'll need to read from the new Zustand auth store.
+      This may create temporary bridge adapter hooks (see Decision 5).
+
+  - id: slice-009
+    name: "Migrate FeatureFlagProvider context to Zustand"
+    status: proposed
+    dependencies: [slice-003]
+    touched_paths:
+      - src/contexts/FeatureFlagContext.tsx
+      - src/contexts/FeatureFlagContext.test.tsx
+      - src/stores/useFeatureFlagStore.ts
+      - src/stores/useFeatureFlagStore.test.ts
+      - src/components/**/*FeatureFlag*
+      - src/hooks/useFeatureFlag.ts
+    contracts:
+      added:
+        - src/stores/useFeatureFlagStore.ts
+        - src/stores/useFeatureFlagStore.test.ts
+      changed:
+        - "All components importing from FeatureFlagContext"
+        - src/hooks/useFeatureFlag.ts
+      removed:
+        - src/contexts/FeatureFlagContext.tsx
+        - src/contexts/FeatureFlagContext.test.tsx
+    denylist_patterns:
+      - "import.*from.*contexts/FeatureFlagContext"
+      - "FeatureFlagContext\\.Provider"
+      - "useFeatureFlagContext"
+    deletion_targets:
+      - src/contexts/FeatureFlagContext.tsx
+      - src/contexts/FeatureFlagContext.test.tsx
+    replay_scenarios:
+      - "Enable flag X -> feature X visible. Disable flag X -> feature X hidden."
+    smoke_scenarios:
+      - "Feature flags load on app init"
+      - "Flag changes propagate without refresh"
+    risks:
+      - "Feature flags may gate Redux behavior (e.g., conditional middleware). Need to audit Redux middleware for flag reads."
+    notes: >
+      Feature flags are read broadly but written rarely (typically on app init).
+      Good Zustand candidate because subscriptions will be selective.
+
+  # ============================================================
+  # PHASE B CLEANUP: Remove provider nesting tree
+  # ============================================================
+
+  - id: slice-010
+    name: "Remove provider composition tree from App root"
+    status: proposed
+    dependencies: [slice-004, slice-005, slice-006, slice-007, slice-008, slice-009]
+    touched_paths:
+      - src/App.tsx
+      - src/contexts/index.ts
+      - src/providers/AppProviders.tsx     # or wherever the nesting tree lives
+    contracts:
+      added: []
+      changed:
+        - src/App.tsx
+      removed:
+        - src/contexts/index.ts
+        - src/providers/AppProviders.tsx
+    denylist_patterns:
+      - "AppProviders"
+      - "import.*from.*contexts/index"
+      - "import.*from.*providers/AppProviders"
+    deletion_targets:
+      - src/contexts/index.ts
+      - src/providers/AppProviders.tsx
+      - src/contexts/               # entire directory should be empty and removable
+    replay_scenarios: []
+    smoke_scenarios:
+      - "App renders correctly without any Context providers in the tree"
+    risks:
+      - "Third-party providers (e.g., React Router, React Query) may be tangled into the same provider tree. Only remove our custom providers — leave third-party ones intact."
+    notes: >
+      After all 6 contexts are migrated, the nested provider tree in App.tsx is
+      dead code. This slice removes it. The src/contexts/ directory should be
+      completely empty and deletable.
+
+  # ============================================================
+  # PHASE C: Redux Feature Slices -> Zustand (leaf to root)
+  # ============================================================
+
+  - id: slice-011
+    name: "Migrate Redux search slice to Zustand"
+    status: proposed
+    dependencies: [slice-001, slice-002, slice-003]
+    touched_paths:
+      - src/redux/slices/searchSlice.ts
+      - src/redux/slices/searchSlice.test.ts
+      - src/stores/useSearchStore.ts
+      - src/stores/useSearchStore.test.ts
+      - src/components/Search/**
+    contracts:
+      added:
+        - src/stores/useSearchStore.ts
+        - src/stores/useSearchStore.test.ts
+      changed:
+        - "All components importing from searchSlice"
+      removed:
+        - src/redux/slices/searchSlice.ts
+        - src/redux/slices/searchSlice.test.ts
+    denylist_patterns:
+      - "import.*from.*redux/slices/searchSlice"
+      - "useSelector.*search"
+    deletion_targets:
+      - src/redux/slices/searchSlice.ts
+      - src/redux/slices/searchSlice.test.ts
+    replay_scenarios:
+      - "Type search query -> results filter -> clear search -> results reset"
+    smoke_scenarios:
+      - "Full search flow with debounce"
+    risks: []
+    notes: >
+      Search is typically self-contained with no cross-slice dependencies.
+      Good first Redux migration to establish the pattern.
+
+  - id: slice-012
+    name: "Migrate Redux notifications/alerts slice to Zustand"
+    status: proposed
+    dependencies: [slice-001, slice-002, slice-003, slice-006]
+    touched_paths:
+      - src/redux/slices/alertsSlice.ts
+      - src/redux/slices/alertsSlice.test.ts
+      - src/stores/useAlertsStore.ts
+      - src/stores/useAlertsStore.test.ts
+      - src/components/Alerts/**
+    contracts:
+      added:
+        - src/stores/useAlertsStore.ts
+        - src/stores/useAlertsStore.test.ts
+      changed:
+        - "All components importing from alertsSlice"
+      removed:
+        - src/redux/slices/alertsSlice.ts
+        - src/redux/slices/alertsSlice.test.ts
+    denylist_patterns:
+      - "import.*from.*redux/slices/alertsSlice"
+    deletion_targets:
+      - src/redux/slices/alertsSlice.ts
+      - src/redux/slices/alertsSlice.test.ts
+    replay_scenarios: []
+    smoke_scenarios:
+      - "API error triggers alert -> alert displays -> user dismisses"
+    risks:
+      - "May overlap with NotificationContext (slice-006). Clarify the boundary — alerts may be Redux-managed server-side alerts vs. client-side toast notifications."
+    notes: >
+      Depends on slice-006 being done first to clarify the notification vs. alert
+      boundary and ensure no duplication between the two systems.
+
+  - id: slice-013
+    name: "Migrate Redux UI/layout slice to Zustand"
+    status: proposed
+    dependencies: [slice-001, slice-002, slice-003]
+    touched_paths:
+      - src/redux/slices/uiSlice.ts
+      - src/redux/slices/uiSlice.test.ts
+      - src/stores/useUIStore.ts
+      - src/stores/useUIStore.test.ts
+      - src/components/Layout/**
+      - src/components/Sidebar/**
+    contracts:
+      added:
+        - src/stores/useUIStore.ts
+        - src/stores/useUIStore.test.ts
+      changed:
+        - "All components importing from uiSlice"
+      removed:
+        - src/redux/slices/uiSlice.ts
+        - src/redux/slices/uiSlice.test.ts
+    denylist_patterns:
+      - "import.*from.*redux/slices/uiSlice"
+    deletion_targets:
+      - src/redux/slices/uiSlice.ts
+      - src/redux/slices/uiSlice.test.ts
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Toggle sidebar -> layout adjusts"
+      - "Responsive breakpoints adjust UI state"
+    risks: []
+    notes: >
+      UI/layout state (sidebar open/closed, mobile breakpoints, etc.).
+      Typically a leaf slice with no cross-dependencies.
+
+  - id: slice-014
+    name: "Migrate Redux settings/preferences slice to Zustand"
+    status: proposed
+    dependencies: [slice-001, slice-002, slice-003, slice-004]
+    touched_paths:
+      - src/redux/slices/settingsSlice.ts
+      - src/redux/slices/settingsSlice.test.ts
+      - src/stores/useSettingsStore.ts
+      - src/stores/useSettingsStore.test.ts
+      - src/components/Settings/**
+    contracts:
+      added:
+        - src/stores/useSettingsStore.ts
+        - src/stores/useSettingsStore.test.ts
+      changed:
+        - "All components importing from settingsSlice"
+      removed:
+        - src/redux/slices/settingsSlice.ts
+        - src/redux/slices/settingsSlice.test.ts
+    denylist_patterns:
+      - "import.*from.*redux/slices/settingsSlice"
+    deletion_targets:
+      - src/redux/slices/settingsSlice.ts
+      - src/redux/slices/settingsSlice.test.ts
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Change setting -> persists across session"
+    risks:
+      - "Settings may interact with ThemeContext (slice-004). Ensure theme-related settings read from the Zustand theme store, not the deleted context."
+    notes: >
+      Depends on slice-004 (theme) being done since settings likely controls theme.
+
+  - id: slice-015
+    name: "Migrate Redux products/catalog slice to Zustand"
+    status: proposed
+    dependencies: [slice-001, slice-002, slice-003]
+    touched_paths:
+      - src/redux/slices/productsSlice.ts
+      - src/redux/slices/productsSlice.test.ts
+      - src/stores/useProductsStore.ts
+      - src/stores/useProductsStore.test.ts
+      - src/components/Products/**
+      - src/components/Catalog/**
+    contracts:
+      added:
+        - src/stores/useProductsStore.ts
+        - src/stores/useProductsStore.test.ts
+      changed:
+        - "All components importing from productsSlice"
+      removed:
+        - src/redux/slices/productsSlice.ts
+        - src/redux/slices/productsSlice.test.ts
+    denylist_patterns:
+      - "import.*from.*redux/slices/productsSlice"
+    deletion_targets:
+      - src/redux/slices/productsSlice.ts
+      - src/redux/slices/productsSlice.test.ts
+    replay_scenarios:
+      - "Load product list -> filter by category -> sort by price"
+    smoke_scenarios:
+      - "Product listing page loads with correct data"
+    risks:
+      - "Products slice likely has async thunks for API calls. Zustand equivalent needs to handle loading/error states identically."
+    notes: >
+      This is likely one of the data-heavier slices with async operations.
+      Good test of the async migration pattern.
+
+  - id: slice-016
+    name: "Migrate Redux cart slice to Zustand"
+    status: proposed
+    dependencies: [slice-001, slice-002, slice-003, slice-015]
+    touched_paths:
+      - src/redux/slices/cartSlice.ts
+      - src/redux/slices/cartSlice.test.ts
+      - src/stores/useCartStore.ts
+      - src/stores/useCartStore.test.ts
+      - src/components/Cart/**
+    contracts:
+      added:
+        - src/stores/useCartStore.ts
+        - src/stores/useCartStore.test.ts
+      changed:
+        - "All components importing from cartSlice"
+      removed:
+        - src/redux/slices/cartSlice.ts
+        - src/redux/slices/cartSlice.test.ts
+    denylist_patterns:
+      - "import.*from.*redux/slices/cartSlice"
+    deletion_targets:
+      - src/redux/slices/cartSlice.ts
+      - src/redux/slices/cartSlice.test.ts
+    replay_scenarios:
+      - "Add item -> cart count updates -> remove item -> cart count decrements -> cart total recalculates"
+    smoke_scenarios:
+      - "Full add-to-cart flow"
+      - "Cart persists across page navigation"
+    risks:
+      - "Cart slice likely reads from products slice. Cross-store dependency needs careful wiring."
+      - "Cart analytics events (add_to_cart, remove_from_cart) are high-value. Must verify parity with analytics middleware."
+    notes: >
+      Depends on products (slice-015) so cross-store reads work.
+      Analytics parity is critical here — cart events are revenue-impacting.
+
+  - id: slice-017
+    name: "Migrate Redux orders/checkout slice to Zustand"
+    status: proposed
+    dependencies: [slice-001, slice-002, slice-003, slice-016, slice-008]
+    touched_paths:
+      - src/redux/slices/ordersSlice.ts
+      - src/redux/slices/ordersSlice.test.ts
+      - src/stores/useOrdersStore.ts
+      - src/stores/useOrdersStore.test.ts
+      - src/components/Checkout/**
+      - src/components/Orders/**
+    contracts:
+      added:
+        - src/stores/useOrdersStore.ts
+        - src/stores/useOrdersStore.test.ts
+      changed:
+        - "All components importing from ordersSlice"
+      removed:
+        - src/redux/slices/ordersSlice.ts
+        - src/redux/slices/ordersSlice.test.ts
+    denylist_patterns:
+      - "import.*from.*redux/slices/ordersSlice"
+    deletion_targets:
+      - src/redux/slices/ordersSlice.ts
+      - src/redux/slices/ordersSlice.test.ts
+    replay_scenarios:
+      - "Place order -> order appears in history -> order status updates"
+    smoke_scenarios:
+      - "Complete checkout flow from cart to confirmation"
+    risks:
+      - "Checkout involves cart, auth, and possibly payment state. Multi-store coordination must be tested."
+      - "Order placement likely has critical analytics events."
+    notes: >
+      Depends on cart (slice-016) and auth (slice-008) since checkout reads from both.
+
+  - id: slice-018
+    name: "Migrate Redux user profile slice to Zustand"
+    status: proposed
+    dependencies: [slice-001, slice-002, slice-003, slice-008]
+    touched_paths:
+      - src/redux/slices/userSlice.ts
+      - src/redux/slices/userSlice.test.ts
+      - src/stores/useUserStore.ts
+      - src/stores/useUserStore.test.ts
+      - src/components/Profile/**
+      - src/components/Account/**
+    contracts:
+      added:
+        - src/stores/useUserStore.ts
+        - src/stores/useUserStore.test.ts
+      changed:
+        - "All components importing from userSlice"
+      removed:
+        - src/redux/slices/userSlice.ts
+        - src/redux/slices/userSlice.test.ts
+    denylist_patterns:
+      - "import.*from.*redux/slices/userSlice"
+    deletion_targets:
+      - src/redux/slices/userSlice.ts
+      - src/redux/slices/userSlice.test.ts
+    replay_scenarios:
+      - "Update profile -> changes reflected in header and profile page"
+    smoke_scenarios:
+      - "Edit profile flow"
+    risks:
+      - "User slice likely depends on auth. May share state or have derived selectors that combine auth + user data."
+    notes: >
+      Depends on auth context migration (slice-008) since user profile
+      almost certainly reads auth state.
+
+  - id: slice-019
+    name: "Migrate Redux forms/draft slice to Zustand"
+    status: proposed
+    dependencies: [slice-001, slice-002, slice-003]
+    touched_paths:
+      - src/redux/slices/formsSlice.ts
+      - src/redux/slices/formsSlice.test.ts
+      - src/stores/useFormsStore.ts
+      - src/stores/useFormsStore.test.ts
+      - src/components/Forms/**
+    contracts:
+      added:
+        - src/stores/useFormsStore.ts
+        - src/stores/useFormsStore.test.ts
+      changed:
+        - "All components importing from formsSlice"
+      removed:
+        - src/redux/slices/formsSlice.ts
+        - src/redux/slices/formsSlice.test.ts
+    denylist_patterns:
+      - "import.*from.*redux/slices/formsSlice"
+    deletion_targets:
+      - src/redux/slices/formsSlice.ts
+      - src/redux/slices/formsSlice.test.ts
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Form draft saves -> navigating away and back restores draft"
+    risks:
+      - "If forms slice manages multi-step wizard state, the state shape may be complex"
+    notes: >
+      Forms/draft state. Likely a leaf slice.
+
+  - id: slice-020
+    name: "Migrate Redux dashboard/analytics slice to Zustand"
+    status: proposed
+    dependencies: [slice-001, slice-002, slice-003, slice-008]
+    touched_paths:
+      - src/redux/slices/dashboardSlice.ts
+      - src/redux/slices/dashboardSlice.test.ts
+      - src/stores/useDashboardStore.ts
+      - src/stores/useDashboardStore.test.ts
+      - src/components/Dashboard/**
+    contracts:
+      added:
+        - src/stores/useDashboardStore.ts
+        - src/stores/useDashboardStore.test.ts
+      changed:
+        - "All components importing from dashboardSlice"
+      removed:
+        - src/redux/slices/dashboardSlice.ts
+        - src/redux/slices/dashboardSlice.test.ts
+    denylist_patterns:
+      - "import.*from.*redux/slices/dashboardSlice"
+    deletion_targets:
+      - src/redux/slices/dashboardSlice.ts
+      - src/redux/slices/dashboardSlice.test.ts
+    replay_scenarios:
+      - "Load dashboard -> widgets populate -> date range filter updates data"
+    smoke_scenarios:
+      - "Dashboard page loads without errors"
+    risks:
+      - "Dashboard may aggregate data from multiple other slices. Verify cross-store reads."
+    notes: >
+      Dashboard likely depends on auth for data scoping.
+
+  - id: slice-021
+    name: "Migrate Redux navigation/routing slice to Zustand"
+    status: proposed
+    dependencies: [slice-001, slice-002, slice-003, slice-008]
+    touched_paths:
+      - src/redux/slices/navigationSlice.ts
+      - src/redux/slices/navigationSlice.test.ts
+      - src/stores/useNavigationStore.ts
+      - src/stores/useNavigationStore.test.ts
+      - src/components/Navigation/**
+    contracts:
+      added:
+        - src/stores/useNavigationStore.ts
+        - src/stores/useNavigationStore.test.ts
+      changed:
+        - "All components importing from navigationSlice"
+      removed:
+        - src/redux/slices/navigationSlice.ts
+        - src/redux/slices/navigationSlice.test.ts
+    denylist_patterns:
+      - "import.*from.*redux/slices/navigationSlice"
+    deletion_targets:
+      - src/redux/slices/navigationSlice.ts
+      - src/redux/slices/navigationSlice.test.ts
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Navigation state reflects current route"
+      - "Breadcrumbs update on navigation"
+    risks:
+      - "Navigation state may be tightly coupled with React Router. Evaluate if this slice is even needed or if React Router's own state suffices."
+    notes: >
+      If this slice just mirrors React Router state, consider eliminating it
+      entirely rather than migrating it. Record in DECISIONS.md if so.
+
+  # ============================================================
+  # PHASE D: Cleanup and package removal
+  # ============================================================
+
+  - id: slice-022
+    name: "Remove Redux store configuration, middleware, and infrastructure"
+    status: proposed
+    dependencies: [slice-011, slice-012, slice-013, slice-014, slice-015, slice-016, slice-017, slice-018, slice-019, slice-020, slice-021]
+    touched_paths:
+      - src/redux/store.ts
+      - src/redux/rootReducer.ts
+      - src/redux/middleware/analytics.ts
+      - src/redux/middleware/index.ts
+      - src/redux/types.ts
+      - src/redux/hooks.ts                # typed useSelector/useDispatch
+      - src/redux/index.ts
+      - src/App.tsx                        # remove Redux Provider
+      - src/test-utils/renderWithRedux.tsx
+      - src/test-utils/mockStore.ts
+    contracts:
+      added: []
+      changed:
+        - src/App.tsx
+      removed:
+        - src/redux/                       # entire directory
+        - src/test-utils/renderWithRedux.tsx
+        - src/test-utils/mockStore.ts
+    denylist_patterns:
+      - "import.*from.*redux/"
+      - "from 'react-redux'"
+      - "from '@reduxjs/toolkit'"
+      - "useSelector"
+      - "useDispatch"
+      - "createSlice"
+      - "configureStore"
+      - "<Provider store="
+    deletion_targets:
+      - src/redux/                         # entire directory tree
+      - src/test-utils/renderWithRedux.tsx
+      - src/test-utils/mockStore.ts
+    replay_scenarios: []
+    smoke_scenarios:
+      - "App boots successfully without any Redux Provider"
+      - "No console warnings about missing Redux store"
+    risks:
+      - "Some third-party library may depend on React-Redux context. Check for connected third-party components."
+    notes: >
+      This is the big cleanup. Only possible after ALL 12 Redux slices are migrated.
+      The entire src/redux/ directory is deleted. Redux Provider removed from App.tsx.
+      Redux test utilities deleted.
+
+  - id: slice-023
+    name: "Remove Redux and Context API packages from dependencies"
+    status: proposed
+    dependencies: [slice-022, slice-010]
+    touched_paths:
+      - package.json
+      - package-lock.json               # or yarn.lock / pnpm-lock.yaml
+      - tsconfig.json                    # if Redux types were configured
+    contracts:
+      added: []
+      changed:
+        - package.json
+      removed:
+        - "redux (package)"
+        - "react-redux (package)"
+        - "@reduxjs/toolkit (package)"
+        - "redux-thunk (package)"
+        - "redux-devtools-extension (package, if present)"
+        - "@types/react-redux (package, if present)"
+    denylist_patterns:
+      - '"redux"'
+      - '"react-redux"'
+      - '"@reduxjs/toolkit"'
+      - '"redux-thunk"'
+    deletion_targets: []
+    replay_scenarios: []
+    smoke_scenarios:
+      - "npm install succeeds"
+      - "npm run build succeeds"
+      - "npm test passes"
+      - "Bundle size decreased (measure before/after)"
+    risks:
+      - "A transitive dependency may pull Redux back in. Check with npm ls redux after removal."
+    notes: >
+      Final slice. Remove all Redux-related packages. Verify clean install,
+      clean build, all tests pass, and measure bundle size improvement.
+      This is the victory lap.

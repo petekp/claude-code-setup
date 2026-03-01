@@ -1,0 +1,204 @@
+{
+  "metadata": {
+    "skill_name": "audit-and-migrate",
+    "skill_path": "/Users/petepetrash/.claude/skills/audit-and-migrate",
+    "executor_model": "claude-opus-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-03-01T12:30:00Z",
+    "evals_run": [1, 2, 3],
+    "runs_per_configuration": 1
+  },
+
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "Auth Consolidation",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 244.6,
+        "tokens": 34583,
+        "tool_calls": 17,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Produces CHARTER.md with mission, invariants, non-goals", "passed": true, "evidence": "CHARTER.md with 5 invariants, explicit non-goals, and guardrails"},
+        {"text": "Anti-patterns with concrete grep patterns", "passed": true, "evidence": "guard.sh: jwt.verify, toMatchSnapshot, jsonwebtoken imports, manual header parsing"},
+        {"text": "CI ratchets with numeric budgets", "passed": true, "evidence": "jwt.verify=8, toMatchSnapshot=24, plus 2 more ratchets"},
+        {"text": "Vertical outcome-based slices", "passed": true, "evidence": "5 slices: foundation, 3 route batches, cleanup"},
+        {"text": "Pre-defined deletion targets", "passed": true, "evidence": "Per-slice targets: inline jwt.verify calls, snapshot directories"},
+        {"text": "MAP.csv file inventory", "passed": true, "evidence": "28 entries with slice ownership and delete flags"},
+        {"text": "Denylist patterns", "passed": true, "evidence": "Per-slice denylist: jwt.verify per route file, toMatchSnapshot"},
+        {"text": "Session handoff protocol", "passed": true, "evidence": "Artifacts follow methodology session protocol, next steps documented"},
+        {"text": "Dependency-ordered slices", "passed": true, "evidence": "Slice 1 foundation → 2-4 routes (parallelizable) → 5 cleanup"}
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "Auth Consolidation",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.11,
+        "passed": 1,
+        "failed": 8,
+        "total": 9,
+        "time_seconds": 223.1,
+        "tokens": 27457,
+        "tool_calls": 11,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Produces CHARTER.md with mission, invariants, non-goals", "passed": false, "evidence": "No charter. Has goals but no invariants or non-goals"},
+        {"text": "Anti-patterns with concrete grep patterns", "passed": false, "evidence": "Audit template exists but no grep patterns with counts"},
+        {"text": "CI ratchets with numeric budgets", "passed": false, "evidence": "Zero mentions of ratchets or budgets"},
+        {"text": "Vertical outcome-based slices", "passed": false, "evidence": "4 horizontal phases: Audit → Tests → Consolidate → Cleanup"},
+        {"text": "Pre-defined deletion targets", "passed": false, "evidence": "Deletion mentioned in Phase 4 but not pre-defined per phase"},
+        {"text": "MAP.csv file inventory", "passed": false, "evidence": "No file-level inventory"},
+        {"text": "Denylist patterns", "passed": false, "evidence": "Zero mentions of denylist patterns"},
+        {"text": "Session handoff protocol", "passed": false, "evidence": "Zero mentions of session continuity"},
+        {"text": "Dependency-ordered slices", "passed": true, "evidence": "Phases logically ordered with Strangler Fig rationale"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "Database Standardization",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 388.9,
+        "tokens": 42955,
+        "tool_calls": 17,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Produces CHARTER.md with mission, invariants, non-goals", "passed": true, "evidence": "5 invariants including 'no >10% perf regression', explicit non-goals"},
+        {"text": "Categorizes DB access patterns with counts", "passed": true, "evidence": "Raw SQL (~147/~32 files), Django ORM (keep), SQLAlchemy (~3/3 endpoints)"},
+        {"text": "CI ratchets with numeric budgets", "passed": true, "evidence": "8 ratchets: cursor.execute, .extra(), .raw(), RawSQL, SQLAlchemy imports, etc."},
+        {"text": "Vertical outcome-based slices", "passed": true, "evidence": "16 slices across 5 phases, organized by capability and complexity tier"},
+        {"text": "Pre-defined deletion targets", "passed": true, "evidence": "Per-slice targets for SQLAlchemy models, config, dependencies"},
+        {"text": "MAP.csv file inventory", "passed": true, "evidence": "~65 file entries with capability labels and delete-in-PR flags"},
+        {"text": "Denylist patterns for removed DB patterns", "passed": true, "evidence": "Guard script has denylist scaffolding for SQLAlchemy and raw cursor patterns"},
+        {"text": "Session handoff protocol", "passed": true, "evidence": "Concrete next step: run S-001, calibrate ratchet budgets with real counts"},
+        {"text": "Hard cases decision framework", "passed": true, "evidence": "3-tier framework: pure ORM → escape hatches → encapsulated cursor.execute()"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "Database Standardization",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.22,
+        "passed": 2,
+        "failed": 7,
+        "total": 9,
+        "time_seconds": 391.6,
+        "tokens": 36735,
+        "tool_calls": 9,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Produces CHARTER.md with mission, invariants, non-goals", "passed": false, "evidence": "No charter. Has goals but no invariants or non-goals"},
+        {"text": "Categorizes DB access patterns with counts", "passed": true, "evidence": "Audit framework categorizes by pattern type with grep patterns and CSV template"},
+        {"text": "CI ratchets with numeric budgets", "passed": false, "evidence": "Zero mentions of ratchets or budgets"},
+        {"text": "Vertical outcome-based slices", "passed": false, "evidence": "6 horizontal phases by difficulty: Trivial → Moderate → Complex SQL"},
+        {"text": "Pre-defined deletion targets", "passed": false, "evidence": "Phase 5 mentions dead code removal but not pre-defined per phase"},
+        {"text": "MAP.csv file inventory", "passed": false, "evidence": "Query inventory (not file inventory) tracks queries not files"},
+        {"text": "Denylist patterns for removed DB patterns", "passed": false, "evidence": "Phase 5 mentions 'lint rules' but no specific denylist patterns"},
+        {"text": "Session handoff protocol", "passed": false, "evidence": "No session continuity mentions"},
+        {"text": "Hard cases decision framework", "passed": true, "evidence": "Phase 4 has decision framework. ORM translation reference documents what stays raw"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "State Management",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 447.0,
+        "tokens": 47167,
+        "tool_calls": 17,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Produces CHARTER.md with mission, invariants, non-goals", "passed": true, "evidence": "Invariants: analytics parity, no behavior changes, no type widening"},
+        {"text": "Inventories all three approaches with counts", "passed": true, "evidence": "Redux (12), Context (6 providers), Zustand (4 features)"},
+        {"text": "CI ratchets with numeric budgets", "passed": true, "evidence": "10 ratchets: react-redux (12), useSelector (36), useDispatch (24), createSlice (12), etc."},
+        {"text": "Vertical outcome-based slices", "passed": true, "evidence": "23 slices, each targeting specific feature domain"},
+        {"text": "Pre-defined deletion targets", "passed": true, "evidence": "All 23 slices have deletion_targets. Redux files deleted atomically per slice"},
+        {"text": "MAP.csv file inventory", "passed": true, "evidence": "85 entries with slice ownership and deletion status"},
+        {"text": "Denylist patterns for removed imports", "passed": true, "evidence": "Guard script has denylist checks for all 23 slices"},
+        {"text": "Session handoff protocol", "passed": true, "evidence": "Calibration steps documented for continuing with real codebase"},
+        {"text": "Cross-cutting concerns as decision points", "passed": true, "evidence": "Analytics middleware = slice 001. Bridge adapters governed by Decision 5 with expiry. Leaf-to-root Context ordering"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "State Management",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.22,
+        "passed": 2,
+        "failed": 7,
+        "total": 9,
+        "time_seconds": 466.7,
+        "tokens": 43955,
+        "tool_calls": 9,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Produces CHARTER.md with mission, invariants, non-goals", "passed": false, "evidence": "No charter. Risk register exists but no invariants"},
+        {"text": "Inventories all three approaches with counts", "passed": true, "evidence": "Clear inventory table: Redux (12), Context (6), Zustand (4)"},
+        {"text": "CI ratchets with numeric budgets", "passed": false, "evidence": "Zero mentions of ratchets or budgets"},
+        {"text": "Vertical outcome-based slices", "passed": false, "evidence": "5 horizontal phases grouped by complexity"},
+        {"text": "Pre-defined deletion targets", "passed": false, "evidence": "Phase 4 mentions cleanup but not pre-defined per unit"},
+        {"text": "MAP.csv file inventory", "passed": false, "evidence": "Audit checklist has fan-out section but no comprehensive file map"},
+        {"text": "Denylist patterns for removed imports", "passed": false, "evidence": "Zero denylist mentions"},
+        {"text": "Session handoff protocol", "passed": false, "evidence": "Zero session continuity mentions"},
+        {"text": "Cross-cutting concerns as decision points", "passed": true, "evidence": "Phase 0.1 dedicated to analytics middleware. Context nesting addressed. Risk register rates analytics parity as highest risk (score 20)"}
+      ]
+    }
+  ],
+
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 360.2, "stddev": 83.4, "min": 244.6, "max": 447.0},
+      "tokens": {"mean": 41568, "stddev": 5190, "min": 34583, "max": 47167}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.185, "stddev": 0.052, "min": 0.11, "max": 0.22},
+      "time_seconds": {"mean": 360.5, "stddev": 100.3, "min": 223.1, "max": 466.7},
+      "tokens": {"mean": 36049, "stddev": 6763, "min": 27457, "max": 43955}
+    },
+    "delta": {
+      "pass_rate": "+0.815",
+      "time_seconds": "-0.3",
+      "tokens": "+5519"
+    }
+  },
+
+  "notes": [
+    "Pass rate delta of +81.5% — the skill's primary value is structural completeness, not just 'better planning'",
+    "Time is essentially equal between configurations (360.2s vs 360.5s) — the skill adds structure without significant time cost",
+    "Token overhead is ~15% (41.6K vs 36K) — modest cost for dramatically better structural coverage",
+    "The domain-specific assertions (dependency ordering, hard cases, cross-cutting concerns) pass in both configurations — these test domain expertise, not methodology",
+    "The methodology-specific assertions (CHARTER, ratchets, MAP.csv, denylist, session handoff) pass 0% without the skill — these are the skill's unique contribution",
+    "Without-skill runs produce excellent practical artifacts (ORM translation guides, patterns guides, risk registers) that the with-skill runs don't — the skill could benefit from encouraging practical reference material alongside control plane artifacts",
+    "All 3 with-skill runs produced exactly the same artifact set (7 files: CHARTER, DECISIONS, SLICES.yaml, MAP.csv, guard.sh, AUDIT, transcript) — very consistent structure"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+      "passed": true,
+      "evidence": "CHARTER.md created with mission ('standardize on Django ORM'), 5 invariants (tests pass, no behavior changes, no data corruption, no >10% perf regression, always deployable), and explicit non-goals (no schema changes, no API redesign, no DB engine migration)"
+    },
+    {
+      "text": "Categorizes database access into distinct patterns (raw SQL, Django ORM, SQLAlchemy) with estimated counts",
+      "passed": true,
+      "evidence": "Audit document categorizes into 3 patterns with estimated counts: raw SQL (~147 queries across ~32 files), Django ORM (existing, keep), SQLAlchemy (~3 queries across 3 endpoints). Further broken down by complexity tier in slice plan"
+    },
+    {
+      "text": "Defines CI ratchets with numeric budgets for each database access pattern to eliminate",
+      "passed": true,
+      "evidence": "migration_guard.sh has 8 ratchet checks with numeric budgets: cursor.execute, connection.cursor, .extra(), .raw(), RawSQL, SQLAlchemy imports, session.query, session.execute"
+    },
+    {
+      "text": "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+      "passed": true,
+      "evidence": "SLICES.yaml has 16 slices across 5 phases. Slices are organized by complexity tier AND capability — e.g., separate slices for different query domains rather than 'convert all raw SQL'. Phase 1 slices are parallelizable with non-overlapping files"
+    },
+    {
+      "text": "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+      "passed": true,
+      "evidence": "Each slice in SLICES.yaml has deletion_targets field populated. Phase 4 SQLAlchemy slices target model files and config. Phase 5 cleanup targets dependency entries"
+    },
+    {
+      "text": "Produces a MAP.csv or equivalent file-level inventory tracking every affected file",
+      "passed": true,
+      "evidence": "MAP.csv created with ~65 file entries mapping every file each slice touches, with capability labels, current/target paths, status, and delete-in-PR flags"
+    },
+    {
+      "text": "Defines denylist patterns for removed database patterns (SQLAlchemy imports, raw SQL patterns)",
+      "passed": true,
+      "evidence": "Guard script has scaffolding for denylist checks. SLICES.yaml slices include denylist_patterns for completed surfaces (SQLAlchemy imports, raw cursor usage patterns)"
+    },
+    {
+      "text": "Includes session handoff protocol or explicit multi-session continuity guidance",
+      "passed": true,
+      "evidence": "Artifact structure follows methodology's session protocol (read CHARTER → DECISIONS → in_progress slices → run guard). Next steps section provides exact first action: 'Run S-001 against your actual codebase, use grep patterns from audit.md to get real counts, update ratchet budgets'"
+    },
+    {
+      "text": "Explicitly addresses 'hard cases' where raw SQL does things the ORM can't easily express — proposes a decision framework rather than ignoring them",
+      "passed": true,
+      "evidence": "Decision 2 in DECISIONS.md defines a 3-tier framework: (1) pure ORM first, (2) ORM escape hatches like .raw() and RawSQL(), (3) last resort: connection.cursor() encapsulated in model managers. Each raw SQL usage requiring tier 2-3 gets a documented decision entry"
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  }
+}

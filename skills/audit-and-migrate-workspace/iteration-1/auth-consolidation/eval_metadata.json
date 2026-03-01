@@ -1,0 +1,16 @@
+{
+  "eval_id": 1,
+  "eval_name": "auth-consolidation",
+  "prompt": "I have a Next.js API where auth middleware is copy-pasted across 8 route files in `src/api/`. Each file has its own slightly different JWT validation. Tests in `__tests__/` are mostly snapshot tests that break on every prop change. I want to consolidate auth into a single middleware and migrate tests to behavioral testing. Help me set up the migration.",
+  "assertions": [
+    "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+    "Identifies specific anti-patterns with concrete grep-able patterns (e.g., duplicated JWT validation, snapshot test patterns)",
+    "Defines CI ratchets with numeric budgets based on current anti-pattern counts",
+    "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+    "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+    "Produces a MAP.csv or equivalent file-level inventory tracking every affected file",
+    "Defines denylist patterns for code that should not be reintroduced after deletion",
+    "Includes session handoff protocol or explicit multi-session continuity guidance",
+    "Slices are dependency-ordered — auth consolidation before test migration (tests depend on the new auth interface)"
+  ]
+}

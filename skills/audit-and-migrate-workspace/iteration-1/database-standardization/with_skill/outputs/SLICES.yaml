@@ -1,0 +1,634 @@
+# Migration Slices
+# Status lifecycle: proposed -> in_progress -> done
+#
+# Slice naming convention: S-NNN
+# Dependency notation: [S-001, S-002] means both must be done first
+#
+# Estimated query counts are based on the described scenario:
+# ~150 queries across 35 files. Breakdown assumed:
+#   - ~90 simple CRUD raw SQL (SELECT/INSERT/UPDATE/DELETE on single tables)
+#   - ~35 multi-table raw SQL (JOINs, subqueries)
+#   - ~22 complex raw SQL (CTEs, window functions, aggregations, DB-specific)
+#   - ~3 SQLAlchemy queries across 3 endpoints
+
+slices:
+
+  # ============================================================
+  # PHASE 0: Foundation (audit tooling, no production code changes)
+  # ============================================================
+
+  - id: S-001
+    name: "Audit & inventory all database access patterns"
+    status: proposed
+    dependencies: []
+    touched_paths:
+      - "**/*.py"  # read-only scan
+    contracts:
+      added:
+        - ".claude/migration/MAP.csv (populated)"
+        - ".claude/migration/audit.md"
+      changed: []
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    replay_scenarios: []
+    smoke_scenarios: []
+    risks:
+      - "Grep patterns may miss dynamically constructed SQL (string concatenation, f-strings)"
+      - "Some raw SQL may be in template files, management commands, or migrations — need to check beyond views/"
+    notes: >
+      Full codebase scan using grep patterns for: cursor.execute, connection.cursor(),
+      .raw(), .extra(), RawSQL, sqlalchemy.*, session.query, session.execute,
+      engine.execute. Classify each instance by complexity tier (simple CRUD,
+      multi-table, complex). Populate MAP.csv with every file containing database access.
+      Produce the audit document with exact counts.
+
+  - id: S-002
+    name: "Set up CI ratchets and guard script"
+    status: proposed
+    dependencies: [S-001]
+    touched_paths:
+      - "scripts/migration_guard.sh"
+      - ".github/workflows/ci.yml"  # or equivalent CI config
+      - "pyproject.toml"  # if adding script entry
+    contracts:
+      added:
+        - "scripts/migration_guard.sh"
+      changed:
+        - "CI configuration (add guard script step)"
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Run guard script — all ratchets pass at initial budget"
+    risks:
+      - "CI pipeline modification may require DevOps review"
+    notes: >
+      Create the guard script with ratchets for: raw SQL cursor.execute count,
+      .extra() count, SQLAlchemy import count, connection.cursor() count.
+      Set budgets to current counts from S-001 audit. Wire into CI.
+
+  - id: S-003
+    name: "Create query equivalence test harness"
+    status: proposed
+    dependencies: [S-001]
+    touched_paths:
+      - "tests/test_query_equivalence.py"
+      - "tests/conftest.py"
+      - "tests/fixtures/"
+    contracts:
+      added:
+        - "tests/test_query_equivalence.py (harness)"
+        - "Pytest fixture for running old-vs-new query comparison"
+      changed: []
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Harness runs against a sample query and reports pass/fail"
+    risks:
+      - "Test database state must be deterministic for result-set comparison"
+    notes: >
+      Build a reusable test helper that: (1) runs the original raw SQL query,
+      (2) runs the new ORM query, (3) compares result sets (order-independent
+      for unordered queries, order-sensitive for ordered ones). This becomes the
+      verification backbone for all subsequent slices. Uses Django's test client
+      and TransactionTestCase where needed.
+
+  # ============================================================
+  # PHASE 1: Simple CRUD raw SQL (highest volume, lowest risk)
+  # ============================================================
+
+  - id: S-010
+    name: "Migrate simple SELECT raw SQL in user-facing views"
+    status: proposed
+    dependencies: [S-002, S-003]
+    touched_paths:
+      - "views/users.py"
+      - "views/profiles.py"
+      - "views/dashboard.py"
+      - "tests/test_views_users.py"
+      - "tests/test_views_profiles.py"
+      - "tests/test_views_dashboard.py"
+    contracts:
+      added:
+        - "ORM querysets replacing raw SELECT statements"
+      changed:
+        - "View functions — raw SQL replaced with ORM calls"
+      removed:
+        - "cursor.execute() calls with SELECT in touched views"
+    denylist_patterns:
+      - "cursor\\.execute.*SELECT.*FROM.*(users|profiles|dashboard)"
+    deletion_targets:
+      - "All cursor.execute() blocks in views/users.py"
+      - "All cursor.execute() blocks in views/profiles.py"
+      - "All cursor.execute() blocks in views/dashboard.py"
+    replay_scenarios:
+      - "Query equivalence test for each migrated SELECT"
+    smoke_scenarios:
+      - "User list page returns same data"
+      - "Profile detail page returns same data"
+      - "Dashboard aggregations match"
+    risks:
+      - "Column ordering differences between raw SQL and ORM .values() — verify serializers handle both"
+    notes: >
+      Estimated ~25-30 simple SELECT queries. These are straightforward
+      Model.objects.filter(...).values() replacements. Start here because
+      it's the highest volume, lowest risk category — builds confidence
+      and rapidly drops the ratchet count.
+
+  - id: S-011
+    name: "Migrate simple INSERT/UPDATE/DELETE raw SQL"
+    status: proposed
+    dependencies: [S-002, S-003]
+    touched_paths:
+      - "views/admin_actions.py"
+      - "views/bulk_operations.py"
+      - "views/forms.py"
+      - "tests/test_admin_actions.py"
+      - "tests/test_bulk_operations.py"
+    contracts:
+      added:
+        - "ORM .create(), .update(), .delete(), .bulk_create(), .bulk_update() calls"
+      changed:
+        - "View functions — raw INSERT/UPDATE/DELETE replaced with ORM"
+      removed:
+        - "cursor.execute() calls with INSERT/UPDATE/DELETE in touched views"
+    denylist_patterns:
+      - "cursor\\.execute.*INSERT\\s+INTO.*(admin_actions|bulk_ops)"
+      - "cursor\\.execute.*UPDATE.*(admin_actions|bulk_ops)"
+      - "cursor\\.execute.*DELETE\\s+FROM.*(admin_actions|bulk_ops)"
+    deletion_targets:
+      - "All cursor.execute() write-operation blocks in touched files"
+    replay_scenarios:
+      - "Before/after row counts match for bulk operations"
+    smoke_scenarios:
+      - "Admin bulk action creates expected records"
+      - "Bulk update modifies correct rows"
+    risks:
+      - "Transaction boundaries — raw SQL may have manual BEGIN/COMMIT that the ORM's atomic() must replicate"
+      - "Bulk operations may have different batch sizes — verify performance"
+    notes: >
+      Estimated ~20-25 write queries. Pay attention to transaction handling:
+      raw SQL with explicit transaction management needs to be wrapped in
+      django.db.transaction.atomic() blocks. Also watch for RETURNING clauses
+      in INSERT statements — the ORM handles this differently.
+
+  - id: S-012
+    name: "Migrate simple raw SQL in utility/helper views"
+    status: proposed
+    dependencies: [S-002, S-003]
+    touched_paths:
+      - "views/search.py"
+      - "views/autocomplete.py"
+      - "views/export.py"
+      - "views/health.py"
+      - "utils/db.py"
+      - "tests/test_search.py"
+      - "tests/test_export.py"
+    contracts:
+      added:
+        - "ORM querysets in utility views"
+      changed:
+        - "View and utility functions — raw SQL replaced"
+      removed:
+        - "cursor.execute() calls in touched utility files"
+    denylist_patterns:
+      - "cursor\\.execute.*(search|autocomplete|export|health)"
+    deletion_targets:
+      - "All cursor.execute() blocks in touched files"
+      - "Raw SQL helper functions in utils/db.py that become unused"
+    replay_scenarios:
+      - "Search results match for sample queries"
+      - "Export data matches row-for-row"
+    smoke_scenarios:
+      - "Search endpoint returns identical results"
+      - "CSV export produces identical output"
+      - "Health check endpoint passes"
+    risks:
+      - "Search queries may use ILIKE or full-text search — verify ORM equivalents exist"
+      - "Export queries may stream large result sets — ensure ORM query uses .iterator()"
+    notes: >
+      Estimated ~15-20 queries. Watch for LIKE/ILIKE patterns — Django ORM
+      has __icontains, __istartswith, etc. Full-text search may need
+      django.contrib.postgres.search (SearchVector, SearchQuery, SearchRank)
+      if PostgreSQL is the backend.
+
+  # ============================================================
+  # PHASE 2: Multi-table raw SQL (medium complexity)
+  # ============================================================
+
+  - id: S-020
+    name: "Migrate multi-table JOIN queries"
+    status: proposed
+    dependencies: [S-010, S-011, S-012]
+    touched_paths:
+      - "views/reports.py"
+      - "views/analytics.py"
+      - "views/orders.py"
+      - "views/inventory.py"
+      - "models/managers.py"
+      - "tests/test_reports.py"
+      - "tests/test_analytics.py"
+    contracts:
+      added:
+        - "ORM select_related/prefetch_related chains"
+        - "Custom manager methods for complex joins"
+      changed:
+        - "View functions — raw JOINs replaced with ORM traversals"
+      removed:
+        - "cursor.execute() calls with JOIN in touched views"
+    denylist_patterns:
+      - "cursor\\.execute.*JOIN.*(reports|analytics|orders|inventory)"
+    deletion_targets:
+      - "All multi-table cursor.execute() blocks in touched files"
+    replay_scenarios:
+      - "Query equivalence for each JOIN query — result sets match"
+      - "EXPLAIN ANALYZE comparison — no >10% regression"
+    smoke_scenarios:
+      - "Report pages render with correct related data"
+      - "Analytics dashboards show correct aggregated data"
+    risks:
+      - "N+1 query regression — raw SQL JOINs are explicit, ORM traversals may generate multiple queries without select_related"
+      - "Left vs Inner join semantics — verify ORM generates the correct join type"
+    notes: >
+      Estimated ~20 JOIN queries. The ORM handles most JOINs via
+      select_related() (foreign keys, one-to-one) and prefetch_related()
+      (many-to-many, reverse relations). For multi-table joins that don't
+      follow foreign key paths, consider annotate() with Subquery or
+      custom manager methods. Profile with django-debug-toolbar to catch
+      N+1 regressions.
+
+  - id: S-021
+    name: "Migrate subquery and correlated subquery patterns"
+    status: proposed
+    dependencies: [S-010, S-011, S-012]
+    touched_paths:
+      - "views/reports.py"
+      - "views/notifications.py"
+      - "views/recommendations.py"
+      - "tests/test_reports.py"
+      - "tests/test_notifications.py"
+    contracts:
+      added:
+        - "ORM Subquery/OuterRef/Exists expressions"
+      changed:
+        - "Views with subquery raw SQL — replaced with ORM Subquery"
+      removed:
+        - "Raw SQL subqueries in touched views"
+    denylist_patterns: []
+    deletion_targets:
+      - "All raw subquery SQL blocks in touched files"
+    replay_scenarios:
+      - "Query equivalence for each subquery migration"
+    smoke_scenarios:
+      - "Notification filtering produces same result set"
+    risks:
+      - "Correlated subqueries with OuterRef can be tricky to express — may need multiple annotate() calls"
+      - "Performance difference between raw subquery and ORM-generated SQL — EXPLAIN ANALYZE check required"
+    notes: >
+      Estimated ~10-15 subqueries. Django's Subquery/OuterRef pattern handles
+      most cases. Example: WHERE id IN (SELECT ...) becomes
+      .filter(id__in=Subquery(Model.objects.filter(...).values('id'))).
+      Correlated subqueries use OuterRef('field_name') inside the Subquery.
+
+  # ============================================================
+  # PHASE 3: Complex raw SQL (highest complexity, requires decisions)
+  # ============================================================
+
+  - id: S-030
+    name: "Migrate aggregate and GROUP BY queries"
+    status: proposed
+    dependencies: [S-020, S-021]
+    touched_paths:
+      - "views/reports.py"
+      - "views/analytics.py"
+      - "views/dashboard.py"
+      - "models/managers.py"
+      - "tests/test_reports.py"
+      - "tests/test_analytics.py"
+    contracts:
+      added:
+        - "ORM .values().annotate() aggregation patterns"
+        - "Custom aggregation functions if needed"
+      changed:
+        - "Views with GROUP BY raw SQL"
+      removed:
+        - "Raw SQL GROUP BY blocks in touched views"
+    denylist_patterns: []
+    deletion_targets:
+      - "All raw GROUP BY SQL in touched files"
+    replay_scenarios:
+      - "Aggregation results match for all GROUP BY queries"
+    smoke_scenarios:
+      - "Report page totals match"
+      - "Analytics dashboard numbers match"
+    risks:
+      - "GROUP BY with HAVING — ORM handles this but syntax requires .values().annotate().filter()"
+      - "Complex expressions in GROUP BY (e.g., date_trunc) may need Trunc or custom Func"
+    notes: >
+      Estimated ~8-10 aggregation queries. The Django ORM's
+      .values('group_field').annotate(total=Sum('amount')) pattern handles
+      standard GROUP BY. For date-based grouping, use django.db.models.functions
+      (TruncMonth, TruncDay, etc.). For HAVING clauses, chain .filter() after
+      .annotate().
+
+  - id: S-031
+    name: "Migrate window function queries"
+    status: proposed
+    dependencies: [S-020, S-021]
+    touched_paths:
+      - "views/analytics.py"
+      - "views/leaderboard.py"
+      - "views/reports.py"
+      - "tests/test_analytics.py"
+      - "tests/test_leaderboard.py"
+    contracts:
+      added:
+        - "ORM Window() expressions"
+      changed:
+        - "Views with window function raw SQL"
+      removed:
+        - "Raw SQL window functions in touched views"
+    denylist_patterns: []
+    deletion_targets:
+      - "Raw SQL window function blocks in touched files"
+    replay_scenarios:
+      - "Window function results match — pay attention to ordering"
+    smoke_scenarios:
+      - "Leaderboard rankings match"
+    risks:
+      - "Custom window frames (ROWS BETWEEN, RANGE BETWEEN) may not be supported by Django's Window — may need RawSQL fallback"
+      - "PARTITION BY multiple columns — verify ORM generates correct SQL"
+    notes: >
+      Estimated ~5-7 window function queries. Django 2.0+ supports
+      Window(expression=Rank(), partition_by=[F('category')], order_by=F('score').desc()).
+      Standard functions (Rank, DenseRank, RowNumber, Lag, Lead, NthValue) are
+      built-in. Custom frame specifications may require a Decision entry if the
+      ORM can't express them.
+
+  - id: S-032
+    name: "Handle recursive CTEs and DB-specific queries"
+    status: proposed
+    dependencies: [S-030, S-031]
+    touched_paths:
+      - "views/categories.py"
+      - "views/org_tree.py"
+      - "models/managers.py"
+      - "tests/test_categories.py"
+      - "tests/test_org_tree.py"
+    contracts:
+      added:
+        - "Custom manager methods wrapping .raw() for CTEs"
+        - "Decision entries for each .raw() usage"
+      changed:
+        - "Views with recursive CTE raw SQL"
+      removed:
+        - "Inline cursor.execute() CTE queries (moved to manager methods)"
+    denylist_patterns:
+      - "cursor\\.execute.*WITH\\s+RECURSIVE.*(views/)"
+    deletion_targets:
+      - "Inline CTE SQL in view files (logic moves to managers)"
+    replay_scenarios:
+      - "CTE results match — tree traversal produces identical hierarchies"
+    smoke_scenarios:
+      - "Category tree renders correctly"
+      - "Org hierarchy displays correctly"
+    risks:
+      - "django-cte or django-tree-queries could provide ORM-level CTE support — evaluate before falling back to .raw()"
+      - "Recursive depth limits may differ between raw SQL and library implementations"
+    notes: >
+      Estimated ~4-5 CTE queries. Recursive CTEs (WITH RECURSIVE) have no
+      native Django ORM equivalent. Options: (1) django-cte library,
+      (2) django-tree-queries for MPTT-like hierarchies, (3) .raw() with
+      parameterized SQL in a model manager. Each approach needs a Decision
+      entry. The raw SQL moves from views to model managers regardless —
+      encapsulation is a win even if we can't fully ORM-ify these.
+
+  - id: S-033
+    name: "Handle INSERT ON CONFLICT and upsert patterns"
+    status: proposed
+    dependencies: [S-020]
+    touched_paths:
+      - "views/sync.py"
+      - "views/import.py"
+      - "models/managers.py"
+      - "tests/test_sync.py"
+      - "tests/test_import.py"
+    contracts:
+      added:
+        - "ORM .update_or_create() / .bulk_create(update_conflicts=True) calls"
+      changed:
+        - "Views with upsert raw SQL"
+      removed:
+        - "Raw SQL INSERT...ON CONFLICT in touched views"
+    denylist_patterns:
+      - "cursor\\.execute.*ON\\s+CONFLICT"
+    deletion_targets:
+      - "All INSERT...ON CONFLICT raw SQL in touched files"
+    replay_scenarios:
+      - "Upsert results match — new rows created, existing rows updated correctly"
+    smoke_scenarios:
+      - "Data sync produces identical final state"
+    risks:
+      - "Django 4.1+ bulk_create(update_conflicts=True) required — verify Django version"
+      - "Complex conflict targets (ON CONFLICT ON CONSTRAINT) may not map cleanly"
+    notes: >
+      Estimated ~3-5 upsert queries. Django 4.1 added update_or_create() and
+      bulk_create(update_conflicts=True, update_fields=[...], unique_fields=[...]).
+      For simple upserts this is a clean 1:1 replacement. For complex conflict
+      resolution with partial indexes, may need .raw() with a Decision entry.
+
+  # ============================================================
+  # PHASE 4: SQLAlchemy removal
+  # ============================================================
+
+  - id: S-040
+    name: "Map SQLAlchemy models to Django models"
+    status: proposed
+    dependencies: [S-001]
+    touched_paths:
+      - "api/sa_models.py"
+      - "models/"
+      - "tests/test_sa_models.py"
+    contracts:
+      added:
+        - "New fields/methods on existing Django models (if gaps found)"
+        - "New Django models (if SA models have no Django equivalent)"
+      changed:
+        - "Existing Django models (extended to cover SA model functionality)"
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    replay_scenarios:
+      - "Django model field types match SA model column types for every mapped table"
+    smoke_scenarios: []
+    risks:
+      - "Type mismatches between SA Column types and Django Field types"
+      - "SA models may use table names that differ from Django's app_label convention"
+    notes: >
+      Catalog all SQLAlchemy models, compare with Django models. For each SA
+      model: identify the table, find the Django model (or note absence), compare
+      column-by-column. Output a mapping table that S-041/S-042/S-043 will use.
+
+  - id: S-041
+    name: "Migrate SQLAlchemy endpoint 1"
+    status: proposed
+    dependencies: [S-040, S-030]
+    touched_paths:
+      - "api/endpoint_1.py"
+      - "tests/test_endpoint_1.py"
+    contracts:
+      added:
+        - "ORM queries replacing SA session.query calls"
+      changed:
+        - "Endpoint implementation — SA replaced with Django ORM"
+      removed:
+        - "SA session.query calls in endpoint_1.py"
+        - "SA session import in endpoint_1.py"
+    denylist_patterns:
+      - "from sqlalchemy|import sqlalchemy.*endpoint_1"
+      - "session\\.query.*endpoint_1"
+    deletion_targets:
+      - "All SQLAlchemy usage in api/endpoint_1.py"
+    replay_scenarios:
+      - "Endpoint response body matches for test fixtures"
+    smoke_scenarios:
+      - "Endpoint returns 200 with correct data"
+    risks:
+      - "SA lazy loading vs Django's deferred fields — behavior differences"
+    notes: >
+      First SA endpoint migration. Establish the pattern for the remaining two.
+
+  - id: S-042
+    name: "Migrate SQLAlchemy endpoint 2"
+    status: proposed
+    dependencies: [S-040, S-030]
+    touched_paths:
+      - "api/endpoint_2.py"
+      - "tests/test_endpoint_2.py"
+    contracts:
+      added:
+        - "ORM queries replacing SA session.query calls"
+      changed:
+        - "Endpoint implementation — SA replaced with Django ORM"
+      removed:
+        - "SA session.query calls in endpoint_2.py"
+        - "SA session import in endpoint_2.py"
+    denylist_patterns:
+      - "from sqlalchemy|import sqlalchemy.*endpoint_2"
+      - "session\\.query.*endpoint_2"
+    deletion_targets:
+      - "All SQLAlchemy usage in api/endpoint_2.py"
+    replay_scenarios:
+      - "Endpoint response body matches for test fixtures"
+    smoke_scenarios:
+      - "Endpoint returns 200 with correct data"
+    risks: []
+    notes: "Follow pattern established in S-041."
+
+  - id: S-043
+    name: "Migrate SQLAlchemy endpoint 3"
+    status: proposed
+    dependencies: [S-040, S-030]
+    touched_paths:
+      - "api/endpoint_3.py"
+      - "tests/test_endpoint_3.py"
+    contracts:
+      added:
+        - "ORM queries replacing SA session.query calls"
+      changed:
+        - "Endpoint implementation — SA replaced with Django ORM"
+      removed:
+        - "SA session.query calls in endpoint_3.py"
+        - "SA session import in endpoint_3.py"
+    denylist_patterns:
+      - "from sqlalchemy|import sqlalchemy.*endpoint_3"
+      - "session\\.query.*endpoint_3"
+    deletion_targets:
+      - "All SQLAlchemy usage in api/endpoint_3.py"
+    replay_scenarios:
+      - "Endpoint response body matches for test fixtures"
+    smoke_scenarios:
+      - "Endpoint returns 200 with correct data"
+    risks: []
+    notes: "Follow pattern established in S-041."
+
+  # ============================================================
+  # PHASE 5: Cleanup and dependency removal
+  # ============================================================
+
+  - id: S-050
+    name: "Remove SQLAlchemy models, config, and dependency"
+    status: proposed
+    dependencies: [S-041, S-042, S-043]
+    touched_paths:
+      - "api/sa_models.py"
+      - "api/sa_session.py"
+      - "settings.py"
+      - "requirements.txt"
+      - "pyproject.toml"
+    contracts:
+      added: []
+      changed:
+        - "requirements.txt (SA removed)"
+        - "settings.py (SA engine config removed)"
+      removed:
+        - "api/sa_models.py"
+        - "api/sa_session.py"
+        - "SQLAlchemy from requirements"
+    denylist_patterns:
+      - "from sqlalchemy"
+      - "import sqlalchemy"
+      - "SQLALCHEMY"
+      - "sa_models"
+      - "sa_session"
+    deletion_targets:
+      - "api/sa_models.py"
+      - "api/sa_session.py"
+      - "SQLAlchemy line in requirements.txt"
+      - "SQLALCHEMY_* settings in settings.py"
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Application starts without SQLAlchemy installed"
+      - "pip install -r requirements.txt succeeds without SA"
+    risks:
+      - "Transitive dependency — another package might depend on SQLAlchemy"
+    notes: >
+      Final cleanup. After this slice, SQLAlchemy is fully removed from the
+      project. Run pip check to verify no dependency conflicts.
+
+  - id: S-051
+    name: "Remove raw SQL utility functions and finalize ratchets"
+    status: proposed
+    dependencies: [S-032, S-033, S-050]
+    touched_paths:
+      - "utils/db.py"
+      - "utils/sql_helpers.py"
+      - "scripts/migration_guard.sh"
+    contracts:
+      added: []
+      changed:
+        - "Guard script — ratchets at 0 or removed, denylists permanent"
+      removed:
+        - "utils/sql_helpers.py (if fully unused)"
+        - "Unused raw SQL helper functions in utils/db.py"
+    denylist_patterns:
+      - "from utils.sql_helpers"
+      - "import sql_helpers"
+    deletion_targets:
+      - "utils/sql_helpers.py (if fully unused)"
+      - "Unused functions in utils/db.py"
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Full test suite passes"
+      - "Guard script shows all ratchets at 0 or converted to permanent denylists"
+    risks:
+      - "Some raw SQL helpers may still be in use for legitimate .raw() queries — verify before deleting"
+    notes: >
+      Final slice. Verify all ratchets are at 0 (or at their final documented
+      exception count for .raw() usages with Decision entries). Convert
+      zero-budget ratchets to permanent denylist patterns. Remove unused
+      helper code. The migration is complete.

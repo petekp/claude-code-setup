@@ -1,0 +1,47 @@
+{
+  "eval_id": 3,
+  "eval_name": "dashboard-search-bar",
+  "prompt": "Add a search bar to the dashboard that filters the table of results.",
+  "assertions": [
+    {
+      "id": "paradigm_count",
+      "text": "At least 3 fundamentally different paradigms explored (e.g., client-side filtering vs server-side search vs hybrid — not just 3 React component approaches)",
+      "type": "quantitative"
+    },
+    {
+      "id": "approach_count",
+      "text": "At least 5 total concrete approaches documented across paradigms",
+      "type": "quantitative"
+    },
+    {
+      "id": "problem_reframing",
+      "text": "Problem is unpacked beyond 'add a search bar' — surfaces hidden complexity like data volume, match semantics, URL state, accessibility, performance",
+      "type": "qualitative"
+    },
+    {
+      "id": "assumption_surfacing",
+      "text": "At least 2 explicit assumptions identified (e.g., data size, search semantics like fuzzy vs exact, whether results are paginated)",
+      "type": "quantitative"
+    },
+    {
+      "id": "tradeoff_matrix",
+      "text": "A structured comparison of approaches against specific criteria",
+      "type": "qualitative"
+    },
+    {
+      "id": "non_obvious",
+      "text": "At least 1 non-obvious consideration surfaced (e.g., URL state sync for shareability, debouncing strategy, column-specific filtering, saved searches)",
+      "type": "qualitative"
+    },
+    {
+      "id": "evidence_based_selection",
+      "text": "Final recommendation explains why it's the right fit for this context, not just the simplest option",
+      "type": "qualitative"
+    },
+    {
+      "id": "rejection_reasoning",
+      "text": "Rejected alternatives have documented reasons for why they were not chosen",
+      "type": "qualitative"
+    }
+  ]
+}

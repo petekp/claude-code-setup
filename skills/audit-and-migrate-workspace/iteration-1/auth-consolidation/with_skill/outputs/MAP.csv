@@ -1,0 +1,30 @@
+slice_id,capability,current_path,target_path,status,delete_in_pr,notes
+slice-001,shared auth middleware,n/a (new file),src/middleware/auth.ts,proposed,no,New canonical auth middleware
+slice-001,auth types,n/a (new file),src/types/auth.ts,proposed,no,AuthenticatedRequest / JWTClaims / AuthError types
+slice-001,middleware tests,n/a (new file),src/middleware/auth.test.ts,proposed,no,Behavioral tests for the middleware itself
+slice-002,users route,src/api/users.ts,src/api/users.ts,proposed,no,Remove inline jwt.verify — use withAuth()
+slice-002,profile route,src/api/profile.ts,src/api/profile.ts,proposed,no,Remove inline jwt.verify — use withAuth()
+slice-002,settings route,src/api/settings.ts,src/api/settings.ts,proposed,no,Remove inline jwt.verify — use withAuth()
+slice-002,users snapshot test,__tests__/api/users.test.ts,__tests__/api/users.test.ts,proposed,no,Replace snapshot assertions with behavioral assertions
+slice-002,profile snapshot test,__tests__/api/profile.test.ts,__tests__/api/profile.test.ts,proposed,no,Replace snapshot assertions with behavioral assertions
+slice-002,settings snapshot test,__tests__/api/settings.test.ts,__tests__/api/settings.test.ts,proposed,no,Replace snapshot assertions with behavioral assertions
+slice-002,users snapshots,__tests__/__snapshots__/users.test.ts.snap,n/a,proposed,yes,Delete after behavioral tests pass
+slice-002,profile snapshots,__tests__/__snapshots__/profile.test.ts.snap,n/a,proposed,yes,Delete after behavioral tests pass
+slice-002,settings snapshots,__tests__/__snapshots__/settings.test.ts.snap,n/a,proposed,yes,Delete after behavioral tests pass
+slice-003,posts route,src/api/posts.ts,src/api/posts.ts,proposed,no,Remove inline jwt.verify — use withAuth()
+slice-003,comments route,src/api/comments.ts,src/api/comments.ts,proposed,no,Remove inline jwt.verify — use withAuth()
+slice-003,uploads route,src/api/uploads.ts,src/api/uploads.ts,proposed,no,Remove inline jwt.verify — use withAuth()
+slice-003,posts snapshot test,__tests__/api/posts.test.ts,__tests__/api/posts.test.ts,proposed,no,Replace snapshot assertions with behavioral assertions
+slice-003,comments snapshot test,__tests__/api/comments.test.ts,__tests__/api/comments.test.ts,proposed,no,Replace snapshot assertions with behavioral assertions
+slice-003,uploads snapshot test,__tests__/api/uploads.test.ts,__tests__/api/uploads.test.ts,proposed,no,Replace snapshot assertions with behavioral assertions
+slice-003,posts snapshots,__tests__/__snapshots__/posts.test.ts.snap,n/a,proposed,yes,Delete after behavioral tests pass
+slice-003,comments snapshots,__tests__/__snapshots__/comments.test.ts.snap,n/a,proposed,yes,Delete after behavioral tests pass
+slice-003,uploads snapshots,__tests__/__snapshots__/uploads.test.ts.snap,n/a,proposed,yes,Delete after behavioral tests pass
+slice-004,admin route,src/api/admin.ts,src/api/admin.ts,proposed,no,Remove inline jwt.verify — use withAuth() or withAdminAuth()
+slice-004,webhooks route,src/api/webhooks.ts,src/api/webhooks.ts,proposed,no,Remove inline jwt.verify — use withAuth(); may need investigation re: webhook signatures
+slice-004,admin snapshot test,__tests__/api/admin.test.ts,__tests__/api/admin.test.ts,proposed,no,Replace snapshot assertions with behavioral assertions
+slice-004,webhooks snapshot test,__tests__/api/webhooks.test.ts,__tests__/api/webhooks.test.ts,proposed,no,Replace snapshot assertions with behavioral assertions
+slice-004,admin snapshots,__tests__/__snapshots__/admin.test.ts.snap,n/a,proposed,yes,Delete after behavioral tests pass
+slice-004,webhooks snapshots,__tests__/__snapshots__/webhooks.test.ts.snap,n/a,proposed,yes,Delete after behavioral tests pass
+slice-005,snapshot directory,__tests__/__snapshots__/,n/a,proposed,yes,Delete entire directory once all routes migrated
+slice-005,guard script,scripts/guard.sh,scripts/guard.sh,proposed,no,Lock all ratchet budgets to 0

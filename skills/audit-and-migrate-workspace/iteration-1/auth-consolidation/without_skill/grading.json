@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+      "passed": false,
+      "evidence": "No CHARTER.md or equivalent document with invariants and non-goals. The migration-plan.md has goals but no explicit invariants (things that must remain true) or non-goals (things explicitly out of scope)"
+    },
+    {
+      "text": "Identifies specific anti-patterns with concrete grep-able patterns",
+      "passed": false,
+      "evidence": "The audit-template.md provides a framework for auditing auth implementations but does not define concrete grep patterns with counts. No patterns like 'jwt.verify' or 'toMatchSnapshot' with current occurrence counts"
+    },
+    {
+      "text": "Defines CI ratchets with numeric budgets based on current anti-pattern counts",
+      "passed": false,
+      "evidence": "No mention of ratchets, budgets, or CI guards anywhere in the outputs. Zero grep matches for 'ratchet', 'budget', 'ci guard', or 'denylist'"
+    },
+    {
+      "text": "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+      "passed": false,
+      "evidence": "Plan uses 4 horizontal phases (Audit → Behavioral Tests → Consolidate → Cleanup). While Phase 3 mentions migrating 'one route at a time', the overall structure is horizontal — all tests first, then all consolidation"
+    },
+    {
+      "text": "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+      "passed": false,
+      "evidence": "Deletion is mentioned in Phase 4 ('Delete snapshot tests and dead auth code') but targets are not pre-defined per phase/slice before implementation begins. Cleanup is deferred to the end"
+    },
+    {
+      "text": "Produces a MAP.csv or equivalent file-level inventory tracking every affected file",
+      "passed": false,
+      "evidence": "No file-level inventory or mapping document. The audit-template.md asks to catalog implementations but doesn't produce a comprehensive file map"
+    },
+    {
+      "text": "Defines denylist patterns for code that should not be reintroduced after deletion",
+      "passed": false,
+      "evidence": "No denylist patterns defined. Zero grep matches for 'denylist' across all outputs"
+    },
+    {
+      "text": "Includes session handoff protocol or explicit multi-session continuity guidance",
+      "passed": false,
+      "evidence": "No mention of session continuity, handoff protocol, or multi-session safety. Zero grep matches for 'handoff', 'session protocol', 'next session', or 'compaction'"
+    },
+    {
+      "text": "Slices are dependency-ordered — auth consolidation before test migration (tests depend on the new auth interface)",
+      "passed": true,
+      "evidence": "Phases are logically ordered with explicit rationale. Phase 2 (behavioral tests) before Phase 3 (consolidation) follows the Strangler Fig pattern — write tests against current code, then swap implementation. The ordering rationale is well-explained even if the order is inverted from the assertion's assumption"
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 8,
+    "total": 9,
+    "pass_rate": 0.11
+  }
+}

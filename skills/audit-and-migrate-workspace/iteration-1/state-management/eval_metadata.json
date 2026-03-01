@@ -1,0 +1,16 @@
+{
+  "eval_id": 3,
+  "eval_name": "state-management",
+  "prompt": "Our React codebase has Redux in the older modules (about 12 feature slices), Context API in the middle-era code (6 providers), and Zustand in the 4 newest features. We want everything on Zustand. The Redux stores have middleware for analytics tracking and the Context providers share some state through nested composition. Help me plan this migration so nothing falls through the cracks.",
+  "assertions": [
+    "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+    "Inventories all three state management approaches with specific counts or categorization",
+    "Defines CI ratchets with numeric budgets for state management patterns to eliminate",
+    "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+    "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+    "Produces a MAP.csv or equivalent file-level inventory tracking every affected component",
+    "Defines denylist patterns for removed state management imports (redux, createContext for state)",
+    "Includes session handoff protocol or explicit multi-session continuity guidance",
+    "Handles cross-cutting concerns explicitly — analytics middleware and shared Context state are identified as decision points, not ignored"
+  ]
+}

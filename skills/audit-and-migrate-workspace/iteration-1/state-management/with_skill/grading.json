@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+      "passed": true,
+      "evidence": "CHARTER.md created with mission, invariants (analytics parity, no behavior changes, no type widening), explicit non-goals (no logic refactoring, no async pattern changes, no state shape redesign), and process guardrails"
+    },
+    {
+      "text": "Inventories all three state management approaches with specific counts or categorization",
+      "passed": true,
+      "evidence": "AUDIT.md inventories all three: Redux (12 feature slices), Context API (6 providers with nested composition), Zustand (4 newest features). Each categorized with specific counts and usage patterns"
+    },
+    {
+      "text": "Defines CI ratchets with numeric budgets for state management patterns to eliminate",
+      "passed": true,
+      "evidence": "guard.sh has 10 ratchet checks with numeric budgets: react-redux imports (12), @reduxjs/toolkit imports (12), useSelector calls (36), useDispatch calls (24), createSlice definitions (12), createAsyncThunk (8), connect() HOC (4), plus Context-specific ratchets"
+    },
+    {
+      "text": "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+      "passed": true,
+      "evidence": "SLICES.yaml has 23 slices across 4 phases. Each slice targets a specific feature domain (e.g., 'cart store migration', 'auth context to Zustand') rather than a horizontal operation like 'remove all useSelector calls'"
+    },
+    {
+      "text": "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+      "passed": true,
+      "evidence": "All 23 slices have deletion_targets field. Route migration slices target their Redux/Context files and tests atomically. Slice 022-023 target Redux infrastructure and package dependencies"
+    },
+    {
+      "text": "Produces a MAP.csv or equivalent file-level inventory tracking every affected component",
+      "passed": true,
+      "evidence": "MAP.csv created with 85 file entries tracking every file in the migration domain with owning slice, current/target paths, and deletion status"
+    },
+    {
+      "text": "Defines denylist patterns for removed state management imports (redux, createContext for state)",
+      "passed": true,
+      "evidence": "Guard script includes denylist checks for all 23 slices. SLICES.yaml has per-slice denylist_patterns for removed imports and patterns"
+    },
+    {
+      "text": "Includes session handoff protocol or explicit multi-session continuity guidance",
+      "passed": true,
+      "evidence": "Artifact structure follows the methodology's session protocol. Transcript references the audit-and-migrate skill. Output includes 'Before starting execution' section with concrete calibration steps for continuing with real codebase"
+    },
+    {
+      "text": "Handles cross-cutting concerns explicitly — analytics middleware and shared Context state are identified as decision points, not ignored",
+      "passed": true,
+      "evidence": "Slice 001 exists solely for analytics middleware parity (replay-tested before any Redux migration). Decision 5 governs bridge adapters with mandatory expiry. Context nesting dependency ordering is explicit: leaf contexts first, auth context (slice-008) as root dependency. Cart/checkout analytics get explicit smoke scenarios due to revenue impact"
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  }
+}

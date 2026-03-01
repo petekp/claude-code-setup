@@ -1,0 +1,131 @@
+{
+  "expectations": [
+    {
+      "text": "At least 3 fundamentally different paradigms explored (e.g., polling vs SSE vs WebSockets vs push notifications — not just 3 WebSocket libraries)",
+      "passed": true,
+      "evidence": "SOLUTION_MAP.md documents 5 distinct paradigms: (1) Custom-Built with Direct Transport (SSE, WebSocket, Polling), (2) Managed Real-Time Infrastructure / Pub/Sub as a Service (Pusher, Ably), (3) Notification-as-a-Service / Full Stack (Novu, Knock), (4) Reactive Database / Notifications as Queries (Supabase Realtime, Convex), (5) Edge-First / Serverless-Native (Upstash Redis + SSE). These are genuinely different paradigms making qualitatively different tradeoffs, not variations of the same strategy."
+    },
+    {
+      "text": "At least 5 total concrete approaches documented across paradigms",
+      "passed": true,
+      "evidence": "SOLUTION_MAP.md documents 10 concrete approaches: 1a (SSE + Postgres), 1b (WebSocket/Socket.io + Postgres), 1c (Polling + Postgres), 2a (Pusher Channels), 2b (Ably Realtime), 3a (Novu), 3b (Knock), 4a (Supabase Realtime), 4b (Convex Reactive Queries), 5a (Upstash Redis + SSE). Each has How it works, Gains, Gives up, Shines when, Risks, and Complexity documented."
+    },
+    {
+      "text": "Problem is restated or reframed in the solver's own words, not just echoed back verbatim",
+      "passed": true,
+      "evidence": "PROBLEM_BRIEF.md restates the problem as: 'The application needs a way to keep users informed about social interactions happening asynchronously... The underlying need is awareness without active checking: users should passively learn about relevant activity so they can decide whether to engage, without having to repeatedly visit and scan the app for changes. This is fundamentally a fan-out delivery problem: a single action by one user (e.g., leaving a comment) must produce a notification for a different user, potentially across multiple delivery channels, with low latency and high reliability.' This is a genuine reframing that identifies the underlying need (awareness without active checking) and the technical nature (fan-out delivery problem), not an echo of the original prompt."
+    },
+    {
+      "text": "At least 2 explicit assumptions identified and called out (e.g., scale expectations, persistence requirements, mobile support)",
+      "passed": true,
+      "evidence": "PROBLEM_BRIEF.md lists 6 explicit assumptions with status tracking: (1) Next.js App Router is the framework, (2) PostgreSQL is available as primary database, (3) Users are authenticated with stable user IDs, (4) App is deployed to a platform supporting long-lived connections, (5) Initial scale is small (<10K users), (6) In-app notifications are the primary channel. Additionally, ASSUMPTIONS_LOG.md documents these assumptions again with detailed rationale and counterfactual analysis ('If the user said X, the recommendation would change to Y')."
+    },
+    {
+      "text": "A structured comparison (table or matrix) comparing approaches against specific criteria",
+      "passed": true,
+      "evidence": "ANALYSIS.md contains a detailed tradeoff matrix table with 10 approaches as columns and 12 criteria as rows (MUST: Real-time <5s, 3 notification types, Unread tracking, Reliable delivery, Next.js compatibility; SHOULD: Extensible types, 30-day persistence, Preference foundation, Graceful degradation, Reasonable cost; NICE: Multi-channel ready, Batching/digest, Unread count without full feed). Each cell contains specific, concrete assessments (e.g., '~1-2s delivery via SSE stream', '$0-49/month depending on scale') rather than vague ratings."
+    },
+    {
+      "text": "At least 1 non-obvious or creative approach explored (e.g., event-driven architecture, notification aggregation patterns, hybrid approaches)",
+      "passed": true,
+      "evidence": "SOLUTION_MAP.md has a dedicated 'Non-obvious Options' section with 4 creative approaches: (1) Hybrid Polling with Optimistic Cheating -- combining polling with optimistic local notifications for instant feedback in common scenarios, referencing early Twitter and Instagram as precedent. (2) Reframe: Do You Need Real-Time at All? -- questioning the core assumption that real-time push is necessary for social notifications. (3) The 'Game Developer' Approach: Client-Predicted Notifications -- borrowing from game networking to client-predict incoming notifications. (4) Server Actions + Streaming: Next.js Native -- using Next.js's built-in cache invalidation via revalidatePath/revalidateTag for near-real-time updates with zero additional infrastructure. The 'do you need real-time at all?' reframe is particularly non-obvious and shows genuine critical thinking."
+    },
+    {
+      "text": "Final recommendation cites specific tradeoffs or evidence, not just popularity or familiarity",
+      "passed": true,
+      "evidence": "DECISION.md cites concrete evidence from three sources: From prototyping: 'fewest lines of code (120 lines vs 160 for Pusher vs 180 for SSE)', 'fewest files (3 vs 4)', 'only approach with a true single-write pattern'. From research: 'WAL replication... reliable and well-tested at the scale this project targets (~1.2 inserts/second at 100K notifications/day)', 'Row Level Security provides authorization at the database level'. From analysis: 'Lowest total cost: $0-25/month vs $49-99/month for Pusher', 'Best deployment compatibility: works on Vercel without any workarounds'. The recommendation is traceable through the artifact chain and includes a conditional decision tree for different contexts."
+    },
+    {
+      "text": "Rejected alternatives have documented reasons for why they were not chosen",
+      "passed": true,
+      "evidence": "DECISION.md has a 'Why Not the Alternatives' section with specific, evidence-backed rejection reasons for each non-selected approach: SSE + PostgreSQL rejected for 'operational complexity on Vercel' with 3 specific problems cited from prototyping. Pusher rejected as primary for dual-write complexity, cost ($49/month baseline), and additional dependency. Novu/Knock rejected because multi-channel is 'nice to have' not 'must have' plus cost/control concerns. Convex rejected because it requires 'betting the entire data layer on a young, proprietary platform'. Additionally, ANALYSIS.md documents 5 approaches eliminated with specific reasons (e.g., '1b: WebSocket fails MUST criterion #5', '1c: Polling marginally fails MUST criterion #1'). SOLUTION_MAP.md also has an 'Eliminated Early' section for 5 approaches dismissed before deep analysis (FCM, Liveblocks, GraphQL Subscriptions, Kafka/RabbitMQ, WebTransport)."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 1,
+      "Write": 18,
+      "Bash": 3,
+      "WebSearch": 13
+    },
+    "total_tool_calls": 35,
+    "output_chars": 61748,
+    "transcript_chars": 316390
+  },
+  "timing": {
+    "executor_duration_seconds": 610.7,
+    "total_duration_seconds": 610.7
+  },
+  "claims": [
+    {
+      "claim": "5 distinct paradigms explored in SOLUTION_MAP.md",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Counted 5 paradigm headers: Custom-Built with Direct Transport, Managed Real-Time Infrastructure, Notification-as-a-Service, Reactive Database, Edge-First/Serverless-Native"
+    },
+    {
+      "claim": "10 concrete approaches documented",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Counted 10 approach subsections: 1a, 1b, 1c, 2a, 2b, 3a, 3b, 4a, 4b, 5a"
+    },
+    {
+      "claim": "Supabase Realtime prototype had fewest lines (120 lines across 3 files)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Prototype directory c-supabase-realtime contains 3 source files (create-notification.ts, schema.sql, use-notifications.ts). Total bytes: 7179. The SSE prototype has 4 files and the Pusher prototype has 4 files, consistent with the claim."
+    },
+    {
+      "claim": "Pusher adds ~45KB to client bundle",
+      "type": "factual",
+      "verified": false,
+      "evidence": "This is a claim about Pusher's client SDK size that cannot be verified from the outputs alone. It appears to be sourced from training data/research."
+    },
+    {
+      "claim": "Supabase free tier includes 500 concurrent Realtime connections",
+      "type": "factual",
+      "verified": false,
+      "evidence": "This is a claim about Supabase pricing that could change. Cannot verify from outputs alone, but it was likely current at the time of the web searches."
+    },
+    {
+      "claim": "100K notifications/day equals ~1.2 inserts/second",
+      "type": "factual",
+      "verified": true,
+      "evidence": "100,000 / 86,400 seconds = 1.157 inserts/second, approximately 1.2. Math checks out."
+    },
+    {
+      "claim": "Prototyping was performed with code artifacts for all 3 finalists",
+      "type": "process",
+      "verified": true,
+      "evidence": "Three prototype directories exist with actual code files: a-sse-postgres (4 files), b-pusher (4 files), c-supabase-realtime (3 files), plus a shared UI component. Files contain substantive TypeScript and SQL code, not stubs."
+    },
+    {
+      "claim": "Web research was conducted to inform the exploration",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript shows 13 WebSearch tool calls across multiple queries covering Next.js real-time patterns, SSE vs WebSockets vs polling, push notification architecture, Novu, Knock, Supabase Realtime, and Convex."
+    }
+  ],
+  "user_notes_summary": null,
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "At least 5 total concrete approaches documented across paradigms",
+        "reason": "This assertion is easy to satisfy by listing approaches with minimal depth. A stronger assertion would check that each approach includes specific technical details (e.g., 'each approach includes concrete gains, tradeoffs, and risk assessment') rather than just counting them."
+      },
+      {
+        "reason": "No assertion checks whether prototypes were actually created or contain substantive code. The skill specifies Phase 4 (prototyping), and the executor produced 3 prototype directories with real code. An assertion like 'at least 2 prototypes with working code were produced' would verify a key phase of the skill's process."
+      },
+      {
+        "reason": "No assertion checks whether the recommendation is conditional or context-aware. This output's strongest feature is the decision tree in DECISION.md that adjusts the recommendation based on context (using Supabase vs not, self-hosted vs Vercel). An assertion like 'recommendation accounts for different project contexts' would reward this sophistication."
+      }
+    ],
+    "overall": "The assertions cover the key outputs well. The main gap is that no assertion tests whether prototyping (Phase 4 of the skill) was actually performed, which is a significant part of the skill's value proposition. The existing assertions would all pass for an output that only did analysis without building anything."
+  }
+}

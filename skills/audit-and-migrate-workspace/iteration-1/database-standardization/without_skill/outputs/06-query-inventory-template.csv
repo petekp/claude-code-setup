@@ -1,0 +1,21 @@
+ID,File,Line,Type,Description,Tables,Complexity,Risk,Has Tests,Migrated,Notes
+Q001,views/reports.py,45,raw_sql,Monthly revenue aggregation with running total,orders+line_items,moderate,high,No,No,Uses window function for running total
+Q002,views/flask_compat/preferences.py,12,sqlalchemy,Get user preferences by user ID,user_preferences,trivial,medium,Yes,No,Ported from Flask user service
+Q003,views/flask_compat/preferences.py,34,sqlalchemy,Update single user preference,user_preferences,trivial,medium,Yes,No,Ported from Flask user service
+Q004,views/flask_compat/analytics.py,22,sqlalchemy,Get page view counts for date range,page_views,trivial,low,No,No,Ported from Flask analytics service
+Q005,views/flask_compat/analytics.py,55,sqlalchemy,Get unique visitor count,page_views+sessions,moderate,low,No,No,Uses SQLAlchemy distinct + join
+Q006,views/flask_compat/analytics.py,78,sqlalchemy,Top pages by view count,page_views,trivial,low,No,No,Simple GROUP BY with ORDER BY
+Q007,views/admin.py,89,raw_sql,Bulk deactivate expired accounts,users,trivial,critical,No,No,Runs nightly via cron - must be tested carefully
+Q008,views/admin.py,112,raw_sql,Generate user activity report,users+orders+sessions,complex,medium,No,No,CTE with multiple joins
+Q009,views/orders.py,23,raw_sql,Get order with line items and product details,orders+line_items+products,trivial,high,Yes,No,Simple multi-table JOIN
+Q010,views/orders.py,67,raw_sql,Calculate order totals with tax,orders+line_items+tax_rates,moderate,critical,Yes,No,Joins on non-FK column (tax_code)
+Q011,views/orders.py,95,raw_sql,Search orders by user email,orders+users,trivial,medium,Yes,No,Simple JOIN with ILIKE
+Q012,views/dashboard.py,15,raw_sql,Dashboard summary stats,orders+users+products,moderate,medium,No,No,Multiple conditional aggregations
+Q013,views/dashboard.py,45,raw_sql,Revenue by category last 30 days,orders+line_items+products+categories,moderate,medium,No,No,Multi-table join with date filter and GROUP BY
+Q014,views/dashboard.py,78,raw_sql,Top customers by lifetime value,users+orders,moderate,low,No,No,Window function with RANK
+Q015,models/order.py,34,raw_sql,Custom manager: orders needing fulfillment,orders+inventory,trivial,high,Yes,No,Could be a queryset method
+Q016,models/product.py,56,raw_sql,Custom manager: products low on stock,products+inventory,trivial,medium,Yes,No,Simple comparison query
+Q017,tasks/cleanup.py,12,raw_sql,Delete expired sessions,sessions,trivial,low,No,No,Simple DELETE with date comparison
+Q018,tasks/cleanup.py,28,raw_sql,Archive old orders,orders+orders_archive,complex,high,No,No,INSERT INTO ... SELECT with multiple conditions
+Q019,tasks/reports.py,15,raw_sql,Weekly sales report,orders+line_items+products,complex,medium,No,No,CTE with window functions
+Q020,tasks/reports.py,67,raw_sql,Inventory valuation report,products+inventory+purchase_orders,complex,high,No,No,Multiple CTEs with joins

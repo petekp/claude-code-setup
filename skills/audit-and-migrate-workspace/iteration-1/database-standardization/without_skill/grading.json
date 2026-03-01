@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+      "passed": false,
+      "evidence": "No CHARTER.md or equivalent. The migration plan has a goal ('standardize on Django ORM') but no explicit invariants (things that must remain true) or non-goals (boundaries). The plan mentions risk mitigations but these are not formalized as invariants"
+    },
+    {
+      "text": "Categorizes database access into distinct patterns (raw SQL, Django ORM, SQLAlchemy) with estimated counts",
+      "passed": true,
+      "evidence": "The audit framework (01-audit-framework.md) categorizes into raw SQL, Django ORM, and SQLAlchemy with grep patterns to find each. The query inventory template (CSV) shows categorization by pattern type. Complexity classification guide included (trivial/moderate/complex/keep-raw)"
+    },
+    {
+      "text": "Defines CI ratchets with numeric budgets for each database access pattern to eliminate",
+      "passed": false,
+      "evidence": "No mention of ratchets, budgets, or CI guards. Zero grep matches. Phase 5 mentions 'lint rules to prevent regression' but no concrete ratchet mechanism"
+    },
+    {
+      "text": "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+      "passed": false,
+      "evidence": "Plan uses 6 horizontal phases organized by difficulty (Preparation → SQLAlchemy removal → Trivial SQL → Moderate SQL → Complex SQL → Validation). Phases are grouped by query complexity, not by domain/capability"
+    },
+    {
+      "text": "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+      "passed": false,
+      "evidence": "Phase 5 mentions 'dead code removal' but deletion targets are not pre-defined per phase before implementation begins. Cleanup is deferred to the final phase"
+    },
+    {
+      "text": "Produces a MAP.csv or equivalent file-level inventory tracking every affected file",
+      "passed": false,
+      "evidence": "The query inventory template (CSV) tracks individual queries but not files. It's a query-level inventory, not a file-level migration map with status and ownership"
+    },
+    {
+      "text": "Defines denylist patterns for removed database patterns (SQLAlchemy imports, raw SQL patterns)",
+      "passed": false,
+      "evidence": "No denylist patterns defined. Phase 5 mentions 'lint rules' but provides no specific patterns or enforcement mechanism"
+    },
+    {
+      "text": "Includes session handoff protocol or explicit multi-session continuity guidance",
+      "passed": false,
+      "evidence": "No mention of session continuity, handoff protocol, or multi-session safety across any output file"
+    },
+    {
+      "text": "Explicitly addresses 'hard cases' where raw SQL does things the ORM can't easily express — proposes a decision framework rather than ignoring them",
+      "passed": true,
+      "evidence": "Phase 4 (Complex raw SQL) includes a decision framework for when .raw() is the correct answer. The ORM translation reference documents what must stay as raw SQL (recursive CTEs, EXPLAIN, DDL). Edge cases doc covers 13 specific gotchas with code examples"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 7,
+    "total": 9,
+    "pass_rate": 0.22
+  }
+}

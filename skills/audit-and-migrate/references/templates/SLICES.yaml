@@ -1,0 +1,19 @@
+# Migration Slices
+# Status lifecycle: proposed → in_progress → done
+
+slices:
+  - id: slice-001
+    name: ""
+    status: proposed
+    dependencies: []          # slice IDs that must be done first
+    touched_paths: []         # files this slice modifies
+    contracts:
+      added: []               # new files/symbols introduced
+      changed: []             # existing files/symbols modified
+      removed: []             # files/symbols deleted
+    denylist_patterns: []     # grep patterns that must not match after completion
+    deletion_targets: []      # files/symbols that must be physically removed
+    replay_scenarios: []      # deterministic replay test references
+    smoke_scenarios: []       # user-facing workflow tests
+    risks: []                 # known risks and mitigations
+    notes: ""

@@ -1,0 +1,23 @@
+{
+  "skill_name": "solution-explorer",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to add real-time notifications to our Next.js app. Users should get notified when someone comments on their post, likes their content, or follows them.",
+      "expected_output": "A thorough exploration of the notification problem space covering multiple paradigms (polling, SSE, WebSockets, push notifications, third-party services), with a tradeoff analysis and recommendation based on evidence.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "We need to implement a plugin system for our CLI tool so third-party developers can extend it with custom commands. The tool is written in TypeScript.",
+      "expected_output": "An exploration of plugin architecture paradigms (dynamic imports, subprocess-based, hook systems, middleware chains, etc.) with analysis of discoverability, security, and developer experience tradeoffs.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Add a search bar to the dashboard that filters the table of results.",
+      "expected_output": "Despite seeming simple, the skill should surface hidden complexity (client vs server filtering, fuzzy vs exact matching, debouncing, URL state sync, accessibility) and explore paradigms before recommending an approach.",
+      "files": []
+    }
+  ]
+}

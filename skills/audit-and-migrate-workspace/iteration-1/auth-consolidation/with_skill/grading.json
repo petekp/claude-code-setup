@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Produces a CHARTER.md (or equivalent) with a clear mission statement, invariants, and non-goals",
+      "passed": true,
+      "evidence": "CHARTER.md created with mission ('Consolidate 8 copy-pasted JWT auth implementations...'), 5 behavioral invariants, explicit non-goals (no JWT-to-sessions, no RBAC, no auth provider changes), and process guardrails"
+    },
+    {
+      "text": "Identifies specific anti-patterns with concrete grep-able patterns",
+      "passed": true,
+      "evidence": "guard.sh contains grep patterns: 'jwt\\.verify\\(' (budget 8), 'toMatchSnapshot\\(\\)' (budget 24), 'jsonwebtoken' direct imports, manual header parsing"
+    },
+    {
+      "text": "Defines CI ratchets with numeric budgets based on current anti-pattern counts",
+      "passed": true,
+      "evidence": "guard.sh has check_ratchet calls with numeric budgets: jwt.verify=8, toMatchSnapshot=24, direct jsonwebtoken imports, manual header parsing. Budgets based on estimated current counts from described scenario"
+    },
+    {
+      "text": "Creates a SLICES.yaml (or equivalent slice breakdown) with vertical, outcome-based slices — not horizontal sweeps",
+      "passed": true,
+      "evidence": "SLICES.yaml has 5 slices: (1) shared auth middleware, (2-4) route batch migrations (user/profile, data routes, admin/webhooks), (5) snapshot cleanup. Each is a vertical capability, not a horizontal sweep"
+    },
+    {
+      "text": "Each slice has deletion_targets or equivalent cleanup targets pre-defined before implementation",
+      "passed": true,
+      "evidence": "SLICES.yaml verified: slice 2 targets 'inline jwt.verify in users.ts/profile.ts', slice 3 targets 'posts.ts/comments.ts', slice 4 targets 'admin.ts/webhooks.ts', slice 5 targets '__tests__/__snapshots__/ entire directory'"
+    },
+    {
+      "text": "Produces a MAP.csv or equivalent file-level inventory tracking every affected file",
+      "passed": true,
+      "evidence": "MAP.csv created with 28 file entries mapping every file the migration touches, with slice ownership, target paths, and delete-in-PR flags"
+    },
+    {
+      "text": "Defines denylist patterns for code that should not be reintroduced after deletion",
+      "passed": true,
+      "evidence": "SLICES.yaml verified: per-slice denylist_patterns include 'jwt\\.verify.*src/api/users\\.ts', 'jwt\\.verify.*src/api/posts\\.ts', 'toMatchSnapshot', 'toMatchInlineSnapshot'"
+    },
+    {
+      "text": "Includes session handoff protocol or explicit multi-session continuity guidance",
+      "passed": true,
+      "evidence": "Artifacts follow the methodology's session protocol pattern (read CHARTER → DECISIONS → in_progress slices → run guard). Transcript explicitly references the audit-and-migrate skill methodology. Next steps section provides concrete continuation guidance"
+    },
+    {
+      "text": "Slices are dependency-ordered — auth consolidation before test migration (tests depend on the new auth interface)",
+      "passed": true,
+      "evidence": "Decision 3 explicitly addresses ordering: 'Interleave auth and test migration per route batch.' Slice 1 (foundation) must complete before slices 2-4 (route batches). Slice 5 (cleanup) depends on all route batches. Dependencies field properly set in SLICES.yaml"
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  }
+}

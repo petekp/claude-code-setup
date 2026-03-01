@@ -1,0 +1,69 @@
+slice_id,capability,current_path,target_path,status,delete_in_pr,notes
+S-001,audit,**/*.py,—,pending,no,Read-only scan — no modifications
+S-010,simple-select-orm,views/users.py,views/users.py,pending,no,Replace cursor.execute SELECT with ORM querysets
+S-010,simple-select-orm,views/profiles.py,views/profiles.py,pending,no,Replace cursor.execute SELECT with ORM querysets
+S-010,simple-select-orm,views/dashboard.py,views/dashboard.py,pending,no,Replace cursor.execute SELECT with ORM querysets
+S-010,simple-select-orm,tests/test_views_users.py,tests/test_views_users.py,pending,no,Update tests for ORM-based views
+S-010,simple-select-orm,tests/test_views_profiles.py,tests/test_views_profiles.py,pending,no,Update tests for ORM-based views
+S-010,simple-select-orm,tests/test_views_dashboard.py,tests/test_views_dashboard.py,pending,no,Update tests for ORM-based views
+S-011,simple-write-orm,views/admin_actions.py,views/admin_actions.py,pending,no,Replace cursor.execute INSERT/UPDATE/DELETE with ORM
+S-011,simple-write-orm,views/bulk_operations.py,views/bulk_operations.py,pending,no,Replace cursor.execute INSERT/UPDATE/DELETE with ORM
+S-011,simple-write-orm,views/forms.py,views/forms.py,pending,no,Replace raw SQL form saves with ORM
+S-011,simple-write-orm,tests/test_admin_actions.py,tests/test_admin_actions.py,pending,no,Update tests
+S-011,simple-write-orm,tests/test_bulk_operations.py,tests/test_bulk_operations.py,pending,no,Update tests
+S-012,utility-orm,views/search.py,views/search.py,pending,no,Replace raw SQL search with ORM lookups
+S-012,utility-orm,views/autocomplete.py,views/autocomplete.py,pending,no,Replace raw SQL autocomplete with ORM
+S-012,utility-orm,views/export.py,views/export.py,pending,no,Replace raw SQL export with ORM .iterator()
+S-012,utility-orm,views/health.py,views/health.py,pending,no,Replace raw SQL health check with ORM
+S-012,utility-orm,utils/db.py,utils/db.py,pending,maybe,Raw SQL helpers — may be partially deleted
+S-012,utility-orm,tests/test_search.py,tests/test_search.py,pending,no,Update tests
+S-012,utility-orm,tests/test_export.py,tests/test_export.py,pending,no,Update tests
+S-020,join-orm,views/reports.py,views/reports.py,pending,no,Replace raw JOIN SQL with select_related/prefetch_related
+S-020,join-orm,views/analytics.py,views/analytics.py,pending,no,Replace raw JOIN SQL with ORM traversals
+S-020,join-orm,views/orders.py,views/orders.py,pending,no,Replace raw JOIN SQL with ORM
+S-020,join-orm,views/inventory.py,views/inventory.py,pending,no,Replace raw JOIN SQL with ORM
+S-020,join-orm,models/managers.py,models/managers.py,pending,no,Add custom manager methods for complex joins
+S-020,join-orm,tests/test_reports.py,tests/test_reports.py,pending,no,Update tests
+S-020,join-orm,tests/test_analytics.py,tests/test_analytics.py,pending,no,Update tests
+S-021,subquery-orm,views/reports.py,views/reports.py,pending,no,Replace raw subqueries with ORM Subquery/OuterRef
+S-021,subquery-orm,views/notifications.py,views/notifications.py,pending,no,Replace raw subqueries
+S-021,subquery-orm,views/recommendations.py,views/recommendations.py,pending,no,Replace raw subqueries
+S-021,subquery-orm,tests/test_reports.py,tests/test_reports.py,pending,no,Update tests
+S-021,subquery-orm,tests/test_notifications.py,tests/test_notifications.py,pending,no,Update tests
+S-030,aggregation-orm,views/reports.py,views/reports.py,pending,no,Replace raw GROUP BY with .values().annotate()
+S-030,aggregation-orm,views/analytics.py,views/analytics.py,pending,no,Replace raw GROUP BY with ORM aggregation
+S-030,aggregation-orm,views/dashboard.py,views/dashboard.py,pending,no,Replace raw aggregations
+S-030,aggregation-orm,models/managers.py,models/managers.py,pending,no,Add aggregation manager methods
+S-030,aggregation-orm,tests/test_reports.py,tests/test_reports.py,pending,no,Update tests
+S-030,aggregation-orm,tests/test_analytics.py,tests/test_analytics.py,pending,no,Update tests
+S-031,window-orm,views/analytics.py,views/analytics.py,pending,no,Replace raw window functions with ORM Window()
+S-031,window-orm,views/leaderboard.py,views/leaderboard.py,pending,no,Replace raw window functions
+S-031,window-orm,views/reports.py,views/reports.py,pending,no,Replace raw window functions
+S-031,window-orm,tests/test_analytics.py,tests/test_analytics.py,pending,no,Update tests
+S-031,window-orm,tests/test_leaderboard.py,tests/test_leaderboard.py,pending,no,Update tests
+S-032,cte-encapsulate,views/categories.py,views/categories.py,pending,no,Move recursive CTE to manager method
+S-032,cte-encapsulate,views/org_tree.py,views/org_tree.py,pending,no,Move recursive CTE to manager method
+S-032,cte-encapsulate,models/managers.py,models/managers.py,pending,no,Add CTE manager methods using .raw()
+S-032,cte-encapsulate,tests/test_categories.py,tests/test_categories.py,pending,no,Update tests
+S-032,cte-encapsulate,tests/test_org_tree.py,tests/test_org_tree.py,pending,no,Update tests
+S-033,upsert-orm,views/sync.py,views/sync.py,pending,no,Replace INSERT ON CONFLICT with update_or_create/bulk_create
+S-033,upsert-orm,views/import.py,views/import.py,pending,no,Replace INSERT ON CONFLICT with ORM
+S-033,upsert-orm,models/managers.py,models/managers.py,pending,no,Add upsert manager methods
+S-033,upsert-orm,tests/test_sync.py,tests/test_sync.py,pending,no,Update tests
+S-033,upsert-orm,tests/test_import.py,tests/test_import.py,pending,no,Update tests
+S-040,sa-model-mapping,api/sa_models.py,—,pending,no,Read-only analysis — map SA models to Django models
+S-040,sa-model-mapping,models/,models/,pending,no,Extend Django models if gaps found
+S-041,sa-endpoint-1,api/endpoint_1.py,api/endpoint_1.py,pending,no,Replace SA queries with Django ORM
+S-041,sa-endpoint-1,tests/test_endpoint_1.py,tests/test_endpoint_1.py,pending,no,Update tests
+S-042,sa-endpoint-2,api/endpoint_2.py,api/endpoint_2.py,pending,no,Replace SA queries with Django ORM
+S-042,sa-endpoint-2,tests/test_endpoint_2.py,tests/test_endpoint_2.py,pending,no,Update tests
+S-043,sa-endpoint-3,api/endpoint_3.py,api/endpoint_3.py,pending,no,Replace SA queries with Django ORM
+S-043,sa-endpoint-3,tests/test_endpoint_3.py,tests/test_endpoint_3.py,pending,no,Update tests
+S-050,sa-removal,api/sa_models.py,—,pending,yes,Delete SA models file
+S-050,sa-removal,api/sa_session.py,—,pending,yes,Delete SA session config
+S-050,sa-removal,settings.py,settings.py,pending,no,Remove SQLALCHEMY_* config
+S-050,sa-removal,requirements.txt,requirements.txt,pending,no,Remove SQLAlchemy dependency
+S-050,sa-removal,pyproject.toml,pyproject.toml,pending,no,Remove SQLAlchemy dependency
+S-051,final-cleanup,utils/db.py,utils/db.py,pending,maybe,Remove unused raw SQL helpers
+S-051,final-cleanup,utils/sql_helpers.py,—,pending,yes,Delete if fully unused
+S-051,final-cleanup,scripts/migration_guard.sh,scripts/migration_guard.sh,pending,no,Finalize ratchets — zero budgets become permanent denylists

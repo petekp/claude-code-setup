@@ -1,0 +1,216 @@
+# Migration Slices
+# Status lifecycle: proposed -> in_progress -> done
+
+slices:
+  - id: slice-001
+    name: "Create shared auth middleware and test harness"
+    status: proposed
+    dependencies: []
+    touched_paths:
+      - src/middleware/auth.ts
+      - src/middleware/auth.test.ts
+      - src/types/auth.ts
+    contracts:
+      added:
+        - "src/middleware/auth.ts — withAuth() middleware function"
+        - "src/types/auth.ts — AuthenticatedRequest, JWTClaims, AuthError types"
+      changed: []
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    replay_scenarios:
+      - "Valid JWT -> 200 with parsed claims on req.user"
+      - "Missing Authorization header -> 401 with {error: 'Missing authorization header'}"
+      - "Malformed token -> 401 with {error: 'Invalid token'}"
+      - "Expired token -> 401 with {error: 'Token expired'}"
+      - "Token with invalid signature -> 401 with {error: 'Invalid token'}"
+    smoke_scenarios:
+      - "Import withAuth in a test route and verify it passes req.user to handler"
+    risks:
+      - "JWT library API differences — verify which jwt.verify options each route currently uses before standardizing"
+    notes: >
+      This slice creates the canonical middleware but does NOT touch any existing route files.
+      It establishes the auth contract that all subsequent slices build on.
+      Must catalog the 8 variations of JWT validation to ensure the middleware handles
+      all legitimate cases (different claim shapes, error handling approaches, etc.).
+
+  - id: slice-002
+    name: "Migrate user-facing routes (users, profile, settings)"
+    status: proposed
+    dependencies: [slice-001]
+    touched_paths:
+      - src/api/users.ts
+      - src/api/profile.ts
+      - src/api/settings.ts
+      - __tests__/api/users.test.ts
+      - __tests__/api/profile.test.ts
+      - __tests__/api/settings.test.ts
+    contracts:
+      added:
+        - "__tests__/api/users.test.ts — behavioral tests for /api/users"
+        - "__tests__/api/profile.test.ts — behavioral tests for /api/profile"
+        - "__tests__/api/settings.test.ts — behavioral tests for /api/settings"
+      changed:
+        - "src/api/users.ts — replace inline JWT with withAuth()"
+        - "src/api/profile.ts — replace inline JWT with withAuth()"
+        - "src/api/settings.ts — replace inline JWT with withAuth()"
+      removed:
+        - "Inline jwt.verify blocks in users.ts, profile.ts, settings.ts"
+        - "Snapshot test files for these three routes (old versions)"
+    denylist_patterns:
+      - "jwt\\.verify.*src/api/users\\.ts"
+      - "jwt\\.verify.*src/api/profile\\.ts"
+      - "jwt\\.verify.*src/api/settings\\.ts"
+      - "toMatchSnapshot.*users"
+      - "toMatchSnapshot.*profile"
+      - "toMatchSnapshot.*settings"
+    deletion_targets:
+      - "Inline jwt.verify calls in src/api/users.ts"
+      - "Inline jwt.verify calls in src/api/profile.ts"
+      - "Inline jwt.verify calls in src/api/settings.ts"
+      - "All .toMatchSnapshot() assertions in the test files for these routes"
+    replay_scenarios:
+      - "GET /api/users with valid token -> 200 with user list"
+      - "GET /api/users without token -> 401"
+      - "GET /api/profile with valid token -> 200 with user profile"
+      - "PUT /api/settings with valid token -> 200 with updated settings"
+      - "PUT /api/settings with invalid body -> 400 (auth passes, validation fails)"
+    smoke_scenarios:
+      - "Full CRUD flow: authenticate -> get profile -> update settings -> verify update"
+    risks:
+      - "profile.ts may have custom claim extraction that differs from the standard middleware — verify before migrating"
+    notes: >
+      User-facing routes first because they are the most commonly hit and have the clearest
+      auth requirements (all require a valid user JWT, no special roles). This is the
+      lowest-risk batch to start with.
+
+  - id: slice-003
+    name: "Migrate data routes (posts, comments, uploads)"
+    status: proposed
+    dependencies: [slice-001]
+    touched_paths:
+      - src/api/posts.ts
+      - src/api/comments.ts
+      - src/api/uploads.ts
+      - __tests__/api/posts.test.ts
+      - __tests__/api/comments.test.ts
+      - __tests__/api/uploads.test.ts
+    contracts:
+      added:
+        - "__tests__/api/posts.test.ts — behavioral tests for /api/posts"
+        - "__tests__/api/comments.test.ts — behavioral tests for /api/comments"
+        - "__tests__/api/uploads.test.ts — behavioral tests for /api/uploads"
+      changed:
+        - "src/api/posts.ts — replace inline JWT with withAuth()"
+        - "src/api/comments.ts — replace inline JWT with withAuth()"
+        - "src/api/uploads.ts — replace inline JWT with withAuth()"
+      removed:
+        - "Inline jwt.verify blocks in posts.ts, comments.ts, uploads.ts"
+        - "Snapshot test files for these three routes (old versions)"
+    denylist_patterns:
+      - "jwt\\.verify.*src/api/posts\\.ts"
+      - "jwt\\.verify.*src/api/comments\\.ts"
+      - "jwt\\.verify.*src/api/uploads\\.ts"
+      - "toMatchSnapshot.*posts"
+      - "toMatchSnapshot.*comments"
+      - "toMatchSnapshot.*uploads"
+    deletion_targets:
+      - "Inline jwt.verify calls in src/api/posts.ts"
+      - "Inline jwt.verify calls in src/api/comments.ts"
+      - "Inline jwt.verify calls in src/api/uploads.ts"
+      - "All .toMatchSnapshot() assertions in the test files for these routes"
+    replay_scenarios:
+      - "POST /api/posts with valid token -> 201 with created post"
+      - "GET /api/posts without token -> 401"
+      - "POST /api/comments with valid token -> 201 with created comment"
+      - "POST /api/uploads with valid token and file -> 200 with upload URL"
+      - "POST /api/uploads without token -> 401"
+    smoke_scenarios:
+      - "Create post -> add comment -> verify comment appears on post"
+    risks:
+      - "uploads.ts may have multipart form handling that interacts with auth header parsing — test carefully"
+    notes: >
+      Data routes are independent from user routes so this slice can run in parallel with
+      slice-002 if desired. The uploads route is the highest risk here due to potential
+      multipart/auth header interaction.
+
+  - id: slice-004
+    name: "Migrate admin routes (admin, webhooks)"
+    status: proposed
+    dependencies: [slice-001]
+    touched_paths:
+      - src/api/admin.ts
+      - src/api/webhooks.ts
+      - __tests__/api/admin.test.ts
+      - __tests__/api/webhooks.test.ts
+    contracts:
+      added:
+        - "__tests__/api/admin.test.ts — behavioral tests for /api/admin"
+        - "__tests__/api/webhooks.test.ts — behavioral tests for /api/webhooks"
+        - "src/middleware/auth.ts — withAdminAuth() variant (if admin routes check roles)"
+      changed:
+        - "src/api/admin.ts — replace inline JWT with withAuth() or withAdminAuth()"
+        - "src/api/webhooks.ts — replace inline JWT with withAuth()"
+      removed:
+        - "Inline jwt.verify blocks in admin.ts, webhooks.ts"
+        - "Snapshot test files for these two routes (old versions)"
+    denylist_patterns:
+      - "jwt\\.verify.*src/api/admin\\.ts"
+      - "jwt\\.verify.*src/api/webhooks\\.ts"
+      - "toMatchSnapshot.*admin"
+      - "toMatchSnapshot.*webhooks"
+    deletion_targets:
+      - "Inline jwt.verify calls in src/api/admin.ts"
+      - "Inline jwt.verify calls in src/api/webhooks.ts"
+      - "All .toMatchSnapshot() assertions in the test files for these routes"
+    replay_scenarios:
+      - "GET /api/admin with admin token -> 200"
+      - "GET /api/admin with regular user token -> 403"
+      - "GET /api/admin without token -> 401"
+      - "POST /api/webhooks with valid token -> 200"
+      - "POST /api/webhooks with webhook secret header -> 200 (if applicable)"
+    smoke_scenarios:
+      - "Admin login -> access admin endpoint -> verify admin-only data"
+    risks:
+      - "admin.ts likely has role-based checks beyond basic JWT validation — may need withAdminAuth() variant"
+      - "webhooks.ts may accept webhook signatures instead of/in addition to JWT — investigate before assuming standard auth"
+    notes: >
+      Admin routes are last because they likely have the most complex auth requirements
+      (role checks, possibly different token types). The webhooks route is a wildcard —
+      it may use webhook signatures rather than JWT, which would make it out of scope
+      for the auth middleware consolidation.
+
+  - id: slice-005
+    name: "Delete snapshot infrastructure and lock ratchets to zero"
+    status: proposed
+    dependencies: [slice-002, slice-003, slice-004]
+    touched_paths:
+      - __tests__/__snapshots__/
+      - jest.config.js
+      - scripts/guard.sh
+    contracts:
+      added: []
+      changed:
+        - "scripts/guard.sh — all ratchet budgets set to 0"
+      removed:
+        - "__tests__/__snapshots__/ — entire snapshot directory"
+        - "Any snapshot-related jest configuration (snapshotSerializers, etc.)"
+    denylist_patterns:
+      - "toMatchSnapshot"
+      - "toMatchInlineSnapshot"
+      - "__snapshots__"
+      - "jwt\\.verify.*src/api/"
+    deletion_targets:
+      - "__tests__/__snapshots__/ (entire directory)"
+      - "Any .snap files anywhere in the repo"
+    replay_scenarios:
+      - "Guard script runs clean with all budgets at 0"
+      - "Full test suite passes with zero snapshot tests"
+    smoke_scenarios:
+      - "npm test passes with no snapshot-related output"
+    risks:
+      - "There may be snapshot tests outside __tests__/ (co-located test files) — grep to find all"
+    notes: >
+      Final cleanup slice. By this point, all routes use the shared middleware and all tests
+      are behavioral. This slice removes the last vestiges of the old approach and locks
+      the ratchets at zero permanently. The guard script becomes a permanent regression guard.

@@ -1,0 +1,47 @@
+{
+  "eval_id": 2,
+  "eval_name": "cli-plugin-system",
+  "prompt": "We need to implement a plugin system for our CLI tool so third-party developers can extend it with custom commands. The tool is written in TypeScript.",
+  "assertions": [
+    {
+      "id": "paradigm_count",
+      "text": "At least 3 fundamentally different paradigms explored (e.g., dynamic imports vs subprocess/IPC vs hook/event systems vs middleware chains — not just variations of one pattern)",
+      "type": "quantitative"
+    },
+    {
+      "id": "approach_count",
+      "text": "At least 5 total concrete approaches documented across paradigms",
+      "type": "quantitative"
+    },
+    {
+      "id": "problem_reframing",
+      "text": "Problem is restated beyond the surface request — considers what 'extensibility' actually means (discoverability, security, versioning, DX)",
+      "type": "qualitative"
+    },
+    {
+      "id": "assumption_surfacing",
+      "text": "At least 2 explicit assumptions identified (e.g., trust model for plugins, distribution mechanism, backward compatibility needs)",
+      "type": "quantitative"
+    },
+    {
+      "id": "tradeoff_matrix",
+      "text": "A structured comparison of approaches against specific criteria like security, DX, performance, ecosystem maturity",
+      "type": "qualitative"
+    },
+    {
+      "id": "non_obvious",
+      "text": "At least 1 non-obvious approach explored (e.g., WASM-based sandboxing, convention-over-configuration, JSON-RPC protocol, code generation)",
+      "type": "qualitative"
+    },
+    {
+      "id": "evidence_based_selection",
+      "text": "Final recommendation cites specific tradeoffs or evidence, not just 'this is how most CLIs do it'",
+      "type": "qualitative"
+    },
+    {
+      "id": "rejection_reasoning",
+      "text": "Rejected alternatives have documented reasons for why they were not chosen",
+      "type": "qualitative"
+    }
+  ]
+}
