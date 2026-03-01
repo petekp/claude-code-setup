@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Sets up symlinks from ~/.claude to this repository.
+# Sets up symlinks from ~/.claude and ~/.codex to this repository.
 #
 # What this does:
 #   ~/.claude/skills       → repo/skills
@@ -11,6 +11,7 @@
 #   ~/.claude/settings.json → repo/settings.json
 #   ~/.claude/statusline-command.sh ← repo/statusline-command.sh (copied)
 #   ~/.mcp.json            → repo/.mcp.json
+#   ~/.codex/skills/<each> → repo/skills/<each> (individual symlinks)
 #
 # After running this, edits in either location are the same file.
 # Commit and push from this repo as usual.
@@ -46,6 +47,7 @@ fi
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
+CODEX_DIR="$HOME/.codex"
 
 DIRS_TO_LINK=(skills commands agents hooks scripts)
 
@@ -281,6 +283,101 @@ unlink_home_file() {
     fi
 }
 
+link_codex_skills() {
+    local skills_source="$REPO_DIR/skills"
+    local exclude_file="$REPO_DIR/codex-exclude"
+
+    if [[ ! -d "$skills_source" ]]; then
+        echo "  ⏭  No skills directory in repo, skipping"
+        return
+    fi
+
+    if [[ ! -d "$CODEX_DIR" ]]; then
+        echo "  ⏭  ~/.codex not found (Codex not installed?), skipping"
+        return
+    fi
+
+    # Load exclude list
+    local -a excludes=()
+    if [[ -f "$exclude_file" ]]; then
+        while IFS= read -r line; do
+            line="${line%%#*}"        # strip comments
+            line="${line// /}"        # strip whitespace
+            [[ -n "$line" ]] && excludes+=("$line")
+        done < "$exclude_file"
+    fi
+
+    mkdir -p "$CODEX_DIR/skills"
+
+    local count=0
+    local skipped=0
+    for skill_dir in "$skills_source"/*/; do
+        [[ ! -d "$skill_dir" ]] && continue
+        local name=$(basename "$skill_dir")
+        [[ "$name" == .* ]] && continue
+
+        # Check exclude list
+        local excluded=false
+        for ex in "${excludes[@]}"; do
+            if [[ "$name" == "$ex" ]]; then
+                excluded=true
+                break
+            fi
+        done
+        if $excluded; then
+            skipped=$((skipped + 1))
+            continue
+        fi
+
+        local target="$CODEX_DIR/skills/$name"
+
+        if [[ -L "$target" ]]; then
+            local current_target=$(readlink "$target")
+            if [[ "$current_target" == "$skill_dir" || "$current_target" == "${skill_dir%/}" ]]; then
+                count=$((count + 1))
+                continue
+            fi
+        fi
+
+        if [[ -d "$target" && ! -L "$target" ]]; then
+            local backup="$target.backup.$(date +%Y%m%d-%H%M%S)"
+            if $DRY_RUN; then
+                echo "  [dry-run] Would backup $name → $backup"
+            else
+                mv "$target" "$backup"
+            fi
+        fi
+
+        if $DRY_RUN; then
+            echo "  [dry-run] Would link: $name"
+        else
+            ln -sf "$skill_dir" "$target"
+        fi
+        count=$((count + 1))
+    done
+    echo "  ✓  $count skills linked, $skipped excluded (preserving .system/)"
+}
+
+unlink_codex_skills() {
+    local skills_source="$REPO_DIR/skills"
+
+    if [[ ! -d "$CODEX_DIR/skills" ]]; then
+        echo "  ⏭  No Codex skills directory found"
+        return
+    fi
+
+    local count=0
+    for target in "$CODEX_DIR/skills"/*/; do
+        [[ ! -L "${target%/}" ]] && continue
+        local link_target=$(readlink "${target%/}")
+        if [[ "$link_target" == "$skills_source"* ]]; then
+            rm "${target%/}"
+            count=$((count + 1))
+        fi
+    done
+    echo "  ✓  Removed $count Codex skill symlinks"
+}
+
 if [[ "$1" == "--undo" ]]; then
     echo "Removing symlinks and restoring backups..."
     echo ""
@@ -303,11 +400,14 @@ if [[ "$1" == "--undo" ]]; then
     for file in "${HOME_FILES_TO_LINK[@]}"; do
         unlink_home_file "$file"
     done
+    echo ""
+    echo "Codex skills:"
+    unlink_codex_skills
 else
     if $DRY_RUN; then
-        echo "Previewing Claude Code configuration setup (no changes will be made)..."
+        echo "Previewing Claude Code + Codex configuration setup (no changes will be made)..."
     else
-        echo "Setting up Claude Code configuration..."
+        echo "Setting up Claude Code + Codex configuration..."
     fi
     echo ""
     echo "Symlinking directories:"
@@ -329,6 +429,9 @@ else
     for file in "${HOME_FILES_TO_LINK[@]}"; do
         link_home_file "$file"
     done
+    echo ""
+    echo "Codex skills (individual symlinks):"
+    link_codex_skills
     echo ""
     if $DRY_RUN; then
         echo "Dry run complete. Run without --dry-run to apply changes."

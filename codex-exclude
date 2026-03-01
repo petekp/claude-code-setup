@@ -1,0 +1,10 @@
+# Skills to skip when linking to Codex
+# (one per line, lines starting with # are ignored)
+#
+# These conflict with Codex built-ins, MCP servers, or curated skills.
+# Add a skill name here if it shows up as a duplicate in Codex.
+
+assistant-ui
+find-skills
+ai-sdk
+skill-creator
