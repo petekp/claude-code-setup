@@ -1,73 +1,5 @@
 {
-  "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "stable",
-  "enabledPlugins": {
-    "agent-sdk-dev@claude-plugins-official": true,
-    "code-review@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true,
-    "github@claude-plugins-official": false,
-    "plan-export@cc-marketplace": true,
-    "playwright@claude-plugins-official": true,
-    "plugin-dev@claude-plugins-official": true,
-    "ralph-loop@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true,
-    "safety-net@cc-marketplace": true,
-    "security-guidance@claude-plugins-official": true,
-    "supabase@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "vercel@claude-plugins-official": true
-  },
-  "feedbackSurveyState": {
-    "lastShownTime": 1753981396935
-  },
-  "hooks": {
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "command": "~/.claude/scripts/hud-state-tracker.sh SessionEnd",
-            "type": "command"
-          }
-        ],
-        "matcher": ""
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "command": "~/.claude/scripts/hud-state-tracker.sh SessionStart",
-            "type": "command"
-          }
-        ],
-        "matcher": ""
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "command": "~/.claude/scripts/hud-state-tracker.sh Stop",
-            "type": "command"
-          }
-        ],
-        "matcher": ""
-      }
-    ]
-  },
-  "minimumVersion": "2.1.9",
-  "model": "opus",
   "permissions": {
-    "additionalDirectories": [
-      "/Users/petepetrash/Dropbox/Screenshots",
-      "~/.claude/skills",
-      "~/Code"
-    ],
     "allow": [
       "Edit",
       "Search",
@@ -287,8 +219,6 @@
       "Bash(claude doctor)",
       "Bash(/opt/homebrew/bin/claude *)"
     ],
-    "ask": [],
-    "defaultMode": "acceptEdits",
     "deny": [
       "**/.env*",
       "**/*.env",
@@ -301,7 +231,78 @@
       "**/build/**",
       "**/*.log"
     ],
+    "ask": [],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "/Users/petepetrash/Dropbox/Screenshots",
+      "~/.claude/skills",
+      "~/Code"
+    ],
     "respectGitignore": true
   },
-  "skipDangerousModePermissionPrompt": true
+  "model": "opus",
+  "hooks": {
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/hud-state-tracker.sh SessionEnd"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/hud-state-tracker.sh SessionStart"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/hud-state-tracker.sh Stop"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "agent-sdk-dev@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "github@claude-plugins-official": false,
+    "plan-export@cc-marketplace": true,
+    "playwright@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "safety-net@cc-marketplace": true,
+    "security-guidance@claude-plugins-official": true,
+    "supabase@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "vercel@claude-plugins-official": true,
+    "serena@claude-plugins-official": true
+  },
+  "alwaysThinkingEnabled": true,
+  "autoUpdatesChannel": "stable",
+  "minimumVersion": "2.1.9",
+  "skipDangerousModePermissionPrompt": true,
+  "feedbackSurveyState": {
+    "lastShownTime": 1753981396935
+  }
 }
