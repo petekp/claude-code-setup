@@ -1,0 +1,1 @@
+Resumed the in-flight analytics migration: preserved slice-001 (done) and slice-002 (in_progress), added slices 003–004 for env bridge removal and docs cleanup, defined ratchet budgets and denylist patterns across all slices, and wrote all 9 deliverables to `outputs/` including a SHIP_CHECKLIST.md that gates the migration to a pristine ready-to-ship state.

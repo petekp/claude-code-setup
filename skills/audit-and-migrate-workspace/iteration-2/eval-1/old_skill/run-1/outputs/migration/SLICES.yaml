@@ -1,0 +1,95 @@
+# Migration Slices
+# Status lifecycle: proposed → in_progress → done
+
+slices:
+  - id: slice-001
+    name: "Page-view call-site migration"
+    status: done
+    dependencies: []
+    touched_paths:
+      - packages/web/src/lib/analytics-client.ts
+    contracts:
+      added:
+        - "trackPageView(path, source) in analytics-client.ts"
+      changed: []
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    replay_scenarios:
+      - "web home page load emits page_view via new client"
+    smoke_scenarios: []
+    risks: []
+    notes: "Page views moved to new client. Confirmed in production per HANDOFF 2026-02-28."
+
+  - id: slice-002
+    name: "Signup tracking migration"
+    status: in_progress
+    dependencies:
+      - slice-001
+    touched_paths:
+      - packages/web/src/lib/legacy-analytics.ts
+      - packages/web/src/lib/analytics-client.ts
+    contracts:
+      added:
+        - "trackSignup(email) in analytics-client.ts"
+      changed: []
+      removed:
+        - "trackLegacySignup(email) from legacy-analytics.ts"
+    denylist_patterns:
+      - "trackLegacySignup"
+      - "import.*legacy-analytics"
+    deletion_targets:
+      - packages/web/src/lib/legacy-analytics.ts
+    replay_scenarios:
+      - "signup flow emits signup event via new client"
+    smoke_scenarios:
+      - "complete signup flow end-to-end"
+    risks:
+      - "Dashboard parity not verified — confirm downstream dashboards accept new event shape"
+    notes: "Started per HANDOFF 2026-02-28. Legacy signup event still emitted. Must add trackSignup to analytics-client.ts, migrate call sites, delete legacy-analytics.ts."
+
+  - id: slice-003
+    name: "Remove legacy env bridge"
+    status: proposed
+    dependencies:
+      - slice-002
+    touched_paths:
+      - packages/shared/src/env.ts
+    contracts:
+      added: []
+      changed:
+        - "env object in env.ts (remove legacy keys)"
+      removed:
+        - "LEGACY_ANALYTICS_WRITE_KEY from env.ts"
+        - "ENABLE_LEGACY_ANALYTICS_BRIDGE from env.ts"
+    denylist_patterns:
+      - "LEGACY_ANALYTICS_WRITE_KEY"
+      - "ENABLE_LEGACY_ANALYTICS_BRIDGE"
+    deletion_targets: []
+    replay_scenarios: []
+    smoke_scenarios:
+      - "app starts without legacy env vars set"
+    risks:
+      - "Any untracked consumer of the bridge flag will break — grep codebase before removing"
+    notes: "Per Decision 3. Clean env.ts of all legacy analytics references."
+
+  - id: slice-004
+    name: "Docs and residue cleanup"
+    status: proposed
+    dependencies:
+      - slice-003
+    touched_paths:
+      - docs/analytics-migration.md
+    contracts:
+      added: []
+      changed:
+        - "docs/analytics-migration.md (rewrite to describe completed state)"
+      removed: []
+    denylist_patterns:
+      - "legacy-analytics\\.ts"
+      - "LEGACY_ANALYTICS_WRITE_KEY"
+    deletion_targets: []
+    replay_scenarios: []
+    smoke_scenarios: []
+    risks: []
+    notes: "Per Decision 4. Update or remove migration doc. Remove README references to legacy write key. Final residue sweep."

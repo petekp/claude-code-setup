@@ -1,0 +1,12 @@
+{
+  "eval_id": 0,
+  "eval_name": "legacy-auth-fresh-audit",
+  "prompt": "Audit the fixture repo at <FIXTURE_ROOT> and create a migration control plane under <OUTPUT_DIR>/migration without changing application code. The goal is to migrate from legacy auth to token auth while making sure the codebase ends pristine and ready to ship. Write CHARTER.md, DECISIONS.md, SLICES.yaml, MAP.csv, SHIP_CHECKLIST.md, AUDIT.md, and HANDOFF.md. Be explicit about critical workflows, cleanup of stale docs/config/scripts/env, residue sweeps, and a final convergence slice.",
+  "assertions": [
+    "The output creates CHARTER.md, SLICES.yaml, MAP.csv, SHIP_CHECKLIST.md, AUDIT.md, and HANDOFF.md under the requested output directory.",
+    "The migration plan includes a final convergence or closeout slice rather than stopping at implementation slices.",
+    "The audit and slices explicitly account for stale docs, scripts, env/config, and tests alongside source code.",
+    "The output defines critical workflows and a ship gate instead of only describing technical changes.",
+    "The slice plan includes residue cleanup or residue queries, not just predeclared deletion targets."
+  ]
+}

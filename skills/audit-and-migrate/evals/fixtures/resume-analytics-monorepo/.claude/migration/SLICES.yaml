@@ -1,0 +1,40 @@
+slices:
+  - id: slice-001
+    name: page view migration
+    status: done
+    dependencies: []
+    touched_paths:
+      - packages/web/src/lib/analytics-client.ts
+    contracts:
+      added: []
+      changed:
+        - packages/web/src/lib/analytics-client.ts
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    replay_scenarios:
+      - web home page load
+    smoke_scenarios: []
+    risks: []
+    notes: "Page views moved first."
+  - id: slice-002
+    name: signup tracking migration
+    status: in_progress
+    dependencies:
+      - slice-001
+    touched_paths:
+      - packages/web/src/lib/legacy-analytics.ts
+      - packages/shared/src/env.ts
+    contracts:
+      added: []
+      changed:
+        - packages/web/src/lib/legacy-analytics.ts
+      removed: []
+    denylist_patterns: []
+    deletion_targets:
+      - packages/web/src/lib/legacy-analytics.ts
+    replay_scenarios: []
+    smoke_scenarios: []
+    risks:
+      - dashboard parity not verified
+    notes: "Need to clean up the env bridge later."

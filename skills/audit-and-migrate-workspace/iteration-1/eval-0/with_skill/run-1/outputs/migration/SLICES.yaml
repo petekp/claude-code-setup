@@ -1,0 +1,218 @@
+# Migration Slices
+# Status lifecycle: proposed -> in_progress -> done
+
+slices:
+  - id: slice-001
+    type: implementation
+    name: "Restore runnable verification baseline"
+    status: proposed
+    dependencies: []
+    touched_paths:
+      - "package.json"
+      - "tsconfig.json"
+      - "eslint.config.js"
+      - "guard.sh"
+      - "package-lock.json"
+    contracts:
+      added:
+        - "tsconfig.json"
+        - "eslint.config.js"
+        - "guard.sh"
+      changed:
+        - "package.json scripts and devDependencies"
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    temp_artifacts: []
+    docs_to_update: []
+    dependency_changes:
+      - "Add the repo-local toolchain required for `npm test`, `npm run lint`, and `npm run build`."
+      - "Create or update the lockfile so verification is reproducible."
+    residue_queries: []
+    verification_commands:
+      - "./guard.sh --status"
+      - "npm run lint"
+      - "npm run build"
+      - "npm test"
+    replay_scenarios: []
+    smoke_scenarios: []
+    manual_checks: []
+    risks:
+      - "Tooling churn must stay tightly scoped so the slice does not become a generic repo modernization effort."
+      - "ESLint config is currently absent, so lint may still fail after installing dependencies unless config is added explicitly."
+    notes: >-
+      Current baseline failures are concrete: `vitest` missing, `eslint` missing,
+      and `tsconfig.json` missing. This slice exists so later auth slices can prove
+      correctness with runnable commands instead of assumptions.
+
+  - id: slice-002
+    type: implementation
+    name: "Switch the current-user workflow to token-only auth"
+    status: proposed
+    dependencies:
+      - "slice-001"
+    touched_paths:
+      - "src/routes/users.ts"
+      - "src/auth/token-auth.ts"
+      - "tests/users-auth.test.ts"
+    contracts:
+      added: []
+      changed:
+        - "getCurrentUser auth precedence and unauthorized behavior"
+        - "TokenClaims contract if needed to preserve admin semantics"
+        - "Behavioral tests for token success, unauthorized failure, and admin-capable callers"
+      removed:
+        - "Legacy-preferred auth behavior in `getCurrentUser`"
+    denylist_patterns:
+      - 'source: "legacy"'
+      - "readLegacySession\\(headers\\.cookie\\)"
+    deletion_targets:
+      - "Legacy branch in `src/routes/users.ts`"
+      - 'The test case asserting `prefers the legacy session cookie`'
+    temp_artifacts: []
+    docs_to_update:
+      - "docs/auth.md"
+    dependency_changes: []
+    residue_queries:
+      - 'rg -n "readLegacySession|legacy_session|source: \"legacy\"|prefers the legacy session cookie" src tests'
+    verification_commands:
+      - "npm test"
+      - "npm run build"
+    replay_scenarios:
+      - "Bearer token only -> returns current user ID from token claims"
+      - "Missing or malformed bearer token -> throws `unauthorized`"
+      - "Admin-capable token -> exposes the chosen admin claim or scope contract"
+    smoke_scenarios:
+      - "Current-user request succeeds with a bearer token and no cookie"
+    manual_checks: []
+    risks:
+      - "Current legacy admin semantics are implicit and can be lost if the token contract is not expanded before deleting the legacy branch."
+      - "Removing legacy precedence can break clients still relying on cookies if rollout is not coordinated."
+    notes: >-
+      Start with failing behavioral tests. The existing suite currently protects the
+      behavior being removed, so the slice must rewrite that expectation before
+      changing production code.
+
+  - id: slice-003
+    type: implementation
+    name: "Delete legacy auth code and operational residue"
+    status: proposed
+    dependencies:
+      - "slice-002"
+    touched_paths:
+      - "src/auth/legacy-auth.ts"
+      - "docs/auth.md"
+      - ".env.example"
+      - "scripts/seed-legacy-auth.sh"
+    contracts:
+      added: []
+      changed:
+        - "Auth documentation and local setup instructions"
+        - "Environment example to reflect token-only configuration"
+      removed:
+        - "LegacyUser and readLegacySession"
+        - "Legacy cookie seeding script"
+        - "Legacy cookie environment variables"
+    denylist_patterns:
+      - "legacy_session"
+      - "readLegacySession"
+      - "LEGACY_AUTH_SECRET"
+      - "LEGACY_COOKIE_NAME"
+      - "seed-legacy-auth"
+    deletion_targets:
+      - "src/auth/legacy-auth.ts"
+      - "scripts/seed-legacy-auth.sh"
+      - "LEGACY_AUTH_SECRET from `.env.example`"
+      - "LEGACY_COOKIE_NAME from `.env.example`"
+      - "Legacy cookie instructions from `docs/auth.md`"
+    temp_artifacts: []
+    docs_to_update:
+      - "docs/auth.md"
+      - ".env.example"
+    dependency_changes:
+      - "Remove any legacy-cookie-specific helpers or packages if added elsewhere during implementation."
+    residue_queries:
+      - 'rg -n "legacy_session|readLegacySession|LEGACY_AUTH_SECRET|LEGACY_COOKIE_NAME|seed-legacy-auth" src tests docs scripts .env.example'
+      - 'rg -n "mobile clients do not send bearer tokens yet" docs'
+    verification_commands:
+      - "./guard.sh"
+      - "npm run lint"
+      - "npm run build"
+      - "npm test"
+    replay_scenarios:
+      - "Local auth setup follows token-only documentation with no cookie seeding step"
+    smoke_scenarios:
+      - "Token-authenticated current-user flow remains green after legacy file/script deletion"
+    manual_checks:
+      - "Confirm mobile or other external clients named in docs now send bearer tokens before release."
+      - "Confirm admin-capable local QA uses token claims or scopes rather than cookie payloads."
+    risks:
+      - "Docs currently state that mobile clients do not send bearer tokens; deleting the fallback without rollout confirmation can cause a release regression."
+      - "Hidden operational dependencies on `LEGACY_*` env vars may exist outside the fixture and must be checked before real-world rollout."
+    notes: >-
+      This slice owns code, docs, env, and script cleanup together. No stale auth
+      guidance survives into a follow-up PR.
+
+  - id: slice-004
+    type: convergence
+    name: "Converge the repo and execute the ship gate"
+    status: proposed
+    dependencies:
+      - "slice-001"
+      - "slice-002"
+      - "slice-003"
+    touched_paths:
+      - "package.json"
+      - "package-lock.json"
+      - "guard.sh"
+      - "src/auth"
+      - "src/routes"
+      - "tests"
+      - "docs/auth.md"
+      - ".env.example"
+    contracts:
+      added: []
+      changed:
+        - "Release-gate scripts, lockfile, and documentation reconciled with the final token-only architecture"
+      removed:
+        - "Any temporary adapters, feature flags, debug helpers, or migration-only artifacts introduced earlier"
+    denylist_patterns:
+      - "legacy_session"
+      - "readLegacySession"
+      - "LEGACY_AUTH_SECRET"
+      - "LEGACY_COOKIE_NAME"
+      - "seed-legacy-auth"
+      - 'source: "legacy"'
+    deletion_targets:
+      - "Any temporary dual-auth adapters or fallback flags created during migration"
+      - "Any migration-only debug logging or scratch files"
+    temp_artifacts:
+      - "Temporary rollout notes or scaffolding created in implementation slices, if any"
+    docs_to_update:
+      - "docs/auth.md"
+      - "package.json scripts"
+      - "Any developer setup or CI documentation introduced during the migration"
+    dependency_changes:
+      - "Prune unused packages and reconcile the lockfile after legacy auth removal."
+    residue_queries:
+      - 'rg -n "legacy_session|readLegacySession|LEGACY_AUTH_SECRET|LEGACY_COOKIE_NAME|seed-legacy-auth|source: \"legacy\"" .'
+      - 'rg -n "TODO\\(migration\\)|FIXME\\(migration\\)|HACK\\(migration\\)|temporary auth|dual-auth|auth fallback" .'
+    verification_commands:
+      - "./guard.sh --status"
+      - "./guard.sh"
+      - "npm run lint"
+      - "npm run build"
+      - "npm test"
+    replay_scenarios:
+      - "Bearer token current-user scenario passes from the main auth test suite"
+    smoke_scenarios:
+      - "No cookie bootstrap is required for local QA"
+      - "Repo-wide residue queries return zero matches"
+    manual_checks:
+      - "Reconfirm external client readiness for token-only auth."
+      - "Reconfirm admin-capable caller behavior after the final cleanup sweep."
+    risks:
+      - "Release can still fail if docs, env examples, or hidden operational references drift out of sync with the code."
+    notes: >-
+      Ready to ship means more than green tests: the repo-wide residue sweep is clean,
+      release-gate commands are runnable, and no stale legacy auth surface remains.

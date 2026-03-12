@@ -1,0 +1,8 @@
+slice_id,capability,current_path,target_path,status,delete_in_pr,notes
+slice-001,flaky test,tests/integration/test_retry_worker.py,tests/integration/test_retry_worker.py,pending,no,Rewrite tests to use FakeClock; remove timing assertions
+slice-002,dead helper,tests/helpers/scenario_factory.py,,pending,yes,Only consumer is the flaky test removed in slice-001
+slice-002,retry script,scripts/run-flaky-tests.sh,,pending,yes,Retry-until-pass script; unnecessary with deterministic tests
+slice-002,stale docs,docs/testing.md,docs/testing.md,pending,no,Rewrite to describe deterministic approach
+slice-003,guard script,,guard.sh,pending,no,New file: CI ratchet enforcement
+n/a,production code,src/retry_worker.py,src/retry_worker.py,unchanged,no,Read-only reference; already supports clock injection
+n/a,project config,pyproject.toml,pyproject.toml,unchanged,no,No changes needed

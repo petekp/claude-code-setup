@@ -1,0 +1,171 @@
+{
+  "skill_name": "audit-and-migrate",
+  "description": "Slice-based, evidence-driven framework for systematically auditing and migrating codebases with accumulated technical debt. Use whenever facing a large refactoring effort, codebase consolidation, tech debt paydown, test suite overhaul, dependency standardization, architecture cleanup, or any multi-session migration. Also use when asked to \"audit the codebase\", \"migrate from X to Y\", \"pay down tech debt\", \"consolidate duplicated code\", \"standardize on one approach\", \"systematic refactoring\", or when a migration effort needs built-in cleanup, residue sweeps, and a final ship-readiness gate so the codebase ends in a pristine, ready-to-ship state instead of requiring follow-up cleanup passes. If someone mentions ratchets, slices, migration playbook, anti-vestigial discipline, convergence, or release cleanup, this is definitely the skill they want.",
+  "results": [
+    {
+      "query": "We've got a TypeScript monorepo where three packages each have their own auth layer, and I want to standardize on one approach without making the repo messier. Please map the migration, add guardrails, and make sure cleanup is built into the plan.",
+      "should_trigger": true,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": false
+    },
+    {
+      "query": "This codebase has gone through several agent-written refactors and now there are duplicate paths, stale configs, and random adapters everywhere. I want a structured migration plan with slices, cleanup, and a real 'ready to ship' closeout.",
+      "should_trigger": true,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": false
+    },
+    {
+      "query": "I need to migrate our Next.js app off a bunch of old API wrappers and ad hoc fetch helpers. There are stale docs, duplicate clients, and half-finished prior refactors all over the repo. Can you audit it and give me a slice-by-slice migration plan that won't leave cruft behind?",
+      "should_trigger": true,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": false
+    },
+    {
+      "query": "Can you help me systematically migrate our flaky React test suite away from sleep-based tests? I don't want a one-off fix, I want a playbook with ratchets and a way for future agent sessions to continue cleanly.",
+      "should_trigger": true,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": false
+    },
+    {
+      "query": "We need to standardize analytics across our web and mobile packages, but there are old dashboards, env flags, and bridge modules that need to be cleaned up too. Help me run this like a disciplined migration, not a loose refactor.",
+      "should_trigger": true,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": false
+    },
+    {
+      "query": "Please audit this backend for tech debt and propose a migration from handwritten SQL access to our repository layer. This will take multiple sessions, so I want control-plane docs, budgets, and anti-regression checks.",
+      "should_trigger": true,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": false
+    },
+    {
+      "query": "I'm consolidating five internal SDK wrappers into one shared module across services. I need an evidence-driven migration approach, not just 'replace imports', because we keep leaving dead code around after each pass.",
+      "should_trigger": true,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": false
+    },
+    {
+      "query": "Can you create a migration playbook for removing our deprecated feature-flag framework from the app, including inventory, slices, delete-in-same-change rules, and final closeout so we don't need extra cleanup passes?",
+      "should_trigger": true,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": false
+    },
+    {
+      "query": "Can you clean up dead code in `src/legacy/` and remove anything that's obviously unused? I mostly want a sweep of orphaned files and exports, not a big migration framework.",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true
+    },
+    {
+      "query": "I want to pay down technical debt in a large Rust service by replacing a legacy lock/file-state subsystem with a safer one. I need a repeatable audit-and-migrate workflow with proof and handoffs, not just code edits.",
+      "should_trigger": true,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": false
+    },
+    {
+      "query": "I'm stuck in a weird state after an agent touched too many files and now the build is broken. I need someone to diagnose what went wrong and tell me the fastest way out of the mess.",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true
+    },
+    {
+      "query": "Help me migrate a codebase from scattered custom logging utilities to one telemetry layer. It touches code, tests, docs, CI, and env config, and I want the work sliced and guarded so agents don't miss hidden residue.",
+      "should_trigger": true,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": false
+    },
+    {
+      "query": "Would you review this migration proposal doc and tell me where the risks are? The document is in `docs/rfc/auth-migration.md` and I want feedback on the plan itself, not for you to run the migration yet.",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true
+    },
+    {
+      "query": "I think this repo is overengineered. Can you simplify the architecture and tell me what complexity isn't earning its keep? I'm looking for a first-principles critique more than a migration control plane.",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true
+    },
+    {
+      "query": "I want a bootstrap prompt so I can continue this refactor in a fresh session tomorrow. Summarize where we are and what the next agent should know.",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true
+    },
+    {
+      "query": "Please do an exhaustive correctness audit of the locking subsystem in this Rust app. I'm worried about races and stale docs, but I'm not asking for a migration plan right now.",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true
+    },
+    {
+      "query": "Could you create a review package for another model? I want to hand off the current branch for external review with the key files and context bundled up.",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true
+    },
+    {
+      "query": "Set up a tuning panel so I can visually tweak the timing and spacing values in this onboarding animation. This isn't a migration, just an interactive debug/control surface.",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true
+    },
+    {
+      "query": "Can you shape this new feature idea before we build it? I want help framing the problem and slicing the feature, not auditing an existing debt-heavy migration.",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true
+    },
+    {
+      "query": "I need to assess whether this codebase is ready for autonomous agent development. Please audit the tooling, docs, and practices for agent-readiness.",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true
+    }
+  ],
+  "summary": {
+    "total": 20,
+    "passed": 10,
+    "failed": 10
+  }
+}

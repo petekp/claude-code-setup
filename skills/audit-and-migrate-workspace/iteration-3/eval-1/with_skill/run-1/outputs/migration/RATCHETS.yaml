@@ -1,0 +1,35 @@
+# Anti-pattern ratchets
+# Budgets can only decrease.
+
+ratchets:
+  - id: ratchet-001
+    label: "trackLegacy function calls"
+    pattern: "trackLegacy"
+    scope: "packages/"
+    budget: 2
+    rationale: "Two legacy tracking functions (trackLegacyPageView, trackLegacySignup) remain in legacy-analytics.ts. Both must reach zero."
+    notes: "trackLegacyPageView is unused (page views already migrated) but the export still exists in the file."
+
+  - id: ratchet-002
+    label: "legacy-analytics imports"
+    pattern: "legacy-analytics"
+    scope: "packages/ docs/"
+    budget: 1
+    rationale: "Only the legacy-analytics.ts file itself should match. Any import of this module elsewhere means a call site was missed."
+    notes: "docs/analytics-migration.md also references this filename — count includes doc references."
+
+  - id: ratchet-003
+    label: "LEGACY_ANALYTICS_WRITE_KEY references"
+    pattern: "LEGACY_ANALYTICS_WRITE_KEY"
+    scope: "packages/ docs/"
+    budget: 1
+    rationale: "Currently defined in packages/shared/src/env.ts. Must reach zero when env cleanup slice completes."
+    notes: ""
+
+  - id: ratchet-004
+    label: "ENABLE_LEGACY_ANALYTICS_BRIDGE references"
+    pattern: "ENABLE_LEGACY_ANALYTICS_BRIDGE"
+    scope: "packages/ docs/"
+    budget: 1
+    rationale: "Bridge flag in env.ts. Must reach zero — bridge exists only for rollback safety which is no longer needed."
+    notes: ""

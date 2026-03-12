@@ -1,0 +1,197 @@
+# Migration Slices
+# Status lifecycle: proposed -> in_progress -> done
+# Reserve a final convergence slice for residue sweep + ship verification.
+
+slices:
+  - id: slice-001
+    type: implementation
+    name: page view migration
+    status: done
+    dependencies: []
+    touched_paths:
+      - packages/web/src/lib/analytics-client.ts
+    external_surfaces:
+      - "Dashboards consuming 'page view' events"
+    contracts:
+      added: []
+      changed:
+        - packages/web/src/lib/analytics-client.ts
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    temp_artifacts: []
+    docs_to_update: []
+    dependency_changes: []
+    residue_queries:
+      - pattern: "trackLegacyPageView"
+        scope: "packages/web/src/"
+        reason: "No call sites should reference the legacy page view function after migration"
+    verification_commands:
+      - command: "grep -r 'trackPageView' packages/web/src/lib/analytics-client.ts"
+        expect: "match found"
+    replay_scenarios:
+      - web home page load
+    smoke_scenarios: []
+    manual_checks: []
+    risks: []
+    notes: "Page views moved to new client. Legacy page view export still exists in legacy-analytics.ts — deletion deferred to slice-002."
+
+  - id: slice-002
+    type: implementation
+    name: signup tracking migration and legacy file deletion
+    status: in_progress
+    dependencies:
+      - slice-001
+    touched_paths:
+      - packages/web/src/lib/analytics-client.ts
+      - packages/web/src/lib/legacy-analytics.ts
+    external_surfaces:
+      - "Dashboards consuming 'signup' / 'legacy signup' events"
+      - "Any downstream ETL keyed on 'legacy signup' event name"
+    contracts:
+      added:
+        - "trackSignup function in analytics-client.ts"
+      changed:
+        - packages/web/src/lib/analytics-client.ts
+      removed:
+        - packages/web/src/lib/legacy-analytics.ts
+    denylist_patterns:
+      - "trackLegacySignup"
+      - "trackLegacyPageView"
+      - "import.*legacy-analytics"
+    deletion_targets:
+      - packages/web/src/lib/legacy-analytics.ts
+    temp_artifacts: []
+    docs_to_update: []
+    dependency_changes: []
+    residue_queries:
+      - pattern: "trackLegacy"
+        scope: "packages/"
+        reason: "All legacy tracking functions must be gone after this slice"
+      - pattern: "legacy-analytics"
+        scope: "packages/web/"
+        reason: "No imports or references to the deleted module"
+    verification_commands:
+      - command: "grep -r 'trackSignup' packages/web/src/lib/analytics-client.ts"
+        expect: "match found — new function exists"
+      - command: "test ! -f packages/web/src/lib/legacy-analytics.ts"
+        expect: "file does not exist"
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Signup form submission emits analytics event"
+    manual_checks:
+      - surface: "Analytics dashboard"
+        check: "Confirm signup events appear under new event name"
+        expected: "Events visible within 5 minutes of test signup"
+    risks:
+      - "Dashboard parity not verified — downstream consumers may still expect 'legacy signup' event name"
+    notes: "Must add trackSignup to analytics-client.ts, migrate all signup call sites, then delete legacy-analytics.ts entirely."
+
+  - id: slice-003
+    type: implementation
+    name: env cleanup and docs reconciliation
+    status: proposed
+    dependencies:
+      - slice-002
+    touched_paths:
+      - packages/shared/src/env.ts
+      - docs/analytics-migration.md
+    external_surfaces:
+      - "Deploy pipelines setting LEGACY_ANALYTICS_WRITE_KEY"
+      - "Deploy pipelines setting ENABLE_LEGACY_ANALYTICS_BRIDGE"
+      - "Developer onboarding docs referencing legacy env vars"
+    contracts:
+      added: []
+      changed:
+        - packages/shared/src/env.ts
+        - docs/analytics-migration.md
+      removed:
+        - "LEGACY_ANALYTICS_WRITE_KEY from env.ts"
+        - "ENABLE_LEGACY_ANALYTICS_BRIDGE from env.ts"
+    denylist_patterns:
+      - "LEGACY_ANALYTICS_WRITE_KEY"
+      - "ENABLE_LEGACY_ANALYTICS_BRIDGE"
+      - "legacy.analytics"
+    deletion_targets: []
+    temp_artifacts: []
+    docs_to_update:
+      - docs/analytics-migration.md
+    dependency_changes: []
+    residue_queries:
+      - pattern: "LEGACY_ANALYTICS_WRITE_KEY"
+        scope: "packages/ docs/"
+        reason: "Legacy env var must be fully removed"
+      - pattern: "ENABLE_LEGACY_ANALYTICS_BRIDGE"
+        scope: "packages/ docs/"
+        reason: "Bridge flag must be fully removed"
+      - pattern: "legacy-analytics"
+        scope: "docs/"
+        reason: "Docs should not reference the deleted file"
+    verification_commands:
+      - command: "grep -c 'LEGACY' packages/shared/src/env.ts"
+        expect: "0"
+      - command: "grep -c 'LEGACY' docs/analytics-migration.md"
+        expect: "0"
+    replay_scenarios: []
+    smoke_scenarios: []
+    manual_checks:
+      - surface: "Deploy pipeline"
+        check: "Confirm LEGACY_ANALYTICS_WRITE_KEY and ENABLE_LEGACY_ANALYTICS_BRIDGE are removed from deploy config"
+        expected: "Vars absent from all environments"
+    risks:
+      - "Deploy pipeline changes require coordination with ops/infra team"
+    notes: "After this slice, env.ts should only contain ANALYTICS_WRITE_KEY. Docs should describe the new architecture only."
+
+  - id: slice-004
+    type: convergence
+    name: closeout — residue sweep and ship verification
+    status: proposed
+    dependencies:
+      - slice-002
+      - slice-003
+    touched_paths: []
+    external_surfaces:
+      - "All surfaces from prior slices — final verification"
+    contracts:
+      added: []
+      changed: []
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    temp_artifacts: []
+    docs_to_update:
+      - docs/analytics-migration.md
+    dependency_changes: []
+    residue_queries:
+      - pattern: "trackLegacy"
+        scope: "packages/ docs/"
+        reason: "Zero legacy tracking references in entire repo"
+      - pattern: "LEGACY_ANALYTICS_WRITE_KEY"
+        scope: "."
+        reason: "Zero references anywhere"
+      - pattern: "ENABLE_LEGACY_ANALYTICS_BRIDGE"
+        scope: "."
+        reason: "Zero references anywhere"
+      - pattern: "legacy-analytics"
+        scope: "."
+        reason: "Zero references to deleted module anywhere"
+      - pattern: "TODO.*(migration|analytics)"
+        scope: "."
+        reason: "No migration TODO markers left behind"
+    verification_commands:
+      - command: "./guard.sh"
+        expect: "All guards pass"
+    replay_scenarios:
+      - web home page load
+    smoke_scenarios:
+      - "Signup form submission emits analytics event"
+      - "Page view fires on navigation"
+    manual_checks:
+      - surface: "Analytics dashboard"
+        check: "Both page view and signup events visible under new names"
+        expected: "Events flowing within 5 minutes"
+      - surface: "Deploy pipeline"
+        check: "Legacy env vars fully removed"
+        expected: "Vars absent"
+    risks: []
+    notes: "Final convergence slice. Execute SHIP_CHECKLIST.md. Only mark done when ship gate passes."

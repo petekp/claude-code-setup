@@ -1,0 +1,171 @@
+# Migration Slices
+# Status lifecycle: proposed → in_progress → done
+
+slices:
+  - id: slice-001
+    type: implementation
+    name: "Remove legacy auth path; make token auth the sole authentication mechanism"
+    status: proposed
+    dependencies: []
+    touched_paths:
+      - src/auth/legacy-auth.ts
+      - src/auth/token-auth.ts
+      - src/routes/users.ts
+      - tests/users-auth.test.ts
+    external_surfaces:
+      - "Cookie contract: clients sending legacy_session cookies will no longer authenticate"
+      - "Bearer token contract: unchanged, remains the sole auth path"
+    contracts:
+      added: []
+      changed:
+        - "src/routes/users.ts: getCurrentUser() drops legacy fallback, token-only"
+        - "tests/users-auth.test.ts: rewritten for token-only scenarios"
+      removed:
+        - "src/auth/legacy-auth.ts: entire module"
+        - "readLegacySession function"
+        - "LegacyUser type"
+    denylist_patterns:
+      - "readLegacySession"
+      - "LegacyUser"
+      - "import.*legacy-auth"
+    deletion_targets:
+      - src/auth/legacy-auth.ts
+    temp_artifacts: []
+    docs_to_update: []
+    dependency_changes: []
+    residue_queries:
+      - pattern: "readLegacySession"
+        scope: "src/ tests/"
+        reason: "Legacy session reader must not exist anywhere in code or tests"
+      - pattern: "LegacyUser"
+        scope: "src/"
+        reason: "Legacy user type must be fully removed"
+      - pattern: "import.*legacy-auth"
+        scope: "src/ tests/"
+        reason: "No imports of deleted module"
+      - pattern: 'source.*legacy'
+        scope: "src/ tests/"
+        reason: "No route responses or test assertions referencing legacy auth source"
+    verification_commands:
+      - command: "npm test"
+        expect: "all tests pass"
+      - command: "npm run build"
+        expect: "compiles without errors"
+      - command: "./guard.sh"
+        expect: "all guards pass"
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Call getCurrentUser with valid Bearer token → returns {source: 'token', id: claims.sub}"
+      - "Call getCurrentUser with no auth → throws unauthorized"
+      - "Call getCurrentUser with legacy cookie only → throws unauthorized (legacy path removed)"
+    manual_checks: []
+    risks:
+      - "Any external consumer relying on legacy cookie auth will break — this is intentional per Decision 1"
+    notes: "This is the core migration slice. Tests are rewritten in the same slice to maintain coverage continuity."
+
+  - id: slice-002
+    type: implementation
+    name: "Clean up stale docs, config, scripts, and env vars for removed legacy auth"
+    status: proposed
+    dependencies:
+      - slice-001
+    touched_paths:
+      - docs/auth.md
+      - scripts/seed-legacy-auth.sh
+      - .env.example
+    external_surfaces:
+      - "Developer documentation: docs/auth.md rewritten for token auth"
+      - "Environment variable contract: LEGACY_AUTH_SECRET and LEGACY_COOKIE_NAME removed from .env.example"
+      - "Local dev tooling: seed-legacy-auth.sh removed"
+    contracts:
+      added: []
+      changed:
+        - "docs/auth.md: rewritten to describe token-based auth"
+        - ".env.example: legacy vars removed"
+      removed:
+        - "scripts/seed-legacy-auth.sh: entire file"
+        - "scripts/ directory if empty"
+    denylist_patterns:
+      - "seed-legacy-auth"
+      - "LEGACY_AUTH_SECRET"
+      - "LEGACY_COOKIE_NAME"
+    deletion_targets:
+      - scripts/seed-legacy-auth.sh
+    temp_artifacts: []
+    docs_to_update:
+      - "docs/auth.md — rewrite for token auth"
+    dependency_changes: []
+    residue_queries:
+      - pattern: "legacy_session"
+        scope: "docs/ scripts/"
+        reason: "Cookie name must not appear in docs or scripts"
+      - pattern: "LEGACY_"
+        scope: "."
+        reason: "No legacy env var references anywhere"
+      - pattern: "seed-legacy-auth"
+        scope: "docs/"
+        reason: "No references to deleted seed script"
+    verification_commands:
+      - command: "./guard.sh"
+        expect: "all guards pass"
+      - command: "test ! -d scripts"
+        expect: "scripts directory removed"
+    replay_scenarios: []
+    smoke_scenarios: []
+    manual_checks:
+      - surface: "docs/auth.md"
+        check: "Read the doc and confirm it accurately describes token-only auth"
+        expected: "No mention of cookies, legacy sessions, or seed scripts"
+    risks: []
+    notes: "Depends on slice-001 so legacy code references are already gone from src/."
+
+  - id: slice-convergence
+    type: convergence
+    name: "Final residue sweep, dependency audit, and ship gate execution"
+    status: proposed
+    dependencies:
+      - slice-001
+      - slice-002
+    touched_paths:
+      - "all files in repo"
+    external_surfaces:
+      - "All external surfaces re-verified as final gate"
+    contracts:
+      added: []
+      changed: []
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    temp_artifacts: []
+    docs_to_update: []
+    dependency_changes:
+      - "Verify no unused dependencies in package.json"
+    residue_queries:
+      - pattern: "legacy"
+        scope: "src/ tests/ docs/"
+        reason: "Whole-codebase sweep for any remaining legacy references"
+      - pattern: "TODO|FIXME|HACK"
+        scope: "src/ tests/ docs/"
+        reason: "No migration markers or stale TODOs"
+      - pattern: "old|backup|temp"
+        scope: "src/ tests/"
+        reason: "No scratch or backup files"
+    verification_commands:
+      - command: "./guard.sh"
+        expect: "all guards pass, all ratchets at 0"
+      - command: "npm test"
+        expect: "all tests pass"
+      - command: "npm run lint"
+        expect: "no lint errors"
+      - command: "npm run build"
+        expect: "compiles cleanly"
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Full auth flow: valid Bearer token returns user identity"
+      - "Full auth flow: missing auth returns unauthorized"
+    manual_checks:
+      - surface: "Repository root"
+        check: "No empty directories, no commented-out code, no stale files"
+        expected: "Clean repo with only token auth artifacts"
+    risks: []
+    notes: "This convergence slice owns the final ship gate defined in SHIP_CHECKLIST.md."

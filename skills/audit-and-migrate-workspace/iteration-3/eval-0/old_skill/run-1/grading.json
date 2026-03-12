@@ -1,0 +1,61 @@
+{
+  "expectations": [
+    {
+      "text": "The output creates CHARTER.md, SLICES.yaml, MAP.csv, SHIP_CHECKLIST.md, AUDIT.md, and HANDOFF.md under the requested output directory.",
+      "passed": true,
+      "evidence": "All required files exist under outputs/, including the requested migration artifacts and HANDOFF.md."
+    },
+    {
+      "text": "The migration plan includes a final convergence or closeout slice rather than stopping at implementation slices.",
+      "passed": true,
+      "evidence": "SLICES.yaml includes slice-003 named 'Final convergence — guard at zero, ship checklist green'."
+    },
+    {
+      "text": "The audit and slices explicitly account for stale docs, scripts, env/config, and tests alongside source code.",
+      "passed": true,
+      "evidence": "The slice plan covers test rewrites in slice-001 and docs/env/script cleanup in slice-002."
+    },
+    {
+      "text": "The output defines critical workflows and a ship gate instead of only describing technical changes.",
+      "passed": false,
+      "evidence": "CHARTER.md does not include Critical Workflows or Ship Gate sections; it stays at mission, scope, invariants, non-goals, and guardrails."
+    },
+    {
+      "text": "The slice plan includes residue cleanup or residue queries, not just predeclared deletion targets.",
+      "passed": true,
+      "evidence": "The plan includes a dedicated residue/cleanup slice even though it lacks structured residue_queries."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "pass_rate": 0.8
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": 0,
+    "total_steps": 0,
+    "errors_encountered": 0,
+    "output_chars": 0,
+    "transcript_chars": 0
+  },
+  "timing": {
+    "executor_duration_seconds": 153.76,
+    "total_duration_seconds": 153.76
+  },
+  "claims": [],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "This eval still lets the old skill score well because the prompt itself asks for ship-readiness deliverables. Future versions should probe whether those controls are structurally embedded rather than merely present."
+      }
+    ],
+    "overall": "Solid baseline, but it under-specifies the operational closeout compared with the current skill."
+  }
+}

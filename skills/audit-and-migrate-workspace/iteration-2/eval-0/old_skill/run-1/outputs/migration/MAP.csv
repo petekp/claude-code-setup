@@ -1,0 +1,9 @@
+slice_id,capability,current_path,target_path,status,delete_in_pr,notes
+slice-001,legacy-auth-module,src/auth/legacy-auth.ts,,pending,yes,Delete entirely — replaced by token-auth
+slice-001,token-auth-module,src/auth/token-auth.ts,src/auth/token-auth.ts,pending,no,Canonical auth — no changes needed
+slice-001,user-route-auth,src/routes/users.ts,src/routes/users.ts,pending,no,Remove legacy fallback; token-only
+slice-001,auth-tests,tests/users-auth.test.ts,tests/users-auth.test.ts,pending,no,Rewrite to assert token-only behavior
+slice-002,auth-docs,docs/auth.md,docs/auth.md,pending,no,Rewrite to describe token auth only
+slice-002,legacy-seed-script,scripts/seed-legacy-auth.sh,,pending,yes,Delete — seeds legacy cookies no longer used
+slice-002,env-config,.env.example,.env.example,pending,no,Remove LEGACY_AUTH_SECRET and LEGACY_COOKIE_NAME
+slice-002,package-config,package.json,package.json,pending,no,Review for legacy-only deps (none expected)

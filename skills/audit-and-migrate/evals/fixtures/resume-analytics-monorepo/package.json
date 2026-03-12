@@ -1,0 +1,7 @@
+{
+  "name": "resume-analytics-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
+}

@@ -1,0 +1,9 @@
+slice_id,kind,capability,current_path,target_path,status,delete_in_pr,verification,notes
+slice-001,test,deterministic retry test,tests/integration/test_retry_worker.py,tests/integration/test_retry_worker.py,proposed,no,"pytest tests/integration/test_retry_worker.py -q",Rewrite timing-based assertions to use FakeClock
+slice-001,test-helper,scenario factory,tests/helpers/scenario_factory.py,,proposed,yes,"rg 'scenario_factory' tests/",Dead after test rewrite — delete entirely
+slice-001,directory,helpers dir,tests/helpers/,,proposed,yes,"test ! -d tests/helpers/",Empty after scenario_factory.py deletion
+slice-002,script,flaky test runner,scripts/run-flaky-tests.sh,,proposed,yes,"test ! -f scripts/run-flaky-tests.sh",Retry-until-green script — vestigial once tests are deterministic
+slice-002,directory,scripts dir,scripts/,,proposed,yes,"test ! -d scripts/",Empty after script deletion
+slice-002,docs,testing docs,docs/testing.md,docs/testing.md,proposed,no,"rg 'flaky' docs/",Rewrite to describe deterministic testing approach
+-,source,retry worker,src/retry_worker.py,src/retry_worker.py,keep,no,"pytest tests/ -q",Production code — not modified; already supports clock injection
+-,config,project config,pyproject.toml,pyproject.toml,keep,no,"pytest tests/ -q",pythonpath config must remain valid

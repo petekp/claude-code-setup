@@ -1,1 +1,1 @@
-slice_id,capability,current_path,target_path,status,delete_in_pr,notes
+slice_id,kind,capability,current_path,target_path,status,delete_in_pr,verification,notes

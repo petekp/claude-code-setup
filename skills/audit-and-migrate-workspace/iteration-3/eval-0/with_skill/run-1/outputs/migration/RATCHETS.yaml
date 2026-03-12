@@ -1,0 +1,59 @@
+# Anti-pattern ratchets
+# Budgets can only decrease. Scopes use paths relative to repo root.
+
+ratchets:
+  - id: ratchet-001
+    label: "readLegacySession references"
+    pattern: "readLegacySession"
+    scope: "src/ tests/"
+    budget: 3
+    rationale: "Legacy session reader function. 1 definition + 1 import + 1 call site. Must reach 0."
+    notes: "src/auth/legacy-auth.ts:1, src/routes/users.ts:2"
+
+  - id: ratchet-002
+    label: "legacy_session cookie name"
+    pattern: "legacy_session"
+    scope: "src/ tests/ docs/ scripts/"
+    budget: 4
+    rationale: "Cookie name string literal across code, tests, docs, and env. Must reach 0."
+    notes: "src/auth/legacy-auth.ts:1, .env.example:1, docs/auth.md:1, tests/users-auth.test.ts:1"
+
+  - id: ratchet-003
+    label: "LegacyUser type references"
+    pattern: "LegacyUser"
+    scope: "src/"
+    budget: 2
+    rationale: "Legacy user type definition and usage. Must reach 0."
+    notes: "src/auth/legacy-auth.ts:2 (type export + return annotation)"
+
+  - id: ratchet-004
+    label: "LEGACY_ env var prefix"
+    pattern: "LEGACY_"
+    scope: "."
+    budget: 2
+    rationale: "Environment variables for removed auth path. Must reach 0."
+    notes: ".env.example:2 (LEGACY_AUTH_SECRET, LEGACY_COOKIE_NAME)"
+
+  - id: ratchet-005
+    label: "import from legacy-auth module"
+    pattern: "import.*legacy-auth"
+    scope: "src/ tests/"
+    budget: 1
+    rationale: "Import of the legacy auth module. Must reach 0 when module is deleted."
+    notes: "src/routes/users.ts:1"
+
+  - id: ratchet-006
+    label: "source legacy in route responses"
+    pattern: 'source.*legacy'
+    scope: "src/ tests/"
+    budget: 2
+    rationale: "Route handler returning legacy as auth source, and test asserting it. Must reach 0."
+    notes: "src/routes/users.ts:1, tests/users-auth.test.ts:1"
+
+  - id: ratchet-007
+    label: "seed-legacy-auth references"
+    pattern: "seed-legacy-auth"
+    scope: "docs/ scripts/"
+    budget: 1
+    rationale: "References to the legacy auth seed script. Must reach 0."
+    notes: "docs/auth.md:1 (scripts/seed-legacy-auth.sh is a deletion target, not a text match)"

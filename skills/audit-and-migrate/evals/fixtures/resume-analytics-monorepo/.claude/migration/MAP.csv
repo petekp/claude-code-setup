@@ -1,0 +1,3 @@
+slice_id,capability,current_path,target_path,status,delete_in_pr,notes
+slice-001,page_view,packages/web/src/lib/analytics-client.ts,packages/web/src/lib/analytics-client.ts,migrated,no,new client is live for page views
+slice-002,signup_tracking,packages/web/src/lib/legacy-analytics.ts,packages/web/src/lib/analytics-client.ts,in_progress,yes,legacy signup event still exists

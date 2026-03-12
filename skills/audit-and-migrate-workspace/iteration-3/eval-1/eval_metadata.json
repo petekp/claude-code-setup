@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "resume-analytics-migration",
+  "prompt": "Resume the in-flight migration in the fixture repo at <FIXTURE_ROOT>. Do not start over from scratch, and do not modify application code. Review the existing .claude/migration artifacts plus the repo itself, then write updated artifacts under <OUTPUT_DIR>/migration and a fresh HANDOFF.md under <OUTPUT_DIR>/HANDOFF.md. Keep the current migration direction if sound, but harden it so the project can finish in a pristine, ready-to-ship state with no forgotten cleanup.",
+  "assertions": [
+    "The output clearly resumes and updates the existing migration instead of inventing a completely fresh unrelated plan.",
+    "The output adds or updates SHIP_CHECKLIST.md and a convergence or closeout slice for the resumed migration.",
+    "The handoff includes what changed, what is now true, what remains, shipping blockers, and exact next steps.",
+    "The updated control plane accounts for docs, env/config, package cleanup, and analytics call-site residue.",
+    "The output preserves the spirit of the existing migration mission while strengthening verification and closeout."
+  ]
+}

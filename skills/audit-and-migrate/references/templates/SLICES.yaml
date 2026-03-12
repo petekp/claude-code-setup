@@ -1,19 +1,28 @@
 # Migration Slices
 # Status lifecycle: proposed → in_progress → done
+# Reserve a final convergence slice for residue sweep + ship verification.
 
 slices:
   - id: slice-001
+    type: implementation       # implementation or convergence
     name: ""
     status: proposed
     dependencies: []          # slice IDs that must be done first
     touched_paths: []         # files this slice modifies
+    external_surfaces: []     # dashboards, webhooks, env contracts, public APIs, CLI entrypoints touched by this slice
     contracts:
       added: []               # new files/symbols introduced
       changed: []             # existing files/symbols modified
       removed: []             # files/symbols deleted
-    denylist_patterns: []     # grep patterns that must not match after completion
+    denylist_patterns: []     # rg patterns that must not match after completion
     deletion_targets: []      # files/symbols that must be physically removed
+    temp_artifacts: []        # adapters, flags, or scratch files created during migration
+    docs_to_update: []        # docs/runbooks/env examples/CI references to reconcile
+    dependency_changes: []    # packages, lockfiles, or scripts to add/remove/verify
+    residue_queries: []       # list of {pattern, scope, reason} that must return zero before closure
+    verification_commands: [] # list of {command, expect} checks for this slice
     replay_scenarios: []      # deterministic replay test references
     smoke_scenarios: []       # user-facing workflow tests
+    manual_checks: []         # list of {surface, check, expected} for manual-only verification
     risks: []                 # known risks and mitigations
     notes: ""

@@ -1,0 +1,126 @@
+# Migration Slices
+# Status lifecycle: proposed -> in_progress -> done
+# Reserve a final convergence slice for residue sweep + ship verification.
+
+slices:
+  - id: slice-001
+    type: implementation
+    name: "Migrate getCurrentUser to token-only auth"
+    status: proposed
+    dependencies: []
+    touched_paths:
+      - src/routes/users.ts
+      - src/auth/legacy-auth.ts
+      - tests/users-auth.test.ts
+    contracts:
+      added: []
+      changed:
+        - "src/routes/users.ts — remove legacy import and cookie check, token-only path"
+        - "tests/users-auth.test.ts — replace legacy-preference test with token-auth tests"
+      removed:
+        - "src/auth/legacy-auth.ts — entire module deleted"
+    denylist_patterns:
+      - "readLegacySession"
+      - "LegacyUser"
+      - "import.*legacy-auth"
+    deletion_targets:
+      - src/auth/legacy-auth.ts
+    temp_artifacts: []
+    docs_to_update: []
+    dependency_changes: []
+    residue_queries:
+      - "readLegacySession"
+      - "LegacyUser"
+      - 'import.*from.*legacy-auth'
+      - 'source: "legacy"'
+    verification_commands:
+      - "npx vitest run"
+      - "./guard.sh"
+    replay_scenarios: []
+    smoke_scenarios:
+      - "getCurrentUser with valid Bearer token returns user"
+      - "getCurrentUser without auth throws unauthorized"
+    manual_checks: []
+    risks:
+      - "If any untested code path depends on readLegacySession, it will break silently"
+    notes: "Core migration slice. After this, legacy auth is structurally gone from src/ and tests/."
+
+  - id: slice-002
+    type: implementation
+    name: "Clean up legacy docs, scripts, config, and env"
+    status: proposed
+    dependencies:
+      - slice-001
+    touched_paths:
+      - docs/auth.md
+      - scripts/seed-legacy-auth.sh
+      - .env.example
+    contracts:
+      added: []
+      changed:
+        - "docs/auth.md — rewrite to describe token auth"
+        - ".env.example — remove LEGACY_* vars, keep TOKEN_AUDIENCE"
+      removed:
+        - "scripts/seed-legacy-auth.sh — deleted"
+    denylist_patterns:
+      - "seed-legacy-auth"
+      - "LEGACY_AUTH_SECRET"
+      - "LEGACY_COOKIE_NAME"
+    deletion_targets:
+      - scripts/seed-legacy-auth.sh
+    temp_artifacts: []
+    docs_to_update:
+      - docs/auth.md
+      - .env.example
+    dependency_changes: []
+    residue_queries:
+      - "seed-legacy-auth"
+      - "LEGACY_AUTH_SECRET"
+      - "LEGACY_COOKIE_NAME"
+      - "legacy_session"
+    verification_commands:
+      - "./guard.sh"
+    replay_scenarios: []
+    smoke_scenarios: []
+    manual_checks:
+      - "Review docs/auth.md for accuracy and completeness"
+    risks: []
+    notes: "Eliminates all non-code legacy references. After this, only package.json name contains 'legacy' (retained per Decision 2)."
+
+  - id: slice-003
+    type: convergence
+    name: "Final residue sweep and ship verification"
+    status: proposed
+    dependencies:
+      - slice-001
+      - slice-002
+    touched_paths:
+      - "all files in repo"
+    contracts:
+      added: []
+      changed: []
+      removed: []
+    denylist_patterns: []
+    deletion_targets: []
+    temp_artifacts: []
+    docs_to_update: []
+    dependency_changes: []
+    residue_queries:
+      - "legacy"
+      - "TODO.*(migration|MIGRATION)"
+      - "HACK"
+      - "FIXME"
+    verification_commands:
+      - "./guard.sh"
+      - "npx vitest run"
+      - "npx eslint src tests"
+      - "npx tsc -p tsconfig.json"
+    replay_scenarios: []
+    smoke_scenarios:
+      - "Full auth flow with bearer token"
+      - "Unauthenticated request rejection"
+    manual_checks:
+      - "Review complete diff as release candidate"
+      - "Verify no backup files, commented-out code, or stray logs"
+    risks: []
+    notes: "Convergence slice. Executes SHIP_CHECKLIST.md. Confirms repo is pristine and ready to ship."

@@ -1,0 +1,11 @@
+# Anti-pattern ratchets
+# Budgets can only decrease.
+
+ratchets:
+  - id: ratchet-001
+    label: ""
+    pattern: ""
+    scope: ""
+    budget: 0
+    rationale: ""
+    notes: ""
