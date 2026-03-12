@@ -1,9 +1,0 @@
-slice_id,kind,capability,current_path,target_path,status,delete_in_pr,verification,notes
-slice-001,code,production-worker,src/retry_worker.py,src/retry_worker.py,keep,no,pytest tests/ -q,Already supports clock injection — no changes needed
-slice-001,test,deterministic-tests,tests/integration/test_retry_worker.py,tests/integration/test_retry_worker.py,migrate,no,pytest tests/integration/test_retry_worker.py -q,Replace time.time() wall-clock assertions with FakeClock assertions
-slice-001,test-helper,scenario-factory,tests/helpers/scenario_factory.py,tests/helpers/scenario_factory.py,keep,no,pytest tests/ -q,Retained — provides test data abstraction
-slice-001,test-helper,fake-clock,tests/helpers/fake_clock.py,tests/helpers/fake_clock.py,create,no,pytest tests/ -q,New FakeClock stub for deterministic timing
-slice-002,script,flaky-retry,scripts/run-flaky-tests.sh,,delete,yes,test ! -f scripts/run-flaky-tests.sh,Retry band-aid — delete after tests are deterministic
-slice-002,docs,testing-guide,docs/testing.md,docs/testing.md,migrate,no,"rg 'flaky' docs/ || echo clean",Rewrite to describe deterministic testing approach
-slice-003,tooling,guard-script,guard.sh,guard.sh,create,no,./guard.sh,CI ratchet enforcement script
-n/a,config,project-config,pyproject.toml,pyproject.toml,keep,no,pytest tests/ -q,No changes needed

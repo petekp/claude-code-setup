@@ -1,7 +1,0 @@
-slice_id,kind,capability,current_path,target_path,status,delete_in_pr,verification,notes
-slice-001,code,page_view,packages/web/src/lib/analytics-client.ts,packages/web/src/lib/analytics-client.ts,migrated,no,"rg 'trackPageView' packages/web/src/lib/analytics-client.ts",new client is live for page views
-slice-002,code,signup_tracking,packages/web/src/lib/legacy-analytics.ts,(deleted),in_progress,yes,"test ! -f packages/web/src/lib/legacy-analytics.ts",legacy file — entire file is deletion target
-slice-002,code,signup_tracking,packages/web/src/lib/analytics-client.ts,packages/web/src/lib/analytics-client.ts,in_progress,no,"rg 'trackSignup' packages/web/src/lib/analytics-client.ts",trackSignup must be added here
-slice-003,config,env_bridge,packages/shared/src/env.ts,packages/shared/src/env.ts,pending,no,"rg 'LEGACY_ANALYTICS' packages/shared/src/env.ts && exit 1 || exit 0",remove LEGACY_ANALYTICS_WRITE_KEY and ENABLE_LEGACY_ANALYTICS_BRIDGE
-slice-003,docs,migration_docs,docs/analytics-migration.md,docs/analytics-migration.md,pending,no,"cat docs/analytics-migration.md",rewrite to describe new architecture only — no legacy references
-slice-004,config,package_json,package.json,package.json,pending,no,"cat package.json",verify no orphaned analytics deps after migration

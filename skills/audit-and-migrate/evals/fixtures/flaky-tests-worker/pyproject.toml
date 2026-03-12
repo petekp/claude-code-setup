@@ -1,6 +1,0 @@
-[project]
-name = "flaky-tests-worker"
-version = "0.1.0"
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]

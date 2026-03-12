@@ -1,9 +1,0 @@
-{
-  "name": "legacy-auth-service",
-  "private": true,
-  "scripts": {
-    "test": "vitest run",
-    "lint": "eslint src tests",
-    "build": "tsc -p tsconfig.json"
-  }
-}

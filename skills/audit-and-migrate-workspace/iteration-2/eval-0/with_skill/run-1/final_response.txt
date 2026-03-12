@@ -1,1 +1,0 @@
-All 9 deliverables written: complete migration control plane (CHARTER, DECISIONS, SLICES, MAP, SHIP_CHECKLIST, AUDIT) plus HANDOFF, transcript, and user_notes covering 5 uncertainties — ready for Phase 2 execution starting with guard script creation and slice-001 (token-only auth migration).

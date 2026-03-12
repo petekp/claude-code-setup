@@ -1,0 +1,4 @@
+interface:
+  display_name: "Exhaustive Systems Analysis"
+  short_description: "Deep, evidence-driven system audits"
+  default_prompt: "Use $exhaustive-systems-analysis to audit this implementation for correctness, race conditions, and production-readiness risks."

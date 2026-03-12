@@ -1,124 +1,185 @@
 ---
 name: manual-testing
-description: Guide users step-by-step through manually testing whatever is currently being worked on. Use when asked to "test this", "verify it works", "let's test", "manual testing", "QA this", "check if it works", or after implementing a feature that needs verification before proceeding.
+description: Guide users through targeted manual verification after code changes. Use when asked to "test this", "verify it works", "QA this", "walk me through testing", "smoke test", "sanity check", "regression test", "acceptance test", or after implementing a feature or bug fix that still needs human validation. Favor this skill for focused verification of the current change; use a broader exploratory-testing skill for open-ended bug hunting across an entire app.
 ---
 
 # Manual Testing
 
-Verify current work through automated testing first, falling back to user verification only when necessary.
+Finish work with a tight verification loop: prove everything possible with tools first, then ask the user to verify only what requires human eyes, hands, devices, or judgment.
 
-## Core Principle
+Do not make the user invent the test plan. Lead them through it.
 
-**Automate everything possible.** Only ask the user to manually verify what Claude cannot verify through tools.
+## Quality Bar
+
+Before asking the user to do anything, know:
+
+- What changed
+- What the expected behavior is
+- What can be verified automatically
+- What still needs a human check
+- What nearby behavior could have regressed
+
+Never ask the user to "poke around" or "let me know if it works." Give concrete actions, a specific screen or command, the expected result, and a short set of likely outcomes to reply with.
 
 ## Workflow
 
-### 1. Analyze Current Context
+### 1. Build a Verification Matrix
 
-Examine recent work to identify what needs testing:
-- Review recent file changes and conversation history
-- Identify the feature, fix, or change to verify
-- Determine testable behaviors and expected outcomes
+Translate the change into a short verification plan before running anything.
 
-### 2. Classify Each Verification Step
+For each changed behavior, capture:
 
-For each thing to verify, determine if Claude can test it automatically:
+- Primary success path
+- Most likely failure or edge case
+- One nearby regression check
+- Verification owner: tool or user
 
-**Claude CAN verify (do these automatically):**
-- Code compiles/builds: `npm run build`, `cargo build`, `go build`, etc.
-- Tests pass: `npm test`, `pytest`, `cargo test`, etc.
-- Linting/type checking: `eslint`, `tsc --noEmit`, `mypy`, etc.
-- API responses: `curl`, `httpie`, or scripted requests
-- File contents: Read files, grep for expected patterns
-- CLI tool output: Run commands and check output
-- Server starts: Start server, check for errors, verify endpoints respond
-- Database state: Query databases, check records exist
-- Log output: Tail logs, grep for expected/unexpected messages
-- Process behavior: Check exit codes, stdout/stderr content
-- File existence/permissions: `ls`, `stat`, `test -f`
-- JSON/config validity: Parse and validate structure
-- Port availability: `lsof`, `netstat`, curl localhost
-- Git state: Check diffs, commits, branch state
+Use a simple internal checklist like:
 
-**Claude CANNOT verify (ask user):**
-- Visual appearance (colors, layout, spacing, alignment)
-- Animations and transitions
-- User experience feel (responsiveness, intuition)
-- Cross-browser rendering
-- Mobile device behavior
-- Physical hardware interaction
-- Third-party service UIs (OAuth flows, payment forms)
-- Accessibility with actual screen readers
-- Performance perception (feels fast/slow)
+| Behavior | Happy path | Edge/regression | Verified by |
+|----------|------------|-----------------|-------------|
+| Save settings | Form saves | Validation error still works | Tool + user |
 
-### 3. Execute Automated Verifications
+Keep the matrix small and focused on the current change.
 
-Run all automatable checks first. Be thorough:
+### 2. Run Tool-Verifiable Checks First
 
-```bash
-# Example: Testing a web feature
-npm run build          # Compiles?
-npm run lint           # No lint errors?
-npm test               # Tests pass?
-npm run dev &          # Server starts?
-sleep 3
-curl localhost:3000/api/endpoint  # API responds correctly?
+Exhaust automated verification before involving the user.
+
+Prefer to verify these yourself:
+
+- Build, compile, typecheck, lint, test
+- API responses and status codes
+- File output, database state, logs, and side effects
+- CLI behavior, exit codes, and generated artifacts
+- Browser automation, screenshots, DOM text, or network behavior when tools can prove it
+
+Only hand work to the user when the result depends on:
+
+- Visual correctness
+- Motion, timing, or feel
+- Real-device behavior
+- Cross-browser differences
+- Screen reader behavior
+- Third-party flows that require human interaction
+
+If an automated check fails, stop and address it before asking for manual verification.
+
+### 3. Prepare the User Path
+
+Set the user up so they can perform the check with minimal effort.
+
+Provide:
+
+- Exact route, URL, screen, or command
+- Any required setup state
+- The single action to take
+- The expected result
+- What to reply with
+
+If the user needs an already-running app, point them to the exact place to open. If you can safely prepare state, data, or fixtures first, do that yourself.
+
+### 4. Lead the User Through Atomic Steps
+
+Run manual verification as a guided sequence, not a dump of vague instructions.
+
+Prefer one atomic step at a time. For a tiny smoke test, bundle at most 2-3 closely related checks.
+
+Use this structure:
+
+```text
+Testing: [feature or fix]
+Progress: Step N of M
+
+Action: [exact thing to click, type, or inspect]
+Expected: [what should happen]
+Reply with one:
+1. [expected outcome]
+2. [common failure mode]
+3. [second common failure mode]
+4. Other
 ```
 
-Report results as you go. If automated tests fail, stop and address before asking user to verify anything.
+If structured question tools are available, convert those reply options into a structured prompt. Otherwise ask the question in plain text with the options inline.
 
-### 4. User Verification (Only When Necessary)
+Example:
 
-For steps Claude cannot automate, present them sequentially with selectable outcomes:
+```text
+Testing: profile photo upload
+Progress: Step 2 of 3
 
-```
-Step N of M: [Brief description]
-
-**Action:** [Specific instruction - what to do]
-
-**Expected:** [What should happen if working correctly]
-```
-
-Then use AskUserQuestion with predicted outcomes:
-- 2-4 most likely outcomes as selectable options
-- First option: expected/success outcome
-- Remaining options: common failure modes
-- Free-text "Other" option is provided automatically
-
-**Example:**
-```json
-{
-  "questions": [{
-    "question": "How does the button look?",
-    "header": "Visual check",
-    "options": [
-      {"label": "Looks correct", "description": "Blue button, proper spacing, readable text"},
-      {"label": "Wrong color/style", "description": "Button exists but styling is off"},
-      {"label": "Layout broken", "description": "Elements overlapping or misaligned"},
-      {"label": "Not visible", "description": "Button missing or hidden"}
-    ],
-    "multiSelect": false
-  }]
-}
+Action: Open `/settings/profile`, upload a PNG under 2 MB, and wait for the save state to finish.
+Expected: The new avatar appears in the header and no error message is shown.
+Reply with one:
+1. Upload worked and the new avatar is visible
+2. Upload finished but the avatar did not update
+3. I saw an error message or spinner got stuck
+4. Other
 ```
 
-### 5. Handle Results
+### 5. Cover the Right Surface Area
 
-**Automated test fails:** Stop and fix before proceeding.
+Always test the changed path first, then cover the most likely place it could fail.
 
-**User reports issue:** Note it, ask if they want to investigate now or continue testing.
+Use these prompts as a calibration checklist.
 
-### 6. Summarize
+**For UI changes:**
 
-After all steps complete:
-- List what was verified automatically (with pass/fail)
-- List what user verified (with results)
-- Summarize any issues found
-- Recommend next actions
+- Check initial render
+- Check loading, empty, error, disabled, and success states when relevant
+- Check keyboard/focus path for interactive controls
+- Check mobile or narrow-width layout if the change is layout-sensitive
+- Check copy, spacing, and obvious visual regressions
+
+**For bug fixes:**
+
+- Reproduce the original bug path
+- Verify the bug no longer occurs
+- Verify a nearby path still behaves correctly
+
+**For API or backend changes:**
+
+- Verify happy-path response
+- Verify invalid-input or failure-path behavior
+- Verify the persisted side effect or downstream state change
+- Verify logs or errors do not show new breakage
+
+**For CLI or local-tool changes:**
+
+- Verify the success path
+- Verify a common failure path and exit code
+- Verify output files, stdout/stderr, and help text when relevant
+
+### 6. Handle Failures Like a Debugger
+
+When the user reports a problem:
+
+- Capture the exact step that failed
+- Record expected versus actual behavior
+- Note any visible error text, logs, or screenshots available
+- Decide whether to stop and investigate immediately or finish the remaining checks only if that still adds value
+
+Before changing code, generate 2-3 plausible hypotheses for the failure so the next debugging step is deliberate instead of guess-driven.
+
+If the failure blocks confidence in the change, stop the manual test and switch into diagnosis.
+
+### 7. Summarize With Confidence and Gaps
+
+Close with a short verification summary that separates what is proven from what is still assumed.
+
+Include:
+
+- Automated checks run and their results
+- Manual steps completed and their results
+- Bugs or regressions found
+- Remaining unverified areas
+- Recommended next action
 
 ## Guidelines
 
-- Run automated checks in parallel when possible
-- Be creative with verification—most things can be tested programmatically
-- If unsure whether something can be automated, try it first
-- Keep user verification steps minimal and focused on truly visual/experiential checks
+- Minimize user effort; maximize agent effort
+- Keep the user in one context at a time
+- Prefer concrete reply options over open-ended questions
+- Check one happy path, one failure path, and one nearby regression when practical
+- Use tools aggressively before asking for human verification
+- Keep the running narrative clear so the user remembers what is being tested and what has already passed

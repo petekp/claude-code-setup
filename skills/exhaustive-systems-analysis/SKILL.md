@@ -1,245 +1,186 @@
 ---
 name: exhaustive-systems-analysis
 description: |
-  Perform comprehensive, deep analysis of a system and its subsystems to identify bugs, race conditions, stale documentation, dead code, and correctness issues. Use when asked to "audit this system", "exhaustive analysis of X", "analyze for correctness", "root out issues in...", "deep dive into...", "verify this code is correct", "find bugs in...", or when reviewing agent-written code for production readiness. Automatically decomposes systems into subsystems, applies appropriate analysis checklists, and produces structured findings with severity classification.
+  Perform evidence-driven, multi-subsystem audits of real codebases to find correctness bugs, race conditions, security gaps, stale documentation, dead code, and production-readiness risks. Use when asked to audit a system end-to-end, verify agent-written code before shipping, analyze a subsystem for correctness across multiple modules, or produce a structured risk report for a real implementation. Prefer other skills for a single isolated bug, a proposal or document review, or a dedicated dead-code cleanup.
 ---
 
 # Exhaustive Systems Analysis
 
-Systematic audit methodology for rooting out latent issues in codebases, particularly agent-written code that needs verification before production use.
+Use this skill for full-system correctness work. The job is to map the system, identify the highest-risk behaviors, prove or refute concrete failure hypotheses, and leave behind a report another engineer can act on without re-reading the whole codebase.
 
-## Core Principles
+## Failure Modes To Prevent
 
-1. **Subsystem isolation** — Analyze each subsystem separately to prevent context pollution
-2. **Evidence-based findings** — Every issue must cite specific code locations
-3. **Severity-driven prioritization** — Critical issues first, cosmetic issues last
-4. **Assume all issues will be fixed** — Don't hedge; be direct about what's wrong
+1. Surface-level audits that scan files without following behavior end-to-end
+2. False certainty: reporting suspicions as bugs without enough evidence
+3. Context drift across large audits with many subsystems
+4. Cosmetic reviews that miss the real correctness and ship-readiness risks
+
+## Operating Mode
+
+- Default to `chat-first` output. Return findings inline unless the user asks for docs or the audit clearly needs multi-session artifacts.
+- Switch to `artifact mode` for large or resumable audits. Use `docs/audit/` or `.claude/docs/audit/`, matching the repo's existing conventions.
+- Do not start fixing code while auditing unless the user explicitly asks for fixes. This skill is for diagnosis, proof, and prioritization.
 
 ## Workflow
 
-### Phase 1: System Decomposition
+### 0. Calibrate The Audit
 
-Before analysis, map the system's subsystems. Auto-discover by:
+Before reading deeply, write a one-screen scope brief using the template in `references/templates.md`.
 
-1. **Read project structure** — Identify major modules, packages, or directories
-2. **Trace data flow** — Follow how data enters, transforms, and exits
-3. **Identify side effects** — File I/O, network, database, IPC, state mutations
-4. **Map dependencies** — Which subsystems depend on which
+Capture:
+- system or area under review
+- user-visible workflows or contracts that matter most
+- likely high-risk surfaces: state, side effects, concurrency, auth, persistence, external integrations
+- out-of-scope areas
+- output mode: `chat-first` or `artifact mode`
 
-Output a subsystem table:
+If the request is broad, narrow it to the modules that can actually change user outcomes or ship readiness.
 
-```markdown
-| # | Subsystem | Files | Side Effects | Priority |
-|---|-----------|-------|--------------|----------|
-| 1 | Lock System | lock.rs | FS: mkdir, rm | High |
-| 2 | API Layer | api/*.rs | Network, DB | High |
-| 3 | Config Parser | config.rs | FS: read | Medium |
-```
+### 1. Load Intent Before Code
 
-**Priority heuristics:**
-- **High**: Side effects, state management, security, concurrency
-- **Medium**: Business logic, data transformation, validation
-- **Low**: Pure utilities, formatting, logging
+Read only the materials that establish intended behavior:
+- `README`, `CLAUDE.md`, architecture docs, ADRs
+- tests that describe user-visible or contract behavior
+- recent commits touching the target area
+- `TODO`, `FIXME`, `HACK`, and "known issues"
+- incident notes, bug reports, or issue tracker items if available
 
-### Phase 2: Sequential Analysis
+Extract:
+- critical workflows
+- external surfaces
+- hotspots and recent churn
+- manual-only surfaces that cannot be fully verified from code alone
 
-Analyze subsystems in priority order. For large codebases (>5 subsystems or >3000 LOC per subsystem), prefer clearing context between subsystems to prevent analysis drift.
+### 2. Build The Coverage Ledger
 
-For each subsystem, apply the appropriate checklist based on subsystem type.
+Map the system into subsystems before deep analysis. Use the coverage ledger template in `references/templates.md`.
 
-### Phase 3: Consolidation
+For each subsystem record:
+- name
+- entrypoints
+- files or directories in scope
+- invariants or promised behaviors
+- side effects
+- risk level
+- status: `planned | in_progress | done | follow_up`
 
-After all subsystems analyzed:
-1. Deduplicate cross-cutting findings
-2. Rank all issues by severity
-3. Produce final report with recommended action order
+Prioritize by user impact first, then by side effects, concurrency, privilege, and recent churn. Folder structure alone is not a priority system.
 
----
+### 3. Generate Hypotheses Before The Deep Pass
 
-## Analysis Checklists
+For each high- or medium-risk subsystem, write 2-3 concrete hypotheses before diving in. Good hypotheses are falsifiable and tied to a behavior boundary.
 
-Select checklist based on subsystem characteristics. Apply multiple if applicable.
+Examples:
+- "A failure between write A and write B can leave persisted state inconsistent."
+- "The retry path duplicates a side effect because idempotence is not enforced."
+- "The docs promise behavior X, but the implementation falls through to Y on invalid input."
 
-### Stateful Systems (files, databases, caches, locks)
+Update or discard hypotheses as evidence comes in. This step prevents aimless scanning.
 
-| Check | Question |
-|-------|----------|
-| **Correctness** | Does code do what documentation claims? |
-| **Atomicity** | Can partial writes corrupt state? |
-| **Race conditions** | Can concurrent access cause inconsistency? |
-| **Cleanup** | Are resources released on all exit paths (success, error, panic)? |
-| **Error recovery** | Do failures leave the system in a valid state? |
-| **Stale documentation** | Do comments match actual behavior? |
-| **Dead code** | Are there unused code paths that could confuse maintainers? |
+### 4. Audit One Subsystem At A Time
 
-### APIs & Network (HTTP, gRPC, WebSocket, IPC)
+Read the subsystem end-to-end:
+- start at entrypoints and trace the happy path
+- trace error paths, cleanup paths, cancellation or shutdown, and retries
+- compare implementation to tests, docs, types, and public contracts
+- run targeted searches, commands, or tests when they strengthen the evidence
+- record exact commands, searches, and scopes when they support a finding
 
-| Check | Question |
-|-------|----------|
-| **Input validation** | Are all inputs validated before use? |
-| **Error responses** | Do errors leak internal details? |
-| **Timeout handling** | Are network operations bounded? |
-| **Retry safety** | Are operations idempotent or properly guarded? |
-| **Authentication** | Are auth checks applied consistently? |
-| **Rate limiting** | Can the API be abused? |
-| **Serialization** | Can malformed payloads cause panics? |
+Select only the relevant checklist sections from `references/checklists.md`. Do not load every checklist if the subsystem only needs one or two.
 
-### Concurrency (threads, async, channels, locks)
+When subagents are available, assign one bounded subsystem per subagent with disjoint files and ask for:
+- hypotheses checked
+- findings with exact citations
+- coverage gaps
+- suggested next verification step
 
-| Check | Question |
-|-------|----------|
-| **Deadlock potential** | Can lock acquisition order cause deadlock? |
-| **Data races** | Is shared mutable state properly synchronized? |
-| **Starvation** | Can any task be indefinitely blocked? |
-| **Cancellation** | Are cancellation/shutdown paths clean? |
-| **Resource leaks** | Are spawned tasks/threads joined or detached properly? |
-| **Panic propagation** | Do panics in tasks crash the whole system? |
+### 5. Classify Findings With Evidence, Status, And Confidence
 
-### UI & Presentation (views, components, templates)
+Every finding must separate observation from inference.
 
-| Check | Question |
-|-------|----------|
-| **State consistency** | Can UI show stale or inconsistent state? |
-| **Error states** | Are all error conditions rendered appropriately? |
-| **Loading states** | Are async operations properly indicated? |
-| **Accessibility** | Are interactions keyboard/screen-reader accessible? |
-| **Memory leaks** | Are subscriptions/observers cleaned up? |
-| **Re-render efficiency** | Are unnecessary re-renders avoided? |
+Required fields:
+- `Severity`: `Critical | High | Medium | Low`
+- `Status`: `Confirmed | Likely | Needs follow-up`
+- `Confidence`: `High | Medium | Low`
+- `Type`: `Bug | Race condition | Security | Stale docs | Dead code | Design flaw | Reliability`
+- `Location`: exact file path and line or function
+- `Impacted behavior`: the user-visible workflow, invariant, or contract at risk
+- `Observed evidence`: code citation, command output, test result, log, or search result
+- `Inference`: why that evidence implies the reported problem
+- `What I checked`: searches, tests, docs, commits, or alternate explanations ruled out
+- `Recommendation`: the smallest credible next action
+- `Next verification step`: required when status is `Needs follow-up`
 
-### Data Processing (parsers, transformers, validators)
+Use `Confirmed` only when the bug is directly demonstrated by code, a failing test, a repro path, or a hard contradiction. Use `Likely` when the reasoning is strong but not directly reproduced. Use `Needs follow-up` when something is suspicious but the evidence is incomplete.
 
-| Check | Question |
-|-------|----------|
-| **Edge cases** | Are empty, null, and boundary values handled? |
-| **Type coercion** | Are implicit conversions safe? |
-| **Overflow/underflow** | Are numeric operations bounded? |
-| **Encoding** | Is text encoding handled consistently (UTF-8)? |
-| **Injection** | Can untrusted input escape its context? |
-| **Invariants** | Are data invariants enforced and documented? |
+### 6. Run A Convergence Pass
 
-### Configuration & Setup (config files, environment, initialization)
+After subsystem reviews:
+- deduplicate cross-cutting findings
+- re-rank by severity and user impact
+- run a final residue sweep for stale docs, deprecated names, orphaned helpers, temp flags, TODO or FIXME clusters, and risky APIs
+- record exact residue queries and counts if they matter to the conclusion
+- list coverage gaps explicitly instead of pretending the audit was complete where it was not
 
-| Check | Question |
-|-------|----------|
-| **Defaults** | Are defaults safe and documented? |
-| **Validation** | Are invalid configs rejected early with clear errors? |
-| **Secrets** | Are secrets handled securely (not logged, not in VCS)? |
-| **Hot reload** | If supported, is reload atomic and safe? |
-| **Compatibility** | Are breaking changes versioned or migrated? |
+## Evidence Standard
 
----
+Prefer stronger evidence over more words. From strongest to weakest:
 
-## Severity Classification
+1. failing or targeted test
+2. reproducible path with exact steps
+3. direct code contradiction with exact citations
+4. logs, telemetry, or command output
+5. scoped search results with counts
+6. static reasoning
 
-Classify every finding. Assume user will fix all issues soon.
+Static reasoning alone can still be valuable, but it should usually produce `Likely`, not `Confirmed`.
 
-| Severity | Criteria | Examples |
-|----------|----------|----------|
-| **Critical** | Data loss, security vulnerability, crash in production | Unhandled panic, SQL injection, file corruption |
-| **High** | Incorrect behavior users will notice | Wrong calculation, race causing wrong UI state, timeout too short |
-| **Medium** | Technical debt that causes confusion or future bugs | Stale docs, misleading names, redundant code paths |
-| **Low** | Cosmetic or minor improvements | Unused parameter, suboptimal algorithm (works correctly) |
+For dead code or stale docs, always show what you searched and why you believe the code or documentation is obsolete. A dead-code claim without a consumer search is incomplete.
 
----
+## Reporting Rules
 
-## Finding Format
+- Lead with findings, not the methodology recap.
+- Prefer user-impacting correctness issues over stylistic cleanup.
+- Keep related findings separate unless they share the same root cause.
+- If nothing serious is wrong, say so directly and still report residual risk and unverified surfaces.
+- Do not write "looks wrong" or "might be an issue" without saying what you checked and what would prove or disprove it.
 
-Every finding must follow this structure:
-
-```markdown
-### [SUBSYSTEM] Finding N: Brief Title
-
-**Severity:** Critical | High | Medium | Low
-**Type:** Bug | Race condition | Security | Stale docs | Dead code | Design flaw
-**Location:** `file.rs:line_range` or `file.rs:function_name`
-
-**Problem:**
-What's wrong and why it matters. Be specific.
-
-**Evidence:**
-Code snippet or reasoning demonstrating the issue.
-
-**Recommendation:**
-Specific fix. Include code if helpful.
-```
-
----
-
-## Output Structure
-
-Adapt output to project organization. Common patterns:
-
-### Pattern A: Audit Directory (recommended for 5+ subsystems)
-
-```
-.claude/docs/audit/
-├── 00-analysis-plan.md      # Subsystem table, priorities, methodology
-├── 01-subsystem-name.md     # Individual analysis
-├── 02-another-subsystem.md
-└── SUMMARY.md               # Consolidated findings, action items
-```
-
-### Pattern B: Single Document (for smaller systems)
-
-```
-.claude/docs/audit/system-name-audit.md
-# Contains: plan, all findings, summary
-```
-
-### Pattern C: Inline with Existing Docs
-
-If project has existing `docs/` or similar, place audit artifacts there.
-
-**Always create a summary** with:
-- Total findings by severity
-- Top 5 most critical issues
-- Recommended fix order
-
----
+Use the templates in `references/templates.md` for:
+- scope brief
+- coverage ledger
+- finding format
+- chat-first summary
+- artifact-mode audit directory
 
 ## Session Management
 
-For thorough analysis:
+Use single-session mode for small audits. For large audits or when context is tight, create a lightweight control plane:
+- `00-plan.md` for the scope brief and coverage ledger
+- one file per subsystem only if the audit is large enough to justify it
+- `SUMMARY.md` for consolidated findings and fix order
+- `HANDOFF.md` if work will continue later
 
-- **Small systems (<1000 LOC, <3 subsystems)**: Single session acceptable
-- **Medium systems (1000-5000 LOC, 3-7 subsystems)**: Clear context between phases
-- **Large systems (>5000 LOC, >7 subsystems)**: Separate sessions per subsystem
+A good handoff includes:
+- what was covered
+- what is now believed to be true
+- what remains unverified
+- current blockers
+- exact next steps
 
-When clearing context, document progress in the analysis plan file so the next session can continue.
+## Anti-Patterns
 
----
-
-## Pre-Analysis: Known Issues Sweep
-
-Before deep analysis, scan for documented issues:
-
-1. **Check CLAUDE.md / README** for "gotchas" or "known issues"
-2. **Search for TODO/FIXME/HACK** comments
-3. **Review recent commits** for bug fixes (may indicate fragile areas)
-4. **Check issue tracker** if accessible
-
-Add these as starting hypotheses—verify or refute during analysis.
-
----
-
-## Anti-Patterns to Avoid
-
-| Anti-Pattern | Why It's Bad | Instead |
-|--------------|--------------|---------|
-| Skimming code | Misses subtle bugs | Read every line in scope |
-| Assuming correctness | Agent code often has edge case bugs | Verify each code path |
-| Vague findings | "This looks wrong" isn't actionable | Cite specific lines, explain why |
-| Over-scoping | Analysis paralysis | Strict subsystem boundaries |
-| Ignoring tests | Tests reveal assumptions | Read tests to understand intent |
-
----
+- scanning directories without identifying entrypoints or invariants
+- reporting every code smell as a finding
+- calling something dead code without a consumer search
+- calling something a bug without showing the broken behavior or violated contract
+- collapsing multiple subsystems into one giant writeup
+- hiding uncertainty instead of marking `Needs follow-up`
 
 ## Completion Criteria
 
-Analysis is complete when:
-
-1. ✅ All high-priority subsystems analyzed
-2. ✅ Every finding has severity, location, and recommendation
-3. ✅ Summary document exists with prioritized action items
-4. ✅ No "TBD" or "needs investigation" items remain
-5. ✅ Cross-references between related findings added
+The audit is complete when:
+1. high-risk subsystems have a ledger entry and a final status
+2. every reported finding has evidence, confidence, and a concrete location
+3. the final report includes fix order plus unverified surfaces
+4. cross-cutting and residue findings have been consolidated
+5. the report is honest about what was not proven

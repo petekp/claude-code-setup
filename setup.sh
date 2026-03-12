@@ -11,7 +11,8 @@
 #   ~/.claude/settings.json → repo/settings.json
 #   ~/.claude/statusline-command.sh ← repo/statusline-command.sh (copied)
 #   ~/.mcp.json            → repo/.mcp.json
-#   ~/.codex/skills/<each> → repo/skills/<each> (individual symlinks)
+#   ~/.codex/skills       → repo/skills
+#   ~/.agents/skills       → repo/skills
 #   ~/.claude/CLAUDE.md    ← repo/instructions/common.md + claude-only.md (assembled)
 #   ~/.codex/AGENTS.md     ← repo/instructions/common.md + codex-only.md (assembled)
 #
@@ -50,6 +51,7 @@ fi
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
 CODEX_DIR="$HOME/.codex"
+AGENTS_DIR="$HOME/.agents"
 
 DIRS_TO_LINK=(skills commands agents hooks scripts)
 
@@ -363,7 +365,6 @@ disassemble_instructions() {
 
 link_codex_skills() {
     local skills_source="$REPO_DIR/skills"
-    local exclude_file="$REPO_DIR/codex-exclude"
 
     if [[ ! -d "$skills_source" ]]; then
         echo "  ⏭  No skills directory in repo, skipping"
@@ -375,85 +376,111 @@ link_codex_skills() {
         return
     fi
 
-    # Load exclude list
-    local -a excludes=()
-    if [[ -f "$exclude_file" ]]; then
-        while IFS= read -r line; do
-            line="${line%%#*}"        # strip comments
-            line="${line// /}"        # strip whitespace
-            [[ -n "$line" ]] && excludes+=("$line")
-        done < "$exclude_file"
+    local target="$CODEX_DIR/skills"
+
+    if [[ -L "$target" ]]; then
+        local current_target=$(readlink "$target")
+        if [[ "$current_target" == "$skills_source" ]]; then
+            echo "  ✓  skills (already linked)"
+            return
+        else
+            echo "  ⚠  skills is symlinked elsewhere: $current_target"
+            echo "      Remove manually if you want to relink"
+            return
+        fi
     fi
 
-    mkdir -p "$CODEX_DIR/skills"
-
-    local count=0
-    local skipped=0
-    for skill_dir in "$skills_source"/*/; do
-        [[ ! -d "$skill_dir" ]] && continue
-        local name=$(basename "$skill_dir")
-        [[ "$name" == .* ]] && continue
-
-        # Check exclude list
-        local excluded=false
-        for ex in "${excludes[@]}"; do
-            if [[ "$name" == "$ex" ]]; then
-                excluded=true
-                break
-            fi
-        done
-        if $excluded; then
-            skipped=$((skipped + 1))
-            continue
-        fi
-
-        local target="$CODEX_DIR/skills/$name"
-
-        if [[ -L "$target" ]]; then
-            local current_target=$(readlink "$target")
-            if [[ "$current_target" == "$skill_dir" || "$current_target" == "${skill_dir%/}" ]]; then
-                count=$((count + 1))
-                continue
-            fi
-        fi
-
-        if [[ -d "$target" && ! -L "$target" ]]; then
-            local backup="$target.backup.$(date +%Y%m%d-%H%M%S)"
-            if $DRY_RUN; then
-                echo "  [dry-run] Would backup $name → $backup"
-            else
-                mv "$target" "$backup"
-            fi
-        fi
-
+    if [[ -d "$target" ]]; then
         if $DRY_RUN; then
-            echo "  [dry-run] Would link: $name"
+            echo "  [dry-run] Would remove existing skills directory"
         else
-            ln -sf "$skill_dir" "$target"
+            echo "  🗑  Removing existing skills directory"
+            rm -rf "$target"
         fi
-        count=$((count + 1))
-    done
-    echo "  ✓  $count skills linked, $skipped excluded (preserving .system/)"
+    fi
+
+    if $DRY_RUN; then
+        echo "  [dry-run] Would link: skills → $skills_source"
+    else
+        ln -s "$skills_source" "$target"
+        echo "  ✓  skills → $skills_source"
+    fi
 }
 
 unlink_codex_skills() {
+    local target="$CODEX_DIR/skills"
+
+    if [[ -L "$target" ]]; then
+        local link_target=$(readlink "$target")
+        if [[ "$link_target" == "$REPO_DIR/skills" ]]; then
+            rm "$target"
+            echo "  ✓  Removed symlink: skills"
+        else
+            echo "  ⏭  skills points elsewhere, skipping"
+        fi
+    else
+        echo "  ⏭  skills (not a symlink, skipping)"
+    fi
+}
+
+link_agents_skills() {
     local skills_source="$REPO_DIR/skills"
 
-    if [[ ! -d "$CODEX_DIR/skills" ]]; then
-        echo "  ⏭  No Codex skills directory found"
+    if [[ ! -d "$skills_source" ]]; then
+        echo "  ⏭  No skills directory in repo, skipping"
         return
     fi
 
-    local count=0
-    for target in "$CODEX_DIR/skills"/*/; do
-        [[ ! -L "${target%/}" ]] && continue
-        local link_target=$(readlink "${target%/}")
-        if [[ "$link_target" == "$skills_source"* ]]; then
-            rm "${target%/}"
-            count=$((count + 1))
+    if [[ ! -d "$AGENTS_DIR" ]]; then
+        echo "  ⏭  ~/.agents not found, skipping"
+        return
+    fi
+
+    local target="$AGENTS_DIR/skills"
+
+    if [[ -L "$target" ]]; then
+        local current_target=$(readlink "$target")
+        if [[ "$current_target" == "$skills_source" ]]; then
+            echo "  ✓  skills (already linked)"
+            return
+        else
+            echo "  ⚠  skills is symlinked elsewhere: $current_target"
+            echo "      Remove manually if you want to relink"
+            return
         fi
-    done
-    echo "  ✓  Removed $count Codex skill symlinks"
+    fi
+
+    if [[ -d "$target" ]]; then
+        if $DRY_RUN; then
+            echo "  [dry-run] Would remove existing skills directory"
+        else
+            echo "  🗑  Removing existing skills directory"
+            rm -rf "$target"
+        fi
+    fi
+
+    if $DRY_RUN; then
+        echo "  [dry-run] Would link: skills → $skills_source"
+    else
+        ln -s "$skills_source" "$target"
+        echo "  ✓  skills → $skills_source"
+    fi
+}
+
+unlink_agents_skills() {
+    local target="$AGENTS_DIR/skills"
+
+    if [[ -L "$target" ]]; then
+        local link_target=$(readlink "$target")
+        if [[ "$link_target" == "$REPO_DIR/skills" ]]; then
+            rm "$target"
+            echo "  ✓  Removed symlink: skills"
+        else
+            echo "  ⏭  skills points elsewhere, skipping"
+        fi
+    else
+        echo "  ⏭  skills (not a symlink, skipping)"
+    fi
 }
 
 if [[ "$1" == "--undo" ]]; then
@@ -481,6 +508,9 @@ if [[ "$1" == "--undo" ]]; then
     echo ""
     echo "Codex skills:"
     unlink_codex_skills
+    echo ""
+    echo "Agents skills:"
+    unlink_agents_skills
     echo ""
     echo "System instructions:"
     disassemble_instructions
@@ -511,8 +541,11 @@ else
         link_home_file "$file"
     done
     echo ""
-    echo "Codex skills (individual symlinks):"
+    echo "Codex skills:"
     link_codex_skills
+    echo ""
+    echo "Agents skills:"
+    link_agents_skills
     echo ""
     echo "System instructions:"
     assemble_instructions

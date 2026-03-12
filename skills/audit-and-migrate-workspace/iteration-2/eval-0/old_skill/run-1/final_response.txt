@@ -1,1 +1,0 @@
-All 9 deliverables written: audited the legacy-auth-service fixture (8 files, 10 legacy surface instances across 6 anti-pattern categories) and produced a complete migration control plane with 3 slices (core migration, residue sweep, final convergence), translation guide, denylist patterns, deletion targets, and a ship checklist with residue sweep criteria.

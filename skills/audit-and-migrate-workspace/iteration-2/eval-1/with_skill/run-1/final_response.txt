@@ -1,1 +1,0 @@
-Resumed the in-flight analytics migration: preserved the sound direction, identified the slice-001 deletion gap and deferred cleanup, hardened all 6 control plane artifacts with verification commands/residue queries/denylist patterns, added 2 new slices (env/docs cleanup + convergence), and wrote a ship checklist with exact release gates — 3 slices remain before ready-to-ship.

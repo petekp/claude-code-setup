@@ -1,7 +1,0 @@
-slice_id,kind,capability,current_path,target_path,status,delete_in_pr,verification,notes
-slice-001,code,page_view,packages/web/src/lib/analytics-client.ts,packages/web/src/lib/analytics-client.ts,migrated,no,"grep -r trackPageView packages/web/src/lib/analytics-client.ts",new client is live for page views
-slice-002,code,signup_tracking,packages/web/src/lib/legacy-analytics.ts,,pending_delete,yes,"test ! -f packages/web/src/lib/legacy-analytics.ts",legacy file — delete after migrating trackSignup
-slice-002,code,signup_tracking,packages/web/src/lib/analytics-client.ts,packages/web/src/lib/analytics-client.ts,in_progress,no,"grep trackSignup packages/web/src/lib/analytics-client.ts",add trackSignup function here
-slice-003,config,env_cleanup,packages/shared/src/env.ts,packages/shared/src/env.ts,in_progress,no,"grep -c LEGACY packages/shared/src/env.ts returns 0",remove LEGACY_ANALYTICS_WRITE_KEY and ENABLE_LEGACY_ANALYTICS_BRIDGE
-slice-003,docs,docs_reconciliation,docs/analytics-migration.md,docs/analytics-migration.md,in_progress,no,"grep -c legacy-analytics docs/analytics-migration.md returns 0",rewrite to describe new architecture only
-slice-004,config,monorepo_root,package.json,package.json,unchanged,no,n/a,no changes expected

@@ -1,1 +1,0 @@
-All 10 deliverables written: complete migration package for replacing timing-based flaky tests with deterministic fake-clock tests, including 7 scoped ratchets, 3 slices with explicit residue queries, exact verification commands, no manual-only checks needed, and a ship-ready closeout plan via SHIP_CHECKLIST.md.

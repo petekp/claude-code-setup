@@ -1,1 +1,0 @@
-Audited the legacy-auth-service fixture (8 files, 6 anti-patterns, 10 instances) and produced a complete migration control plane with 3 slices (core auth migration, config/docs cleanup, convergence), 5 architecture decisions, file map, ship checklist, and handoff — all deliverables written to the outputs directory.

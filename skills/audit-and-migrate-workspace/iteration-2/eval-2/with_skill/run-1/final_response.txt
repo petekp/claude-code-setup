@@ -1,1 +1,0 @@
-All 9 deliverables written: migration package for replacing timing-based flaky tests with deterministic FakeClock tests, including 5 ratchet queries with explicit scopes, 3 slices (2 implementation + 1 convergence), deletion targets for `run-flaky-tests.sh`, exact verification commands per slice, manual-only checks, and a ship-ready closeout plan.

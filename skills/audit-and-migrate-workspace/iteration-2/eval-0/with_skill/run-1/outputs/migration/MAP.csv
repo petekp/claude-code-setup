@@ -1,9 +1,0 @@
-slice_id,kind,capability,current_path,target_path,status,delete_in_pr,verification,notes
-slice-001,code,legacy-cookie-auth,src/auth/legacy-auth.ts,,pending,yes,npx vitest run,Entire module deleted — replaced by token-auth.ts
-slice-001,code,token-auth,src/auth/token-auth.ts,src/auth/token-auth.ts,pending,no,npx vitest run,Retained and becomes sole auth module
-slice-001,code,user-route-auth,src/routes/users.ts,src/routes/users.ts,pending,no,npx vitest run,Remove legacy import and cookie check; token-only
-slice-001,test,auth-test,tests/users-auth.test.ts,tests/users-auth.test.ts,pending,no,npx vitest run,Replace legacy-preference test with token-auth tests
-slice-002,doc,auth-docs,docs/auth.md,docs/auth.md,pending,no,manual review,Rewrite to describe token auth only
-slice-002,script,legacy-seed,scripts/seed-legacy-auth.sh,,pending,yes,./guard.sh,Delete — legacy-only seed script
-slice-002,config,env-example,.env.example,.env.example,pending,no,./guard.sh,Remove LEGACY_* vars; keep TOKEN_AUDIENCE
-slice-003,config,package-meta,package.json,package.json,pending,no,manual review,Name still says legacy-auth-service (Decision 2)
