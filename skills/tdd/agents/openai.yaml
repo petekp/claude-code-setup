@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test-Driven Development"
+  short_description: "Drive changes with failing tests first"
+  default_prompt: "Use $tdd to implement or fix this by writing the smallest failing test first, passing it with minimal code, and refactoring on green."

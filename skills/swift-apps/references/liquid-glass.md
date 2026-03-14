@@ -4,17 +4,19 @@ Use this reference when adopting Apple’s Liquid Glass APIs or reviewing whethe
 
 ## Use Liquid Glass In The Right Layer
 
-Use it for navigation, controls, floating chrome, and grouped interactive elements.
-Do not apply it to the content layer of documents, tables, lists, or reading surfaces.
+Start with standard SwiftUI navigation, toolbar, tab, sheet, and search components. They automatically pick up the current design system before you add any custom glass.
+Reserve custom Liquid Glass for navigation, controls, floating chrome, and grouped interactive elements.
 
 ## Follow The Core Rules
 
 - Prefer native Liquid Glass APIs over custom blur stacks.
+- First run the feature in the latest SDK and inspect what standard components already do for free.
 - Wrap related glass elements in `GlassEffectContainer`.
 - Apply `glassEffect` after layout and appearance modifiers.
 - Use interactive glass only for tappable, clickable, or focusable elements.
 - Keep shapes, prominence, and tinting consistent across a feature.
 - Gate usage with availability checks and provide a clean fallback.
+- In AppKit bridges, prefer `NSGlassEffectContainerView` instead of recreating the material yourself.
 
 ## Start With Safe Defaults
 

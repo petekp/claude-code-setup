@@ -3,15 +3,21 @@
 Mock at **system boundaries** only:
 
 - External APIs (payment, email, etc.)
-- Databases (sometimes - prefer test DB)
+- Databases (sometimes; prefer a real or in-memory test database when cheap)
 - Time/randomness
 - File system (sometimes)
 
-Don't mock:
+Prefer a fake, fixture, or real lightweight dependency before building a tower of
+stubs.
+
+Do not mock:
 
 - Your own classes/modules
 - Internal collaborators
 - Anything you control
+
+If mocking your own module feels necessary, treat that as a design smell. Improve
+the seam instead.
 
 ## Designing for Mockability
 
@@ -57,3 +63,13 @@ The SDK approach means:
 - No conditional logic in test setup
 - Easier to see which endpoints a test exercises
 - Type safety per endpoint
+
+## Prefer These Rewrites
+
+- Replace deep mock trees with a single fake at the boundary
+- Replace mock-heavy unit tests with an integration test through the module's
+  public API
+- Replace global patching with explicit dependency injection
+
+The test should stay focused on behavior. The mock should only make the boundary
+deterministic.

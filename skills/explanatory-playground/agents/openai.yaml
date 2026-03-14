@@ -1,0 +1,4 @@
+interface:
+  display_name: "Explanatory Playground"
+  short_description: "Interactive, source-linked system explainers"
+  default_prompt: "Use $explanatory-playground to build an interactive, source-linked guide that explains how this subsystem works."

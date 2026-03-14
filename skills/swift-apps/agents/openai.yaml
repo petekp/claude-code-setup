@@ -1,0 +1,4 @@
+interface:
+  display_name: "Swift Apps"
+  short_description: "Build and review SwiftUI and macOS apps"
+  default_prompt: "Use $swift-apps to design, build, refactor, or audit this SwiftUI or macOS feature for Apple-platform quality."

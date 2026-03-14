@@ -21,9 +21,16 @@ Use this reference when the feature runs on macOS or when a user asks for a “n
 - Use commands and toolbar items to expose primary actions; do not bury everything in context menus.
 - Support multiple windows when it improves the workflow instead of forcing one global workspace.
 
+Use scenes and environment actions instead of custom window plumbing when SwiftUI already models the behavior:
+
+- `WindowGroup` for primary or repeatable windows
+- `Settings` for the settings window
+- `openWindow`, `pushWindow`, and `dismissWindow` for programmatic window flow
+- `supportsMultipleWindows` to gate multi-window affordances per platform
+
 ## Respect Mac Interaction Contracts
 
-- Put Settings in the app menu and keep the standard keyboard shortcut.
+- Prefer a `Settings` scene so SwiftUI supplies the standard Settings menu item and Command-comma shortcut for you.
 - Do not override standard editing shortcuts such as copy, paste, undo, redo, and find.
 - Keep toolbar groups purposeful and sparse.
 - Prefer system text controls over custom editors unless the feature truly requires custom behavior.
@@ -41,6 +48,7 @@ Reach for AppKit when the feature is genuinely AppKit-native, such as:
 - Performance-sensitive dense data views that need mature AppKit controls
 
 Keep any bridge thin and isolated so AppKit does not leak across the codebase.
+When adopting Liquid Glass in AppKit-backed surfaces, prefer native container views over home-grown blur stacks.
 
 ## Review Before Shipping
 

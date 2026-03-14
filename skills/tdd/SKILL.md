@@ -1,107 +1,182 @@
 ---
 name: tdd
-description: Test-driven development with red-green-refactor loop. Use when user wants to build features or fix bugs using TDD, mentions "red-green-refactor", wants integration tests, or asks for test-first development.
+description: >
+  Test-driven development for features, bug fixes, regressions, and safe refactors
+  using a failing-test-first workflow. Use when Codex needs to add or change
+  behavior with proof, reproduce a bug in a test, write regression or
+  characterization tests, make a refactor safer, or respond to prompts like
+  "use TDD", "red-green-refactor", "write the test first", "add a regression
+  test", "reproduce this in a test", "prove the fix", "cover this change with
+  tests", or "make this safe to refactor". Prefer this skill when confidence
+  should come from executable evidence instead of reasoning alone.
 ---
 
 # Test-Driven Development
 
-## Philosophy
+Treat executable evidence as the source of truth. Use this workflow to prevent
+five common agent failures:
 
-**Core principle**: Tests should verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't.
+- guessing instead of proving
+- writing many tests before learning anything
+- testing shapes or internals instead of behavior
+- over-mocking code under your control
+- letting the feedback loop get so slow that TDD stops working
 
-**Good tests** are integration-style: they exercise real code paths through public APIs. They describe _what_ the system does, not _how_ it does it. A good test reads like a specification - "user can checkout with valid cart" tells you exactly what capability exists. These tests survive refactors because they don't care about internal structure.
+## Start the Session
 
-**Bad tests** are coupled to implementation. They mock internal collaborators, test private methods, or verify through external means (like querying a database directly instead of using the interface). The warning sign: your test breaks when you refactor, but behavior hasn't changed. If you rename an internal function and tests fail, those tests were testing implementation, not behavior.
+Before editing code:
 
-See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
+1. Read repo-local instructions such as `AGENTS.md`, `CLAUDE.md`, and package or
+   test scripts.
+2. Inspect nearby production code and nearby tests to infer naming, seams,
+   fixtures, and the fastest targeted command.
+3. Identify two commands up front:
+   - the fastest command that runs the single target test
+   - the broader command that validates the changed boundary before finishing
+4. Choose the smallest public or near-public seam that can prove the behavior.
+   See [seams.md](seams.md).
+5. Ask the user only when the public contract, intended behavior, or required
+   coverage scope is materially ambiguous.
 
-## Anti-Pattern: Horizontal Slices
+Follow repo-local instructions if they are stricter than this skill.
 
-**DO NOT write all tests first, then all implementation.** This is "horizontal slicing" - treating RED as "write all tests" and GREEN as "write all code."
+## Work Vertically
 
-This produces **crap tests**:
+Do not batch all tests first and all implementation later.
 
-- Tests written in bulk test _imagined_ behavior, not _actual_ behavior
-- You end up testing the _shape_ of things (data structures, function signatures) rather than user-facing behavior
-- Tests become insensitive to real changes - they pass when behavior breaks, fail when behavior is fine
-- You outrun your headlights, committing to test structure before understanding the implementation
+```text
+Wrong:
+  RED:   test1, test2, test3
+  GREEN: impl1, impl2, impl3
 
-**Correct approach**: Vertical slices via tracer bullets. One test → one implementation → repeat. Each test responds to what you learned from the previous cycle. Because you just wrote the code, you know exactly what behavior matters and how to verify it.
-
-```
-WRONG (horizontal):
-  RED:   test1, test2, test3, test4, test5
-  GREEN: impl1, impl2, impl3, impl4, impl5
-
-RIGHT (vertical):
-  RED→GREEN: test1→impl1
-  RED→GREEN: test2→impl2
-  RED→GREEN: test3→impl3
-  ...
-```
-
-## Workflow
-
-### 1. Planning
-
-Before writing any code:
-
-- [ ] Confirm with user what interface changes are needed
-- [ ] Confirm with user which behaviors to test (prioritize)
-- [ ] Identify opportunities for [deep modules](deep-modules.md) (small interface, deep implementation)
-- [ ] Design interfaces for [testability](interface-design.md)
-- [ ] List the behaviors to test (not implementation steps)
-- [ ] Get user approval on the plan
-
-Ask: "What should the public interface look like? Which behaviors are most important to test?"
-
-**You can't test everything.** Confirm with the user exactly which behaviors matter most. Focus testing effort on critical paths and complex logic, not every possible edge case.
-
-### 2. Tracer Bullet
-
-Write ONE test that confirms ONE thing about the system:
-
-```
-RED:   Write test for first behavior → test fails
-GREEN: Write minimal code to pass → test passes
+Right:
+  RED -> GREEN -> REFACTOR: test1 -> impl1
+  RED -> GREEN -> REFACTOR: test2 -> impl2
+  RED -> GREEN -> REFACTOR: test3 -> impl3
 ```
 
-This is your tracer bullet - proves the path works end-to-end.
+Write one failing test. Make it pass with the smallest sensible change.
+Refactor only on green. Repeat.
 
-### 3. Incremental Loop
+## Choose the Entry Path
 
-For each remaining behavior:
+### New feature
 
-```
-RED:   Write next test → fails
-GREEN: Minimal code to pass → passes
-```
+1. Start with the smallest user-visible or caller-visible behavior worth
+   shipping.
+2. Write one tracer-bullet test at the chosen seam.
+3. Make it fail for the right reason.
+4. Implement the thinnest slice that turns the test green.
+5. Add the next behavior only after the current one is proven.
 
-Rules:
+### Bug fix or regression
 
-- One test at a time
-- Only enough code to pass current test
-- Don't anticipate future tests
-- Keep tests focused on observable behavior
+1. List 2-3 plausible hypotheses before changing code.
+2. Reproduce the bug with the smallest failing regression test that would have
+   caught it.
+3. Narrow the reproduction with logs, assertions, or a lower seam if the first
+   repro is noisy.
+4. Fix the code under that failing test.
+5. Add one neighboring test only if it proves the fix is specific rather than
+   accidental.
 
-### 4. Refactor
+See [bugfixes.md](bugfixes.md) for the detailed mini-loop.
 
-After all tests pass, look for [refactor candidates](refactoring.md):
+### Legacy code or refactor
 
-- [ ] Extract duplication
-- [ ] Deepen modules (move complexity behind simple interfaces)
-- [ ] Apply SOLID principles where natural
-- [ ] Consider what new code reveals about existing code
-- [ ] Run tests after each refactor step
+1. Freeze current behavior with a characterization test before reshaping
+   internals.
+2. Refactor behind that safety rail until the design exposes a better seam.
+3. Replace overly broad characterization coverage with tighter behavioral tests
+   when the seam improves.
+4. Use the green state to deepen modules and simplify interfaces.
 
-**Never refactor while RED.** Get to GREEN first.
+See [seams.md](seams.md), [deep-modules.md](deep-modules.md), and
+[refactoring.md](refactoring.md).
 
-## Checklist Per Cycle
+## Run the Core Loop
 
-```
-[ ] Test describes behavior, not implementation
-[ ] Test uses public interface only
-[ ] Test would survive internal refactor
-[ ] Code is minimal for this test
-[ ] No speculative features added
-```
+For each cycle:
+
+1. `RED`: Write or tighten one test that proves one behavior. Confirm it fails.
+2. `GREEN`: Write the minimum production change that makes only that behavior
+   pass.
+3. `REFACTOR`: Clean up duplication, naming, and structure while staying green.
+4. Re-run the smallest relevant command first, then widen verification as
+   confidence grows.
+
+If the test cannot fail, the loop is invalid. Break it on purpose, lower the
+seam, or add the missing observability before trusting it.
+
+## Keep Feedback Fast
+
+Use this ladder:
+
+1. Run the single target test while iterating.
+2. Run the surrounding file, package, or focused suite after a small cluster of
+   green cycles.
+3. Run broader verification before finishing: the relevant integration suite,
+   typecheck, lint, or full tests for the touched boundary.
+4. Call out any verification gap explicitly if time, tooling, or environment
+   prevents broader checks.
+
+If the loop feels slow, the seam is probably too high. Move down a level unless
+the behavior truly lives in the browser or across system boundaries.
+
+## Choose Assertions That Survive Refactors
+
+- Assert observable outcomes, not helper calls.
+- Prefer public interfaces over internal collaborators.
+- Mock only system boundaries you do not control. See [mocking.md](mocking.md).
+- Treat tests as specifications for behavior, not snapshots of implementation
+  shape.
+- Keep each test about one behavior, even if that behavior needs more than one
+  assertion.
+
+See [tests.md](tests.md) for examples and rewrites.
+
+## Use Subagents Carefully
+
+When other agents help:
+
+- Keep ownership of the failing test, the red/green loop, and final verification
+  in the main thread.
+- Let workers explore implementation ideas or refactors under the existing
+  failing test.
+- Reject fixes that only pass by weakening the test unless the test was proving
+  the wrong behavior.
+
+## Avoid These Anti-Patterns
+
+- Editing production code for the target behavior before seeing a meaningful
+  failing test
+- Writing the whole test plan up front
+- Solving multiple behaviors in one red/green cycle
+- Using browser or end-to-end tests for logic that could be proven faster
+  elsewhere
+- Mocking modules you own just to make the test convenient
+- Leaving debug scaffolding, speculative branches, or unverified refactors
+  behind
+
+## Finish with Proof
+
+Consider the task done only when:
+
+- the changed behavior is covered by a test that failed before the change
+- the targeted tests pass
+- the relevant broader verification command has run, or the gap is documented
+  clearly
+- refactors happened only while green
+- the final summary states what behavior is now proven and what still relies on
+  manual verification
+
+## Read More Only As Needed
+
+- [tests.md](tests.md) for durable behavior-level assertions and bad-to-better
+  rewrites
+- [mocking.md](mocking.md) for boundary-only mocking rules
+- [seams.md](seams.md) for seam selection, test levels, and fast feedback
+- [bugfixes.md](bugfixes.md) for regression-test-first debugging
+- [interface-design.md](interface-design.md) for testable interfaces
+- [deep-modules.md](deep-modules.md) for hiding complexity behind small APIs
+- [refactoring.md](refactoring.md) for green-only cleanup targets

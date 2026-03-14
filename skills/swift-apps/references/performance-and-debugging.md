@@ -47,6 +47,7 @@ Prefer these moves:
 ## Profile With Instruments
 
 Use the SwiftUI template and Time Profiler in a release build.
+Apple's performance analysis guidance is especially useful when you need to confirm long `body` updates, frequent view invalidations, hitches, or hangs before rewriting architecture.
 Capture the exact interaction that feels slow: scrolling, navigation, animation, typing, or data refresh.
 
 Ask for or collect:
@@ -70,4 +71,5 @@ Summarize:
 - Re-run the same interaction and compare hitches, CPU, memory, or frame pacing.
 - Re-run the failing test or reproducer.
 - Confirm accessibility and reduced-motion behavior did not regress.
+- Re-check in a release build on representative hardware, because previews and debug builds are for iteration, not trustworthy performance baselines.
 - Call out any remaining unknowns that still require user-run profiling or device checks.

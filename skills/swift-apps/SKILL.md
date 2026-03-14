@@ -1,9 +1,9 @@
 ---
-name: swift-apple-platforms
-description: Build, refactor, review, and debug native Apple-platform software in Swift. Use when working on `.swift` files, SwiftUI views, Observation-based state, async/await flows, UIKit/AppKit interop, Liquid Glass adoption, macOS-native UX, or SwiftUI performance/accessibility. Trigger on requests to create or polish iOS, iPadOS, macOS, or visionOS features; clean up SwiftUI view structure; diagnose jank or invalidation storms; review app quality; or make a feature feel like a good Apple-platform citizen.
+name: swift-apps
+description: Build, refactor, review, and debug native Apple-platform software in Swift. Use when working on `.swift` files, SwiftUI views, Observation-based state, `@Bindable` and binding flow, SwiftData-backed UI, scenes and windows, search/navigation structures, UIKit/AppKit interop, Liquid Glass adoption, macOS-native UX, or SwiftUI performance/accessibility. Trigger on requests to create or polish iOS, iPadOS, macOS, or visionOS features; clean up SwiftUI view structure; diagnose jank or invalidation storms; review app quality; or make a feature feel like a good Apple-platform citizen.
 ---
 
-# Swift Apple Platforms
+# Swift Apps
 
 Engineer native-feeling Apple-platform software with SwiftUI-first patterns, clear state ownership, platform fidelity, accessibility, and performance discipline.
 Default to direct, readable code that works with Apple frameworks instead of layering web-style abstractions onto SwiftUI.
@@ -16,6 +16,7 @@ Default to direct, readable code that works with Apple frameworks instead of lay
 - **Performance or jank**: Start code-first, then move to profiling if review is inconclusive. Load [references/performance-and-debugging.md](references/performance-and-debugging.md).
 - **Liquid Glass or new design-system APIs**: Use native materials and availability gating, not custom blur imitations. Load [references/liquid-glass.md](references/liquid-glass.md).
 - **macOS-specific work**: Treat menu commands, keyboard flows, windows, sidebars, toolbars, and text behavior as product requirements, not polish. Load [references/macos-quality-bar.md](references/macos-quality-bar.md).
+- **Version-sensitive API questions**: When the exact current API shape matters, load [references/official-docs-map.md](references/official-docs-map.md) first and trust Apple docs over memory.
 
 ## Apply The Core Rules
 
@@ -26,7 +27,7 @@ Default to direct, readable code that works with Apple frameworks instead of lay
    Every feature should account for loading, empty, error, offline, partial, and permission-restricted states.
 
 3. Keep state close to the view that owns it.
-   Use `@State`, `@Binding`, `@Environment`, `@Observable`, `@Query`, and `.task` as the default toolset. Introduce a view model only when the existing codebase already relies on them or when non-view orchestration truly needs a reference type.
+   Use `@State`, `@Binding`, `@Bindable`, `@Environment`, `@Observable`, `@Query`, and `.task` as the default toolset. Introduce a view model only when the existing codebase already relies on them or when non-view orchestration truly needs a reference type.
 
 4. Keep `body` cheap and identity stable.
    Do not sort, filter, format, decode images, create UUIDs, or perform I/O in `body`. Precompute or cache expensive work, and use stable IDs.
@@ -49,11 +50,13 @@ Default to direct, readable code that works with Apple frameworks instead of lay
 | Jank, invalidation storms, layout thrash, profiling, bug triage, verification | [references/performance-and-debugging.md](references/performance-and-debugging.md) |
 | Menu bar, shortcuts, windows, sidebars, toolbars, Mac polish, AppKit escape hatches | [references/macos-quality-bar.md](references/macos-quality-bar.md) |
 | Liquid Glass placement, modifier order, containers, availability, transitions | [references/liquid-glass.md](references/liquid-glass.md) |
+| Official Apple docs and WWDC sessions for state, navigation, scenes, Liquid Glass, and performance | [references/official-docs-map.md](references/official-docs-map.md) |
 
 ## Deliver The Result
 
 - Start by naming the target platform, app archetype, and primary interaction model.
 - Call out the chosen state and data-flow approach whenever the architecture is non-obvious.
+- Use previews for fast iteration, but verify critical behavior in Simulator or on device when scenes, windows, focus, animation, or performance are involved.
 - When reviewing, report the highest-risk issues first: correctness, platform mismatch, accessibility gaps, performance risks, then style.
 - When debugging, share the leading hypotheses, the evidence that ruled them in or out, and the final root cause.
 - Finish with verification steps: tests, build or lint commands, profiling passes, and any manual checks still needed.
