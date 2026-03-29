@@ -35,7 +35,7 @@ Codex's `config.toml` mixes MCP servers with tool-specific settings:
 - `agents_directory` — path to agent instructions
 - Feature flags and sandbox settings
 
-Symmlinking this file would override all those settings. Instead, MCP servers must be added to `config.toml` manually.
+Symlinking this file would override all those settings. Instead, MCP servers must be added to `config.toml` manually.
 
 ## Adding a new server to both tools
 

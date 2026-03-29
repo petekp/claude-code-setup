@@ -6,7 +6,7 @@
 set -euo pipefail
 
 HOOK_SCRIPT="$HOME/.claude/scripts/hud-state-tracker.sh"
-STATE_FILE="$HOME/.claude/hud-session-states-v2.json"
+STATE_FILE="$HOME/.capacitor/sessions.json"
 TEST_SESSION_ID="test-$(date +%s)"
 TEST_CWD="/tmp/test-project"
 
@@ -81,9 +81,9 @@ run_test "UserPromptSubmit transitions to working" \
   "working"
 
 # Test 3: PermissionRequest
-run_test "PermissionRequest transitions to blocked" \
+run_test "PermissionRequest transitions to waiting" \
   '{"hook_event_name":"PermissionRequest","session_id":"'$TEST_SESSION_ID'","cwd":"'$TEST_CWD'"}' \
-  "blocked"
+  "waiting"
 
 # Test 4: PostToolUse (from blocked to working)
 run_test "PostToolUse (blocked->working)" \

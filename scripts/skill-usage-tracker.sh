@@ -49,4 +49,8 @@ timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 project="${SESSION_CWD:-$PWD}"
 
 mkdir -p "$(dirname "$USAGE_LOG")"
-echo "{\"skill\":\"$skill_name\",\"ts\":\"$timestamp\",\"project\":\"$project\"}" >> "$USAGE_LOG"
+python3 -c "
+import json, sys
+json.dump({'skill': sys.argv[1], 'ts': sys.argv[2], 'project': sys.argv[3]}, sys.stdout)
+" "$skill_name" "$timestamp" "$project" >> "$USAGE_LOG"
+echo "" >> "$USAGE_LOG"

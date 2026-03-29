@@ -4,7 +4,6 @@
 #
 # What this does:
 #   ~/.claude/skills       → repo/skills
-#   ~/.claude/commands     → repo/commands
 #   ~/.claude/agents       → repo/agents
 #   ~/.claude/hooks        → repo/hooks
 #   ~/.claude/scripts      → repo/scripts
@@ -53,7 +52,7 @@ CLAUDE_DIR="$HOME/.claude"
 AGENTS_DIR="$HOME/.agents"
 CODEX_EXCLUDE="$REPO_DIR/codex-exclude"
 
-DIRS_TO_LINK=(skills commands agents hooks scripts)
+DIRS_TO_LINK=(skills agents hooks scripts)
 
 FILES_TO_LINK=(settings.json)
 
@@ -601,7 +600,12 @@ verify() {
         if [[ -L "$target" ]]; then
             local actual=$(readlink "$target")
             if [[ "$actual" == "$source" ]]; then
-                echo "  ✓  $name → $source"
+                if [[ ! -e "$target" ]]; then
+                    echo "  ✗  $name → $source (target does not exist)"
+                    issues=$((issues + 1))
+                else
+                    echo "  ✓  $name → $source"
+                fi
             else
                 echo "  ⚠  $name → $actual (expected $source)"
                 issues=$((issues + 1))
@@ -624,7 +628,12 @@ verify() {
         if [[ -L "$target" ]]; then
             local actual=$(readlink "$target")
             if [[ "$actual" == "$source" ]]; then
-                echo "  ✓  $name → $source"
+                if [[ ! -e "$target" ]]; then
+                    echo "  ✗  $name → $source (target does not exist)"
+                    issues=$((issues + 1))
+                else
+                    echo "  ✓  $name → $source"
+                fi
             else
                 echo "  ⚠  $name → $actual (expected $source)"
                 issues=$((issues + 1))
@@ -666,7 +675,12 @@ verify() {
         if [[ -L "$target" ]]; then
             local actual=$(readlink "$target")
             if [[ "$actual" == "$source" ]]; then
-                echo "  ✓  $name → $source"
+                if [[ ! -e "$target" ]]; then
+                    echo "  ✗  $name → $source (target does not exist)"
+                    issues=$((issues + 1))
+                else
+                    echo "  ✓  $name → $source"
+                fi
             else
                 echo "  ⚠  $name → $actual (expected $source)"
                 issues=$((issues + 1))

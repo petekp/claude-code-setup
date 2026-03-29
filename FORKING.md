@@ -17,7 +17,7 @@ How to make this repo your own.
 ./setup.sh
 ```
 
-This symlinks directories into `~/.claude/`, links skills into `~/.codex/`, and assembles system instructions for both tools.
+This symlinks directories into `~/.claude/`, links skills into `~/.agents/`, and assembles system instructions for both tools.
 
 ## Step 3: Detach from Upstream (Optional)
 
@@ -58,30 +58,6 @@ description: When to use this skill
 Content here...
 ```
 
-### Add or Remove Commands
-
-```bash
-# Remove a command
-rm commands/synthesize-feedback.md
-
-# Add your own
-# Create commands/my-command.md with frontmatter
-```
-
-Command structure:
-```markdown
----
-description: What this command does
-allowed-tools: Bash, Edit, Read
----
-
-Instructions for Claude...
-```
-
-### Update /squad
-
-If you keep the `/squad` command, update the skill catalog in `commands/squad.md` to match your actual skills.
-
 ## Step 5: Handle Permissions
 
 The `templates/settings.json.reference` is **reference only**. It contains:
@@ -117,7 +93,6 @@ See [templates/README.md](templates/README.md) for more details.
 | Codex-only instructions | `instructions/codex-only.md` | Codex-specific rules |
 | Coding conventions | `CLAUDE.md` (repo root) | Per-project preferences (not assembled) |
 | Skills | `skills/` | Add/remove as needed |
-| Commands | `commands/` | Add/remove as needed |
 | Agents | `agents/` | Add/remove as needed |
 | Hooks | `hooks/` | Add/remove as needed |
 | Codex exclusions | `codex-exclude` | Skills to skip for Codex |

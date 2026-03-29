@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/scripts/generate-hud-status.sh"
+            "command": "~/.claude/scripts/hud-state-tracker.sh Stop"
           }
         ]
       }
