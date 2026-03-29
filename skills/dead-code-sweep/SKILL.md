@@ -71,6 +71,10 @@ For each track, the sub-agent should:
 1. Read `references/cruft-patterns.md` for detection strategies specific to that track
 2. Search the codebase using Grep and Glob
 3. Verify each candidate by tracing references — a symbol is only dead if **zero live code paths** reach it
+3b. Search CI scripts and shell test fixtures for path references to the
+    candidate: `rg <filename> -- scripts/ tests/ .github/`. Files consumed
+    as ratchet-check arguments or Bats test fixtures are NOT dead even if
+    zero source files import them.
 4. Record findings with file path, line range, and evidence
 
 **Verification is critical.** Common false positives to watch for:
@@ -82,6 +86,10 @@ For each track, the sub-agent should:
 - Decorator-registered or plugin-registered handlers
 - CLI entry points referenced in package.json `bin` fields
 - CSS class names referenced in templates or JSX as dynamic strings
+- CI scripts and shell test fixtures that reference files by path — e.g.,
+  `check_file_contains "name" "path/to/file"` in `scripts/ci/`, or
+  `cat "$PROJECT_ROOT/path/to/file"` in `tests/**/*.bats`. These are string
+  arguments, not imports, so import-tracing tools miss them entirely.
 
 When uncertain, mark as "needs review" rather than "confirmed dead."
 
@@ -173,3 +181,7 @@ Agent-generated cruft tends to cluster. When one dead function is found, examine
 ### Use git history as a signal
 
 When available, check when suspect code was last meaningfully modified. Code untouched across several refactor commits is more likely dead. Use `git log --follow` to trace renames and detect superseded files.
+
+### Check CI and test infrastructure, not just source code
+
+Files may have zero source-code references but be consumed by CI scripts (`scripts/ci/`, `.github/workflows/`), shell test fixtures (`tests/**/*.bats`), or verification tooling (`.verifier/`). These references appear as string arguments to shell functions — invisible to import tracing. Always run `rg <filename> -- scripts/ tests/ .github/` before classifying a file as orphaned.
