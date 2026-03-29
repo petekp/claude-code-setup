@@ -1,0 +1,130 @@
+schema_version: "1"
+method:
+  id: research-to-implementation
+  version: "2026-03-21"
+  title: Research-to-Implementation
+  description: >
+    Artifact-driven method for taking a significant feature from idea to shipped code.
+    Chains intent → constraints → decision → contract → code through 5 phases.
+    Topology only — this file does not encode runtime behavior or adapter contracts.
+
+  phases:
+    - id: alignment
+      title: Alignment
+      execution: serial
+      steps:
+        - id: intent-lock
+          title: Intent Lock
+          action: interactive
+          produces: intent-brief.md
+          gate:
+            type: outputs_present
+            required: [intent-brief.md]
+            checks: ["Ranked Outcomes non-empty", "Non-Goals non-empty"]
+
+    - id: evidence
+      title: Evidence
+      execution: serial
+      steps:
+        - id: evidence-probes
+          title: Parallel Evidence Probes
+          action: dispatch
+          execution: parallel
+          workers:
+            - id: external
+              title: External Patterns
+              skills: [deep-research]
+              produces: external-digest.md
+            - id: internal
+              title: Internal System Surface
+              skills: [] # domain-skills resolved at runtime
+              produces: internal-digest.md
+          consumes: [intent-brief.md]
+          produces: [external-digest.md, internal-digest.md]
+        - id: constraints-synthesis
+          title: Constraints Synthesis
+          action: synthesis
+          consumes: [external-digest.md, internal-digest.md]
+          produces: constraints.md
+          gate:
+            type: outputs_present
+            required: [constraints.md]
+            checks: ["at least one hard invariant", "ranked open questions", "certainty labels"]
+
+    - id: decision
+      title: Decision
+      execution: serial
+      steps:
+        - id: generate-candidates
+          title: Generate Distinct Candidates
+          action: dispatch
+          skills: [] # domain-skills resolved at runtime
+          consumes: [intent-brief.md, constraints.md]
+          produces: options.md
+        - id: adversarial-evaluation
+          title: Adversarial Evaluation + Decision Packet
+          action: dispatch
+          skills: [] # domain-skills resolved at runtime
+          consumes: [constraints.md, options.md]
+          produces: decision-packet.md
+        - id: tradeoff-decision
+          title: Tradeoff Decision
+          action: interactive
+          consumes: [decision-packet.md]
+          produces: adr.md
+          gate:
+            type: outputs_present
+            required: [adr.md]
+            checks: ["Decision non-empty", "Accepted Risks non-empty", "at least one Rejected Alternative"]
+
+    - id: preflight
+      title: Preflight
+      execution: serial
+      steps:
+        - id: implementation-contract
+          title: Implementation Contract
+          action: synthesis
+          consumes: [adr.md, constraints.md, intent-brief.md]
+          produces: execution-packet.md
+          gate:
+            type: outputs_present
+            required: [execution-packet.md]
+            checks: ["Invariants non-empty", "Slice Order non-empty", "Test Obligations non-empty"]
+        - id: prove-seam
+          title: Prove the Hardest Seam
+          action: dispatch
+          skills: [] # domain-skills resolved at runtime
+          consumes: [execution-packet.md]
+          produces: seam-proof.md
+          gate:
+            type: evidence-reopen
+            outcomes:
+              design_holds: continue
+              needs_adjustment: update-execution-packet
+              design_invalidated: interactive-reopen
+
+    - id: delivery
+      title: Delivery
+      execution: serial
+      steps:
+        - id: implement
+          title: Implement
+          action: dispatch
+          adapter: manage-codex
+          consumes: [execution-packet.md]
+          produces: implementation-handoff.md
+          max_attempts: 3
+          notes: >
+            Delegates to manage-codex skill. Orchestrator creates CHARTER.md
+            from execution-packet.md and synthesizes implementation-handoff.md
+            from manage-codex convergence output.
+        - id: ship-review
+          title: Final Ship Review
+          action: dispatch
+          skills: [] # domain-skills resolved at runtime
+          consumes: [execution-packet.md, implementation-handoff.md, intent-brief.md]
+          produces: ship-review.md
+          max_attempts: 2
+          notes: >
+            Assessment only — worker does not modify source code.
+            If ISSUES FOUND, orchestrator handles remediation before re-running.

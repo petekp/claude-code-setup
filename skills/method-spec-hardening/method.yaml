@@ -1,0 +1,161 @@
+schema_version: "1"
+method:
+  id: spec-hardening
+  version: "2026-03-22"
+  title: Spec Hardening
+  description: >
+    Artifact-driven method for turning a rough RFC, design spec, PRD, or method
+    schema into a canonical amended spec, a build-ready execution packet, and a
+    reviewed implementation plan without crossing into code. Chains draft ->
+    digest -> critique -> amendment -> contract -> plan across 6 phases.
+    Topology only - this file does not encode runtime behavior or adapter contracts.
+
+  phases:
+    - id: intake
+      title: Intake
+      execution: serial
+      steps:
+        - id: spec-intake
+          title: Spec Intake
+          action: interactive
+          produces: spec-brief.md
+          gate:
+            type: outputs_present
+            required: [spec-brief.md]
+            checks:
+              - "Source Document explicit"
+              - "Intended Outcome explicit"
+              - "Non-Goals explicit"
+
+    - id: multi-angle-review
+      title: Multi-Angle Review
+      execution: serial
+      steps:
+        - id: draft-digest
+          title: Draft Digest
+          action: synthesis
+          consumes: [spec-brief.md]
+          produces: draft-digest.md
+          notes: >
+            Also reads the external source draft referenced by spec-brief.md.
+          gate:
+            type: outputs_present
+            required: [draft-digest.md]
+            checks:
+              - "mechanism captured without new design decisions"
+              - "Assumptions section present"
+              - "Ambiguities section present"
+        - id: parallel-review-passes
+          title: Parallel Review Passes
+          action: dispatch
+          execution: parallel
+          workers:
+            - id: implementer
+              title: Implementer Review
+              skills: [clean-architecture]
+              produces: implementer-review.md
+              notes: "Add <domain-skills> at runtime."
+            - id: systems
+              title: Systems Review
+              skills: [architecture-exploration, clean-architecture]
+              produces: systems-review.md
+              notes: "Add <domain-skills> at runtime if skill budget allows."
+            - id: comparative
+              title: Comparative Review
+              skills: [deep-research, architecture-exploration]
+              produces: comparative-review.md
+          consumes: [draft-digest.md]
+          produces: [implementer-review.md, systems-review.md, comparative-review.md]
+          gate:
+            type: outputs_present
+            required: [implementer-review.md, systems-review.md, comparative-review.md]
+            checks:
+              - "implementer review names build seams or says draft is buildable"
+              - "systems review covers architecture and runtime concerns"
+              - "comparative review includes two meaningful comparisons or records no relevant prior art"
+          notes: >
+            Represents Steps 3, 4, and 5 in SKILL.md. These reviews are independent
+            and can be dispatched in parallel once draft-digest.md exists.
+
+    - id: amendment
+      title: Amendment
+      execution: serial
+      steps:
+        - id: caveat-resolution
+          title: Caveat Resolution
+          action: interactive
+          consumes: [implementer-review.md, systems-review.md, comparative-review.md]
+          produces: caveat-resolution.md
+          gate:
+            type: outputs_present
+            required: [caveat-resolution.md]
+            checks:
+              - "Accepted Caveats or explicit no-change rationale present"
+              - "Deferred Risks section non-empty"
+        - id: amended-draft
+          title: Amended Draft
+          action: synthesis
+          consumes: [draft-digest.md, caveat-resolution.md]
+          produces: amended-spec.md
+          notes: >
+            Also reads the external source draft referenced by spec-brief.md.
+          gate:
+            type: outputs_present
+            required: [amended-spec.md]
+            checks:
+              - "accepted caveats reflected"
+              - "deferred risks still visible"
+
+    - id: contracting
+      title: Contracting
+      execution: serial
+      steps:
+        - id: execution-packet
+          title: Execution Packet
+          action: synthesis
+          consumes: [amended-spec.md, systems-review.md, caveat-resolution.md]
+          produces: execution-packet.md
+          gate:
+            type: outputs_present
+            required: [execution-packet.md]
+            checks:
+              - "Invariants non-empty"
+              - "Verification Strategy non-empty"
+              - "Rollback or Reopen Triggers non-empty"
+
+    - id: planning
+      title: Planning
+      execution: serial
+      steps:
+        - id: implementation-plan
+          title: Implementation Plan
+          action: synthesis
+          consumes: [amended-spec.md, execution-packet.md]
+          produces: implementation-plan.md
+          gate:
+            type: outputs_present
+            required: [implementation-plan.md]
+            checks:
+              - "every slice references an execution-packet obligation"
+              - "every slice has an associated test or verification responsibility"
+
+    - id: validation
+      title: Validation
+      execution: serial
+      steps:
+        - id: plan-review
+          title: Plan Review
+          action: dispatch
+          skills: [seam-ripper, clean-architecture] # add <domain-skills> at runtime if skill budget allows
+          consumes: [execution-packet.md, implementation-plan.md]
+          produces: plan-review.md
+          gate:
+            type: verdict-reopen
+            outcomes:
+              ready: continue
+              revise: interactive-reopen
+          notes: >
+            READY is allowed only when Blocking Gaps are empty. REVISE must name
+            whether to reopen caveat-resolution.md, amended-spec.md, or
+            implementation-plan.md. The user may instead pause for a new upstream
+            decision loop.

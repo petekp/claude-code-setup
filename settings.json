@@ -274,6 +274,17 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/skill-usage-tracker.sh"
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {

@@ -1,0 +1,141 @@
+schema_version: "1"
+method:
+  id: decision-pressure-loop
+  version: "2026-03-22"
+  title: Decision-Pressure-Loop
+  description: >
+    Architecture decision workflow for choosing between meaningful architectural
+    or protocol options under uncertainty before implementation begins. Chains
+    framing -> current-state reality -> serious options -> explicit weighting ->
+    pressure test -> published decision guide through 5 phases. Topology only —
+    this file does not encode runtime behavior or adapter contracts.
+
+  phases:
+    - id: framing
+      title: Framing
+      execution: serial
+      steps:
+        - id: decision-frame
+          title: Decision Frame
+          action: interactive
+          produces: decision-brief.md
+          gate:
+            type: outputs_present
+            required: [decision-brief.md]
+            checks:
+              - "Decision Question non-empty"
+              - "Must-Protect Qualities non-empty"
+              - "Non-Decision Space non-empty"
+
+    - id: reality-mapping
+      title: Reality Mapping
+      execution: serial
+      steps:
+        - id: current-system-map
+          title: Current System Map
+          action: dispatch
+          skills: [architecture-exploration] # plus domain-skills resolved at runtime
+          consumes: [decision-brief.md]
+          produces: current-system-map.md
+          max_attempts: 2
+          gate:
+            type: outputs_present
+            required: [current-system-map.md]
+            checks:
+              - "at least one invariant"
+              - "at least one operational constraint"
+              - "at least one pain point"
+
+    - id: option-exploration
+      title: Option Exploration
+      execution: serial
+      steps:
+        - id: generate-serious-options
+          title: Generate Serious Options
+          action: dispatch
+          skills: [solution-explorer, architecture-exploration] # plus domain-skills resolved at runtime
+          consumes: [decision-brief.md, current-system-map.md]
+          produces: decision-options.md
+          max_attempts: 2
+          gate:
+            type: outputs_present
+            required: [decision-options.md]
+            checks:
+              - "at least three options"
+              - "each option differs on at least two of architecture shape, ownership boundary, migration cost, or failure surface"
+        - id: score-and-compare
+          title: Score and Compare
+          action: synthesis
+          consumes: [decision-brief.md, current-system-map.md, decision-options.md]
+          produces: decision-scorecard.md
+          gate:
+            type: outputs_present
+            required: [decision-scorecard.md]
+            checks:
+              - "weighted dimensions present"
+              - "per-option reasoning present"
+              - "confidence labels present"
+
+    - id: pressure
+      title: Pressure
+      execution: serial
+      steps:
+        - id: tradeoff-weighting-checkpoint
+          title: Tradeoff Weighting Checkpoint
+          action: interactive
+          consumes: [decision-scorecard.md]
+          produces: decision-steer.md
+          gate:
+            type: outputs_present
+            required: [decision-steer.md]
+            checks:
+              - "Chosen Priority Order explicit"
+              - "Risks Willingly Accepted explicit"
+              - "maps back to scorecard dimensions"
+        - id: pressure-test-leading-option
+          title: Pressure Test the Leading Option
+          action: dispatch
+          skills: [seam-ripper, clean-architecture] # plus domain-skills resolved at runtime
+          consumes:
+            - current-system-map.md
+            - decision-options.md
+            - decision-scorecard.md
+            - decision-steer.md
+          produces: pressure-report.md
+          max_attempts: 2
+          gate:
+            type: outputs_present
+            required: [pressure-report.md]
+            checks:
+              - "at least one plausible failure scenario"
+              - "at least one boundary-level objection"
+              - "explicit comparison to the strongest alternative"
+        - id: decision-commit
+          title: Decision Commit
+          action: interactive
+          consumes: [decision-scorecard.md, pressure-report.md]
+          produces: decision-choice.md
+          gate:
+            type: outputs_present
+            required: [decision-choice.md]
+            checks:
+              - "Chosen Option explicit"
+              - "Accepted Downsides explicit"
+              - "at least one Rejected Alternative"
+
+    - id: publication
+      title: Publication
+      execution: serial
+      steps:
+        - id: publish-adr-and-implementation-guide
+          title: Publish ADR and Implementation Guide
+          action: synthesis
+          consumes: [decision-brief.md, current-system-map.md, decision-choice.md, pressure-report.md]
+          produces: decision-guide.md
+          gate:
+            type: outputs_present
+            required: [decision-guide.md]
+            checks:
+              - "decision rationale present"
+              - "implementation-facing guardrails present"
+              - "reopen conditions preserved"

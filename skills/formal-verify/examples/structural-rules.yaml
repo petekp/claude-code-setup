@@ -1,0 +1,57 @@
+# Example structural constraints for a Rust+Swift codebase
+# with a UniFFI boundary and strict ownership rules.
+# 
+# Adapted from Capacitor's architectural rules as described in CLAUDE.md.
+
+ownership:
+  - rule: "exclusive_tmux_access"
+    description: "Only TmuxRouter may build or execute tmux commands"
+    constraint:
+      only: "TmuxRouter"
+      may: "reference_tmux_literal"
+
+  - rule: "rust_owns_state_derivation"
+    description: "Swift must not derive routing state — only project from Rust snapshots"
+    constraint:
+      modules_in: "swift"
+      must_not: "call_pattern:derive_*|reduce_*"
+      except: ["RuntimeClient"]
+
+  - rule: "single_activation_coordinator"
+    description: "Only TerminalActivationCoordinator may arbitrate activation requests"
+    constraint:
+      only: "TerminalActivationCoordinator"
+      may: "call_pattern:activate_*|arbitrate_*"
+
+boundaries:
+  - rule: "uniffi_single_entry"
+    description: "Only RuntimeClient may cross the FFI boundary"
+    constraint:
+      only: "RuntimeClient"
+      may: "import:CapacitorCore"
+
+  - rule: "no_driver_core_imports"
+    description: "Terminal drivers must not import from core/"
+    constraint:
+      modules_matching: "*TerminalDriver"
+      must_not: "import_from:core/"
+
+patterns:
+  - rule: "driver_protocol_conformance"
+    description: "All terminal drivers must implement TerminalDriver protocol"
+    constraint:
+      modules_matching: "*TerminalDriver"
+      must: "implement:TerminalDriver"
+
+migration:
+  - rule: "no_legacy_activation"
+    description: "No references to deprecated parallel activation paths"
+    constraint:
+      all_modules: true
+      must_not: "reference:target_kind|target_value|parallel_activation"
+
+  - rule: "no_legacy_route_shapes"
+    description: "All routing must use RoutingTarget, not raw strings"
+    constraint:
+      all_modules: true
+      must_not: "reference:route_string|raw_route"
