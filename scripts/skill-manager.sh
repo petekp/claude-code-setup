@@ -23,7 +23,6 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 CLAUDE_DIR="$HOME/.claude"
-CODEX_DIR="$HOME/.codex"
 AGENTS_DIR="$HOME/.agents"
 SKILLS_DIR="$REPO_DIR/skills"
 USAGE_LOG="$CLAUDE_DIR/skill-usage.jsonl"
@@ -261,7 +260,6 @@ cmd_check() {
     header "Skill Availability Check"
 
     local claude_skills_dir="$CLAUDE_DIR/skills"
-    local codex_skills_dir="$CODEX_DIR/skills"
     local agents_skills_dir="$AGENTS_DIR/skills"
 
     # Check Claude skills directory
@@ -281,35 +279,28 @@ cmd_check() {
     fi
     echo ""
 
-    # Check Codex skills directory
-    echo -e "  ${BOLD}Codex (~/.codex/skills):${NC}"
-    if [[ -L "$codex_skills_dir" ]]; then
-        local target
-        target=$(readlink "$codex_skills_dir")
-        if [[ "$target" == "$SKILLS_DIR" ]]; then
-            ok "Symlinked to repo ($target)"
-        else
-            warn "Symlinked to different location: $target"
+    # Check Agents skills directory (Codex reads from here)
+    echo -e "  ${BOLD}Agents/Codex (~/.agents/skills):${NC}"
+    if [[ -d "$agents_skills_dir" && ! -L "$agents_skills_dir" ]]; then
+        # Per-skill symlinks (expected)
+        local linked=0
+        local broken=0
+        for link in "$agents_skills_dir"/*/; do
+            [[ -L "${link%/}" ]] || continue
+            if [[ -d "$link" ]]; then
+                linked=$((linked + 1))
+            else
+                broken=$((broken + 1))
+            fi
+        done
+        ok "$linked skills linked (per-skill)"
+        if [[ $broken -gt 0 ]]; then
+            warn "$broken broken symlinks"
         fi
-    elif [[ -d "$codex_skills_dir" ]]; then
-        warn "Is a regular directory (not symlinked to repo)"
-    else
-        fail "Not found — run ./setup.sh to link"
-    fi
-    echo ""
-
-    # Check Agents skills directory
-    echo -e "  ${BOLD}Agents (~/.agents/skills):${NC}"
-    if [[ -L "$agents_skills_dir" ]]; then
+    elif [[ -L "$agents_skills_dir" ]]; then
         local target
         target=$(readlink "$agents_skills_dir")
-        if [[ "$target" == "$SKILLS_DIR" ]]; then
-            ok "Symlinked to repo ($target)"
-        else
-            warn "Symlinked to different location: $target"
-        fi
-    elif [[ -d "$agents_skills_dir" ]]; then
-        warn "Is a regular directory (not symlinked to repo)"
+        warn "Directory-level symlink ($target) — run ./setup.sh to migrate to per-skill"
     else
         fail "Not found — run ./setup.sh to link"
     fi
@@ -393,35 +384,40 @@ cmd_sync() {
     header "Repo Sync Validation"
 
     local claude_skills_dir="$CLAUDE_DIR/skills"
-    local codex_skills_dir="$CODEX_DIR/skills"
     local agents_skills_dir="$AGENTS_DIR/skills"
 
-    # Check if symlinks are correct
     local all_synced=true
 
     echo -e "  ${BOLD}Symlink status:${NC}"
 
-    for pair in "Claude:$claude_skills_dir" "Codex:$codex_skills_dir" "Agents:$agents_skills_dir"; do
-        local label="${pair%%:*}"
-        local dir="${pair#*:}"
-
-        if [[ -L "$dir" ]]; then
-            local target
-            target=$(readlink "$dir")
-            if [[ "$target" == "$SKILLS_DIR" ]]; then
-                ok "$label: linked to repo"
-            else
-                fail "$label: linked to wrong location ($target)"
-                all_synced=false
-            fi
-        elif [[ -d "$dir" ]]; then
-            fail "$label: regular directory (not symlinked)"
-            all_synced=false
+    # Claude: directory-level symlink
+    if [[ -L "$claude_skills_dir" ]]; then
+        local target
+        target=$(readlink "$claude_skills_dir")
+        if [[ "$target" == "$SKILLS_DIR" ]]; then
+            ok "Claude: linked to repo"
         else
-            fail "$label: directory missing"
+            fail "Claude: linked to wrong location ($target)"
             all_synced=false
         fi
-    done
+    elif [[ -d "$claude_skills_dir" ]]; then
+        fail "Claude: regular directory (not symlinked)"
+        all_synced=false
+    else
+        fail "Claude: directory missing"
+        all_synced=false
+    fi
+
+    # Agents: per-skill symlinks
+    if [[ -d "$agents_skills_dir" && ! -L "$agents_skills_dir" ]]; then
+        ok "Agents: per-skill symlinks"
+    elif [[ -L "$agents_skills_dir" ]]; then
+        warn "Agents: directory-level symlink (run ./setup.sh to migrate to per-skill)"
+        all_synced=false
+    else
+        fail "Agents: directory missing"
+        all_synced=false
+    fi
     echo ""
 
     # Check git status of skills directory
