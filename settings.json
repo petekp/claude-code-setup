@@ -216,6 +216,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "~/.claude/scripts/sync-codex-skills.sh"
+          },
+          {
+            "type": "command",
             "command": "~/.claude/scripts/hud-state-tracker.sh SessionStart"
           }
         ]
