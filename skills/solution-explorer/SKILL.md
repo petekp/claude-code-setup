@@ -1,6 +1,6 @@
 ---
 name: solution-explorer
-description: Exhaustively explore a problem and solution space before implementing a feature or making an architectural decision. Use when asked to implement a feature, design a system, choose between approaches, or any time there are multiple valid ways to solve a problem. Forces systematic exploration of alternatives to find the global optimum instead of settling on the first reasonable idea. Use this skill whenever the user says things like "implement X", "how should we build", "best way to", "design", "architect", "add a feature for", or describes a non-trivial feature they want built. Even if the user doesn't explicitly ask for exploration, use this skill when you recognize that the implementation has multiple viable paradigms worth comparing.
+description: Exhaustively explore a problem and solution space before implementation. Use only when the user explicitly asks to compare feature-level implementation options, evaluate tradeoffs, choose between concrete approaches, or do pre-implementation planning for a non-trivial feature. This skill is for deliberate option analysis before coding, not straightforward feature implementation after the direction is already decided. Prefer `architecture-exploration` for large architectural or subsystem-direction decisions.
 ---
 
 # Solution Explorer

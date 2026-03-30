@@ -1,6 +1,6 @@
 ---
 name: skill-creator
-description: Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, update or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.
+description: Create, evaluate, and tune repo-managed skills. Use when the user explicitly wants to author a new skill in this repository, revise an existing repo skill, benchmark skill behavior, or optimize a skill description for better triggering accuracy. Prefer the system `skill-creator` for general guidance on skill writing outside this repo; this repo-local skill is for hands-on maintenance and evaluation of skills under `~/Code/claude-code-setup/skills/`.
 ---
 
 # Skill Creator

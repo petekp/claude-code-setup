@@ -1,6 +1,6 @@
 ---
 name: capture-learning
-description: Analyze recent conversation context and capture learnings to project knowledge files (for project-specific insights) or skills/commands/subagents (for cross-project patterns). Use when the user asks to "capture this learning", "update the docs with this", "remember this for next time", "document this issue", "add this to CLAUDE.md", "save this knowledge", or "update project knowledge". Also triggers after resolving build/setup issues, discovering non-obvious patterns, or completing debugging sessions with valuable insights.
+description: Analyze recent conversation context and capture learnings to project knowledge files (for project-specific insights) or skills/commands/subagents (for cross-project patterns). Use when the user explicitly asks to "capture this learning", "update the docs with this", "remember this for next time", "document this issue", "add this to CLAUDE.md", "save this knowledge", or "update project knowledge", or when they clearly want a just-discovered insight persisted. Do not auto-trigger after ordinary build/setup/debug sessions unless the conversation explicitly turns toward documenting the learning.
 ---
 
 # Capture Learning

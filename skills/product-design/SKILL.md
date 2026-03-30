@@ -3,16 +3,11 @@ name: product-design
 description: >
   Expert product design knowledge for software interfaces — 451 practices across 25 categories,
   each with tags, priority (core/situational/niche), and applies_when metadata for precise retrieval.
-  Use this skill whenever the user is designing, reviewing, building, or discussing any part of a
-  software interface. This includes: building forms or input flows, designing dashboards or data tables,
-  choosing UI components (modals vs. sidebars, tabs vs. accordions, toggles vs. checkboxes), planning
-  navigation or information architecture, handling errors and feedback, designing onboarding or empty
-  states, building enterprise/B2B admin panels, creating design systems, implementing accessibility,
-  optimizing perceived performance, designing search/filter/sort, building multi-step workflows or
-  wizards, or reviewing existing designs for usability issues. Also trigger when the user asks about
-  design best practices, UX heuristics, cognitive load, Gestalt principles, Fitts's Law, Hick's Law,
-  or any named design principle. Even if the user doesn't explicitly say "design" — if they're building
-  UI and making layout, component, or interaction decisions, this skill applies.
+  Use only when the user explicitly wants product-design help: UX critique, design review, usability
+  feedback, help choosing between interaction patterns, or guidance grounded in design principles such as
+  heuristics, cognitive load, Gestalt, Fitts's Law, or Hick's Law. Do not trigger for routine UI
+  implementation, styling, or frontend feature work unless the request is fundamentally about evaluating
+  or deciding the design.
 ---
 
 # Product Design Knowledge Base

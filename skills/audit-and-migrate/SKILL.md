@@ -1,7 +1,12 @@
 ---
 name: audit-and-migrate
 description: |
-  Slice-based, evidence-driven framework for auditing and migrating debt-heavy codebases. Use for large refactors, codebase consolidation, tech debt paydown, dependency standardization, architecture cleanup, or any multi-session migration. Also use when asked to audit the codebase, migrate from X to Y, standardize on one approach, consolidate duplicated code, or run a systematic refactor with built-in cleanup, residue sweeps, and a final ship-readiness gate. Make sure to use this skill whenever the user wants a controlled migration with slices, guardrails, handoffs, cleanup, or release closeout, even if they do not explicitly say "migration". Mentions of ratchets, slices, migration playbooks, anti-vestigial discipline, convergence, or release cleanup should strongly trigger it.
+  Slice-based, evidence-driven framework for explicit codebase migrations and convergence programs.
+  Use when the user is moving from a named source to a named target, running a multi-session
+  standardization effort across a codebase, consolidating parallel implementations into one target
+  architecture, or asking for a migration playbook with slices, ratchets, handoffs, and release
+  closeout. Do not trigger for normal refactors, routine cleanup, or one-off architecture improvements
+  that are not framed as a migration or convergence effort.
 ---
 
 # Systematic Codebase Audit & Migration
