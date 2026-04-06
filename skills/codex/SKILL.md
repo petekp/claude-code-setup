@@ -36,6 +36,7 @@ The helper script:
 - uses `printf` instead of `echo` so multi-line prompts stay intact
 - adds `--skip-git-repo-check` automatically outside Git repositories
 - defaults to `--full-auto --ephemeral --color never` for a clean one-shot run
+- always keeps one-shot `/codex` executions out of the Codex desktop app's saved session list
 - captures Codex stdout and stderr to a temp directory
 - returns only Codex's final message on success
 - fails clearly if Codex exits non-zero or never writes a final message

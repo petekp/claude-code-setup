@@ -4,16 +4,17 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: run-codex.sh [--cd DIR] [--sandbox MODE] [--search] [--no-ephemeral]
+Usage: run-codex.sh [--cd DIR] [--sandbox MODE] [--search]
 
 Reads the Codex prompt from stdin and prints Codex's final message to stdout.
+Runs `codex exec` with `--ephemeral` so the desktop app does not persist the
+run as a normal session.
 EOF
 }
 
 workdir=$(pwd)
 sandbox_mode=""
 use_search=0
-use_ephemeral=1
 
 while (($# > 0)); do
   case "$1" in
@@ -35,10 +36,6 @@ while (($# > 0)); do
       ;;
     --search)
       use_search=1
-      shift
-      ;;
-    --no-ephemeral)
-      use_ephemeral=0
       shift
       ;;
     --help|-h)
@@ -95,9 +92,7 @@ else
   cmd+=(--sandbox "$sandbox_mode")
 fi
 
-if ((use_ephemeral)); then
-  cmd+=(--ephemeral)
-fi
+cmd+=(--ephemeral)
 
 if ! git -C "$workdir" rev-parse --show-toplevel >/dev/null 2>&1; then
   cmd+=(--skip-git-repo-check)
