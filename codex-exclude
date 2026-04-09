@@ -4,9 +4,4 @@
 # These conflict with Codex built-ins, MCP servers, or curated skills.
 # Add a skill name here if it shows up as a duplicate in Codex.
 
-find-skills
 ai-sdk
-
-# Claude-specific skills (reference Claude-only tools/paths)
-claude-md-author
-capture-learning
