@@ -1,0 +1,4 @@
+interface:
+  display_name: "React Change Review"
+  short_description: "Stack-ranked React hardening reviews"
+  default_prompt: "Use $react-change-review to review the recent React code changes, coalesce nonredundant findings, and recommend the fix order."

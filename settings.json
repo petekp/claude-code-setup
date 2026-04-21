@@ -216,6 +216,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "~/.claude/scripts/fix-skill-symlinks.sh"
+          },
+          {
+            "type": "command",
             "command": "~/.claude/scripts/sync-codex-skills.sh"
           },
           {

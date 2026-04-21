@@ -13,23 +13,46 @@ total_valid=0
 
 link_points_into_repo_skills() {
     raw_target=$(readlink "$1")
-    case $raw_target in
-        "$REPO_SKILLS_DIR"/*) return 0 ;;
-        *) return 1 ;;
+    case "$raw_target" in
+        /*)
+            case ${raw_target%/} in
+                "$REPO_SKILLS_DIR"/*) return 0 ;;
+                *) return 1 ;;
+            esac
+            ;;
+        *)
+            absolute_target=$(
+                cd "$(dirname "$1")" &&
+                cd "$raw_target" &&
+                pwd -P
+            ) || return 1
+            case "$absolute_target" in
+                "$REPO_SKILLS_DIR"/*) return 0 ;;
+                *) return 1 ;;
+            esac
+            ;;
     esac
 }
 
 mkdir -p "$CODEX_SKILLS_DIR"
 
 for existing in "$CODEX_SKILLS_DIR"/*; do
-    [ -e "$existing" ] || [ -L "$existing" ] || continue
     [ -L "$existing" ] || continue
 
-    if ! link_points_into_repo_skills "$existing"; then
+    expected="$REPO_SKILLS_DIR/$(basename "$existing")"
+    if [ ! -d "$expected" ]; then
         continue
     fi
 
-    if [ ! -e "$existing" ]; then
+    raw_target=$(readlink "$existing")
+
+    if [ "${raw_target#/}" = "$raw_target" ] || [ "${raw_target%/}" != "$expected" ]; then
+        rm "$existing"
+        removed_broken=$((removed_broken + 1))
+    elif ! link_points_into_repo_skills "$existing"; then
+        rm "$existing"
+        removed_broken=$((removed_broken + 1))
+    elif [ ! -e "$existing" ]; then
         rm "$existing"
         removed_broken=$((removed_broken + 1))
     fi

@@ -47,7 +47,7 @@ if [[ "$1" == "--dry-run" ]]; then
     shift
 fi
 
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 CLAUDE_DIR="$HOME/.claude"
 AGENTS_DIR="$HOME/.agents"
 CODEX_EXCLUDE="$REPO_DIR/codex-exclude"
