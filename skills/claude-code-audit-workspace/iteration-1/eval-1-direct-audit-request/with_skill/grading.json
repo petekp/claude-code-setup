@@ -1,0 +1,41 @@
+{
+  "expectations": [
+    {
+      "text": "An outputs/report.md file exists and is at least 800 bytes",
+      "passed": true,
+      "evidence": "report.md bytes: 12301  path: /Users/petepetrash/.claude/skills/claude-code-audit-workspace/iteration-1/eval-1-direct-audit-request/with_skill/outputs/audit/report.md"
+    },
+    {
+      "text": "The run sampled or processed at least 10 distinct sessions",
+      "passed": true,
+      "evidence": "sessions processed (from sample.json or extracted/): 25"
+    },
+    {
+      "text": "Report cites at least 2 distinct 8-char+ session-id hex fragments",
+      "passed": true,
+      "evidence": "distinct session-id-like hex fragments: 8"
+    },
+    {
+      "text": "Report contains at least 3 numeric counts",
+      "passed": true,
+      "evidence": "numeric claim matches: 15"
+    },
+    {
+      "text": "drafts/ directory exists with at least one file",
+      "passed": true,
+      "evidence": "drafts file count: 5 at /Users/petepetrash/.claude/skills/claude-code-audit-workspace/iteration-1/eval-1-direct-audit-request/with_skill/outputs/audit/drafts"
+    }
+  ],
+  "pass_rate": 1.0,
+  "machine_only": true,
+  "_diagnostics": {
+    "report_bytes": 12301,
+    "report_path": "/Users/petepetrash/.claude/skills/claude-code-audit-workspace/iteration-1/eval-1-direct-audit-request/with_skill/outputs/audit/report.md",
+    "drafts_count": 5,
+    "drafts_dir": "/Users/petepetrash/.claude/skills/claude-code-audit-workspace/iteration-1/eval-1-direct-audit-request/with_skill/outputs/audit/drafts",
+    "sessions_processed": 25,
+    "session_id_citations": 8,
+    "numeric_claims": 15,
+    "recommendations_counted": 3
+  }
+}

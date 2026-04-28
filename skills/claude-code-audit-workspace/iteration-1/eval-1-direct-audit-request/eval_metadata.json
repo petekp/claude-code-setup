@@ -1,0 +1,16 @@
+{
+  "eval_id": 1,
+  "eval_name": "direct-audit-request",
+  "prompt": "Do a deep audit of a large sample of my recent Claude Code sessions. Analyze how I actually use Claude Code and find the issues and opportunities that would meaningfully improve my workflow. I don't want marginal observations — I want the few changes that would lead to step-change improvements in how I work with Claude Code. Scope it so it finishes in under 20 minutes, but do the best analysis you can within that time.",
+  "assertions": [
+    {"id": "report_exists", "text": "An outputs/report.md file exists and is at least 800 bytes", "type": "machine"},
+    {"id": "sampled_many", "text": "The run sampled or processed at least 10 distinct sessions", "type": "machine"},
+    {"id": "cites_session_ids", "text": "Report cites at least 2 distinct 8-char+ session-id hex fragments", "type": "machine"},
+    {"id": "uses_numbers", "text": "Report contains at least 3 numeric counts", "type": "machine"},
+    {"id": "has_drafts", "text": "drafts/ directory exists with at least one file", "type": "machine"},
+    {"id": "top_recs_bounded", "text": "Report presents a bounded top-list of 2-5 recommendations", "type": "semantic"},
+    {"id": "step_change_framing", "text": "Recommendations are leverage-style", "type": "semantic"},
+    {"id": "drafts_installable", "text": "Drafted implementations are concrete and ready to paste in", "type": "semantic"},
+    {"id": "evidence_real", "text": "Evidence quotes/session-ids point to real sessions", "type": "semantic"}
+  ]
+}

@@ -1,0 +1,999 @@
+{
+  "generated_at": "2026-04-23T12:43:52",
+  "totals": {
+    "sessions": 25,
+    "user_prompts": 175,
+    "tool_uses": 3631,
+    "input_tokens": 10371,
+    "output_tokens": 7191103,
+    "tool_errors": 92,
+    "interrupts": 3,
+    "duration_hours": 188.49,
+    "correction_markers": 52,
+    "friction_markers": 14
+  },
+  "per_session_means": {
+    "user_prompts": 7.0,
+    "tool_uses": 145.24,
+    "errors": 3.68,
+    "corrections": 2.08,
+    "duration_min": 452.37
+  },
+  "outcome_distribution": {
+    "likely_abandoned": 4,
+    "unknown": 15,
+    "likely_completed": 6
+  },
+  "top_tools": [
+    [
+      "Bash",
+      1666
+    ],
+    [
+      "Edit",
+      512
+    ],
+    [
+      "Read",
+      501
+    ],
+    [
+      "TaskUpdate",
+      329
+    ],
+    [
+      "Write",
+      174
+    ],
+    [
+      "TaskCreate",
+      173
+    ],
+    [
+      "Grep",
+      132
+    ],
+    [
+      "Skill",
+      41
+    ],
+    [
+      "ToolSearch",
+      32
+    ],
+    [
+      "Agent",
+      24
+    ],
+    [
+      "Monitor",
+      16
+    ],
+    [
+      "Glob",
+      8
+    ],
+    [
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      7
+    ],
+    [
+      "ScheduleWakeup",
+      4
+    ],
+    [
+      "TaskOutput",
+      4
+    ],
+    [
+      "AskUserQuestion",
+      3
+    ],
+    [
+      "TaskList",
+      3
+    ],
+    [
+      "SendMessage",
+      1
+    ],
+    [
+      "TaskGet",
+      1
+    ]
+  ],
+  "top_tool_bigrams": [
+    [
+      "Bash -> Bash",
+      877
+    ],
+    [
+      "Read -> Read",
+      168
+    ],
+    [
+      "Edit -> Edit",
+      165
+    ],
+    [
+      "Bash -> Read",
+      159
+    ],
+    [
+      "TaskCreate -> TaskCreate",
+      141
+    ],
+    [
+      "TaskUpdate -> TaskUpdate",
+      141
+    ],
+    [
+      "Read -> Bash",
+      126
+    ],
+    [
+      "Edit -> Bash",
+      109
+    ],
+    [
+      "Bash -> TaskUpdate",
+      89
+    ],
+    [
+      "Read -> Edit",
+      80
+    ],
+    [
+      "TaskUpdate -> Bash",
+      72
+    ],
+    [
+      "Write -> Bash",
+      67
+    ],
+    [
+      "Bash -> Edit",
+      61
+    ],
+    [
+      "Write -> Write",
+      55
+    ],
+    [
+      "Grep -> Grep",
+      55
+    ],
+    [
+      "Grep -> Read",
+      50
+    ],
+    [
+      "Bash -> Write",
+      46
+    ],
+    [
+      "Read -> Grep",
+      37
+    ],
+    [
+      "TaskUpdate -> Read",
+      34
+    ],
+    [
+      "Edit -> Read",
+      34
+    ],
+    [
+      "Skill -> Bash",
+      33
+    ],
+    [
+      "TaskCreate -> TaskUpdate",
+      27
+    ],
+    [
+      "TaskUpdate -> Write",
+      24
+    ],
+    [
+      "Bash -> ToolSearch",
+      22
+    ],
+    [
+      "Read -> Write",
+      22
+    ]
+  ],
+  "top_slash_commands": [
+    [
+      "/circuit:handoff",
+      91
+    ],
+    [
+      "/circuit:run",
+      34
+    ],
+    [
+      "/Users",
+      26
+    ],
+    [
+      "/codex",
+      11
+    ],
+    [
+      "/path",
+      10
+    ],
+    [
+      "/tmp",
+      6
+    ],
+    [
+      "/circuit:explore",
+      4
+    ]
+  ],
+  "hook_events": [
+    [
+      "SessionStart:SessionStart:clear",
+      66
+    ],
+    [
+      "UserPromptSubmit:UserPromptSubmit",
+      26
+    ],
+    [
+      "Stop:Stop",
+      13
+    ],
+    [
+      "SessionStart:SessionStart:resume",
+      11
+    ],
+    [
+      "SessionStart:SessionStart:startup",
+      3
+    ]
+  ],
+  "per_project": {
+    "/Users/petepetrash/Code/circuit-next": {
+      "sessions": 13,
+      "tool_uses": 2219,
+      "errors": 55,
+      "corrections": 28,
+      "duration_s": 52343
+    },
+    "/Users/petepetrash/Code/capacitor": {
+      "sessions": 4,
+      "tool_uses": 537,
+      "errors": 14,
+      "corrections": 4,
+      "duration_s": 54598
+    },
+    "/Users/petepetrash/Code/ever/arc-design-studio": {
+      "sessions": 4,
+      "tool_uses": 466,
+      "errors": 16,
+      "corrections": 17,
+      "duration_s": 566750
+    },
+    "/Users/petepetrash/Code/circuit": {
+      "sessions": 4,
+      "tool_uses": 409,
+      "errors": 7,
+      "corrections": 3,
+      "duration_s": 4858
+    }
+  },
+  "correction_samples": [
+    {
+      "idx": 1,
+      "ts": "2026-04-23T19:38:08.704Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "negation_or_correction_language",
+      "session_id": "03422d07-4eac-435c-91b6-62e3e3e49654"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-16T03:50:36.601Z",
+      "text": "Direct slash-command invocation for `/circuit:build`.\n\nLaunch the `circuit:build` skill immediately.\nUse hook-authored helper wrappers from `.circuit/bin/` instead of rediscovering plugin paths or cache layout.\nIf the request is an explicit smoke/bootstrap verification of the workflow, bootstrap and validate run state, then stop without unrelated repo exploration.\nValid smoke evidence is the real `.circuit` run state and workflow scaffold on disk; repo hygiene or branch status alone does not cou",
+      "reason": "negation_or_correction_language",
+      "session_id": "0a876ff5-6744-49f1-87f5-64468fc656b9"
+    },
+    {
+      "idx": 1,
+      "ts": "2026-04-23T08:18:21.213Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "negation_or_correction_language",
+      "session_id": "2b691fa5-da22-400b-9fd9-7ad9fcb19000"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-23T09:45:58.469Z",
+      "text": "Stop hook feedback:\nAuto-continuity guard: HEAD (d921528a) has advanced past the latest continuity record's base_commit (63844603). Before this turn ends, invoke the `circuit:handoff` skill with `save` (or run `.circuit/bin/circuit-engine continuity save` directly) to persist a continuity record capturing this chunk of work \u2014 author --goal, --next, --state-markdown, and --debt-markdown from the session so the next thread can resume cleanly with /circuit:handoff resume. If there is genuinely no w",
+      "reason": "negation_or_correction_language",
+      "session_id": "2b691fa5-da22-400b-9fd9-7ad9fcb19000"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-23T09:46:41.684Z",
+      "text": "Direct utility invocation for `/circuit:handoff`.\n\n## Purpose\n\nSave, explicitly resume, or clear session continuity across session boundaries.\n\n## Examples\n\nFast modes are positional subcommands:\n\n```\n/circuit:handoff                            # Draft continuity from conversation and save\n/circuit:handoff resume                     # Present saved continuity and pick up\n/circuit:handoff done                       # Clear continuity and detach the current run\n```\n\n## Bootstrap Contract\n\nLaunch t",
+      "reason": "negation_or_correction_language",
+      "session_id": "2b691fa5-da22-400b-9fd9-7ad9fcb19000"
+    },
+    {
+      "idx": 1,
+      "ts": "2026-04-23T19:08:58.757Z",
+      "text": "Please update the prompt to encourage using max rigor tournament at the appropriate steps. Also please reinforce that we want to perform a very methodical, exacting audit, in a sequence that ensures we start from the bottom up and don't miss any crucial details as we go from the root to the leaves.",
+      "reason": "negation_or_correction_language",
+      "session_id": "32d27b72-eaff-445e-8a16-c02c8c92c37c"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-23T19:14:03.328Z",
+      "text": "I don't want to manually validate; i want this to run autonomous",
+      "reason": "negation_or_correction_language",
+      "session_id": "32d27b72-eaff-445e-8a16-c02c8c92c37c"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-17T15:24:38.863Z",
+      "text": "Direct slash-command invocation for `/circuit:run <task>`.\n\n## Purpose\n\nThe primary Circuit router.\n\n## Examples\n\nPrefix a task with a built-in intent to skip classification and dispatch directly:\n\n| Prefix | Workflow | Rigor |\n|--------|----------|-------|\n| `fix:` | Repair | Lite |\n| `repair:` | Repair | Deep |\n| `develop:` | Build | Standard |\n| `decide:` | Explore | Tournament |\n| `migrate:` | Migrate | Deep |\n| `cleanup:` | Sweep | Standard |\n| `overnight:` | Sweep | Autonomous |\n| (none) |",
+      "reason": "negation_or_correction_language",
+      "session_id": "50db8177-466e-4b84-9252-f251293959e8"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-17T15:24:44.628Z",
+      "text": "Direct slash-command invocation for `/circuit:run <task>`.\n\n## Purpose\n\nThe primary Circuit router.\n\n## Examples\n\nPrefix a task with a built-in intent to skip classification and dispatch directly:\n\n| Prefix | Workflow | Rigor |\n|--------|----------|-------|\n| `fix:` | Repair | Lite |\n| `repair:` | Repair | Deep |\n| `develop:` | Build | Standard |\n| `decide:` | Explore | Tournament |\n| `migrate:` | Migrate | Deep |\n| `cleanup:` | Sweep | Standard |\n| `overnight:` | Sweep | Autonomous |\n| (none) |",
+      "reason": "negation_or_correction_language",
+      "session_id": "50db8177-466e-4b84-9252-f251293959e8"
+    },
+    {
+      "idx": 4,
+      "ts": "2026-04-17T15:29:02.972Z",
+      "text": "Base directory for this skill: /Users/petepetrash/Code/ever/arc-design-studio/.claude/skills/code-conventions\n\nApplies when writing, reviewing, or renaming any code in this project \u2014 components, functions, constants, types, hooks, files.\n\n## Stack Rules\n\n- **No raw HTML elements** \u2014 never use `<button>`, `<input>`, `<span>`, `<div role=\"button\">` with manual styling. Every interactive or styled element must use a design system component. If a component doesn't fit, add a variant or create a new ",
+      "reason": "negation_or_correction_language",
+      "session_id": "50db8177-466e-4b84-9252-f251293959e8"
+    },
+    {
+      "idx": 5,
+      "ts": "2026-04-17T15:29:06.094Z",
+      "text": "Base directory for this skill: /Users/petepetrash/Code/ever/arc-design-studio/.claude/skills/motion\n\nApplies when adding, reviewing, or debugging animations, transitions, gestures, scroll-linked effects, or layout animations.\n\n## Import\n\n```tsx\nimport { motion, AnimatePresence } from \"motion/react\"\nimport { useAnimate, useScroll, useTransform, useSpring, useInView } from \"motion/react\"\n```\n\nNever import from `framer-motion` \u2014 always `motion/react`.\n\n## When to Use motion vs CSS\n\n| Effect | Use |",
+      "reason": "negation_or_correction_language",
+      "session_id": "50db8177-466e-4b84-9252-f251293959e8"
+    },
+    {
+      "idx": 10,
+      "ts": "2026-04-17T16:31:19.514Z",
+      "text": "no noticeable change or improvement.",
+      "reason": "negation_or_correction_language",
+      "session_id": "50db8177-466e-4b84-9252-f251293959e8"
+    },
+    {
+      "idx": 12,
+      "ts": "2026-04-17T16:44:06.223Z",
+      "text": "there's a layout shift that happens within the drawer when collapsing it, when the thread content transitions out. the thread content, like the suggested prompts, seem to instantly vanish instead of fading out gracefully similar to the entrance animation. why?",
+      "reason": "negation_or_correction_language",
+      "session_id": "50db8177-466e-4b84-9252-f251293959e8"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-16T00:52:56.488Z",
+      "text": "Direct slash-command invocation for `/circuit:run <task>`.\n\nLaunch the `circuit:run` skill immediately.\nUse hook-authored helper wrappers from `.circuit/bin/` instead of rediscovering plugin paths or cache layout.\nIf the request is an explicit smoke/bootstrap verification of the workflow, bootstrap and validate run state, then stop without unrelated repo exploration.\nValid smoke evidence is the real `.circuit` run state and workflow scaffold on disk; repo hygiene or branch status alone does not ",
+      "reason": "negation_or_correction_language",
+      "session_id": "56b47668-ee59-4756-8e60-2987402fed2f"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-23T16:49:51.717Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "negation_or_correction_language",
+      "session_id": "57173ff0-8e31-4e56-a0e9-ddada1c4aed9"
+    },
+    {
+      "idx": 7,
+      "ts": "2026-04-23T18:24:48.039Z",
+      "text": "## Context\nContinue the Paddock desktop triage/composer continuity and performance work in worktree `/Users/petepetrash/.codex/worktrees/246d/arc-design-studio` on branch `pkp/paddock-route-session-global-composer`. Important: the handoff was generated from a later shell whose cwd was `/Users/petepetrash/.codex/worktrees/722b/arc-design-studio`, but the actual changed worktree for this project is `246d`. Start your first reply by summarizing all changes made so far, then continue from the open i",
+      "reason": "negation_or_correction_language",
+      "session_id": "57173ff0-8e31-4e56-a0e9-ddada1c4aed9"
+    },
+    {
+      "idx": 12,
+      "ts": "2026-04-23T19:01:26.157Z",
+      "text": "Stop hook feedback:\nAuto-continuity guard: HEAD (0cef8175) has advanced past the latest continuity record's base_commit (46cfceeb). Before this turn ends, invoke the `circuit:handoff` skill with `save` (or run `.circuit/bin/circuit-engine continuity save` directly) to persist a continuity record capturing this chunk of work \u2014 author --goal, --next, --state-markdown, and --debt-markdown from the session so the next thread can resume cleanly with /circuit:handoff resume. If there is genuinely no w",
+      "reason": "negation_or_correction_language",
+      "session_id": "57173ff0-8e31-4e56-a0e9-ddada1c4aed9"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-17T16:59:49.760Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "negation_or_correction_language",
+      "session_id": "68295abb-6609-479b-800e-9e5253aa8207"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-17T17:29:34.424Z",
+      "text": "Direct slash-command invocation for `/circuit:run <task>`.\n\n## Purpose\n\nThe primary Circuit router.\n\n## Examples\n\nPrefix a task with a built-in intent to skip classification and dispatch directly:\n\n| Prefix | Workflow | Rigor |\n|--------|----------|-------|\n| `fix:` | Repair | Lite |\n| `repair:` | Repair | Deep |\n| `develop:` | Build | Standard |\n| `decide:` | Explore | Tournament |\n| `migrate:` | Migrate | Deep |\n| `cleanup:` | Sweep | Standard |\n| `overnight:` | Sweep | Autonomous |\n| (none) |",
+      "reason": "negation_or_correction_language",
+      "session_id": "68295abb-6609-479b-800e-9e5253aa8207"
+    },
+    {
+      "idx": 4,
+      "ts": "2026-04-17T17:29:44.895Z",
+      "text": "Direct slash-command invocation for `/circuit:run <task>`.\n\n## Purpose\n\nThe primary Circuit router.\n\n## Examples\n\nPrefix a task with a built-in intent to skip classification and dispatch directly:\n\n| Prefix | Workflow | Rigor |\n|--------|----------|-------|\n| `fix:` | Repair | Lite |\n| `repair:` | Repair | Deep |\n| `develop:` | Build | Standard |\n| `decide:` | Explore | Tournament |\n| `migrate:` | Migrate | Deep |\n| `cleanup:` | Sweep | Standard |\n| `overnight:` | Sweep | Autonomous |\n| (none) |",
+      "reason": "negation_or_correction_language",
+      "session_id": "68295abb-6609-479b-800e-9e5253aa8207"
+    },
+    {
+      "idx": 5,
+      "ts": "2026-04-17T17:48:39.474Z",
+      "text": "<task-notification>\n<task-id>af4c22ba7b1bb56e6</task-id>\n<tool-use-id>toolu_01FFk4NpBSaFtB9gpC91pwB1</tool-use-id>\n<output-file>/private/tmp/claude-501/-Users-petepetrash-Code-ever-arc-design-studio/c46197f1-f055-47c8-81c4-b93cd1aafdf7/tasks/af4c22ba7b1bb56e6.output</output-file>\n<status>completed</status>\n<summary>Agent \"Fresh-context review of motion audit fixes\" completed</summary>\n<result>Both artifacts written. Here are the verbatim contents:\n\n## `.circuit/circuit-runs/address-all-motion-au",
+      "reason": "negation_or_correction_language",
+      "session_id": "68295abb-6609-479b-800e-9e5253aa8207"
+    },
+    {
+      "idx": 16,
+      "ts": "2026-04-17T22:24:51.424Z",
+      "text": "Direct slash-command invocation for `/circuit:run <task>`.\n\n## Purpose\n\nThe primary Circuit router.\n\n## Examples\n\nPrefix a task with a built-in intent to skip classification and dispatch directly:\n\n| Prefix | Workflow | Rigor |\n|--------|----------|-------|\n| `fix:` | Repair | Lite |\n| `repair:` | Repair | Deep |\n| `develop:` | Build | Standard |\n| `decide:` | Explore | Tournament |\n| `migrate:` | Migrate | Deep |\n| `cleanup:` | Sweep | Standard |\n| `overnight:` | Sweep | Autonomous |\n| (none) |",
+      "reason": "negation_or_correction_language",
+      "session_id": "68295abb-6609-479b-800e-9e5253aa8207"
+    },
+    {
+      "idx": 17,
+      "ts": "2026-04-17T22:25:08.426Z",
+      "text": "Direct slash-command invocation for `/circuit:run <task>`.\n\n## Purpose\n\nThe primary Circuit router.\n\n## Examples\n\nPrefix a task with a built-in intent to skip classification and dispatch directly:\n\n| Prefix | Workflow | Rigor |\n|--------|----------|-------|\n| `fix:` | Repair | Lite |\n| `repair:` | Repair | Deep |\n| `develop:` | Build | Standard |\n| `decide:` | Explore | Tournament |\n| `migrate:` | Migrate | Deep |\n| `cleanup:` | Sweep | Standard |\n| `overnight:` | Sweep | Autonomous |\n| (none) |",
+      "reason": "negation_or_correction_language",
+      "session_id": "68295abb-6609-479b-800e-9e5253aa8207"
+    },
+    {
+      "idx": 20,
+      "ts": "2026-04-17T22:54:04.464Z",
+      "text": "oh, perhaps, i actually forget what we've been focused on in this session. i think things might have gotten tangled a bit.",
+      "reason": "negation_or_correction_language",
+      "session_id": "68295abb-6609-479b-800e-9e5253aa8207"
+    },
+    {
+      "idx": 1,
+      "ts": "2026-04-23T02:46:18.512Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "negation_or_correction_language",
+      "session_id": "7bba5176-b0fa-44df-b7ea-1c341634a4e1"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-23T03:02:40.469Z",
+      "text": "Stop hook feedback:\nAuto-continuity guard: HEAD (863ef620) has advanced past the latest continuity record's base_commit (cc47f2fc). Before this turn ends, invoke the `circuit:handoff` skill with `save` (or run `.circuit/bin/circuit-engine continuity save` directly) to persist a continuity record capturing this chunk of work \u2014 author --goal, --next, --state-markdown, and --debt-markdown from the session so the next thread can resume cleanly with /circuit:handoff resume. If there is genuinely no w",
+      "reason": "negation_or_correction_language",
+      "session_id": "7bba5176-b0fa-44df-b7ea-1c341634a4e1"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-23T03:03:50.108Z",
+      "text": "Direct utility invocation for `/circuit:handoff`.\n\n## Purpose\n\nSave, explicitly resume, or clear session continuity across session boundaries.\n\n## Examples\n\nFast modes are positional subcommands:\n\n```\n/circuit:handoff                            # Draft continuity from conversation and save\n/circuit:handoff resume                     # Present saved continuity and pick up\n/circuit:handoff done                       # Clear continuity and detach the current run\n```\n\n## Bootstrap Contract\n\nLaunch t",
+      "reason": "negation_or_correction_language",
+      "session_id": "7bba5176-b0fa-44df-b7ea-1c341634a4e1"
+    },
+    {
+      "idx": 4,
+      "ts": "2026-04-16T04:50:36.782Z",
+      "text": "Direct slash-command invocation for `/circuit:run <task>`.\n\nLaunch the `circuit:run` skill immediately.\nUse hook-authored helper wrappers from `.circuit/bin/` instead of rediscovering plugin paths or cache layout.\nIf the request is an explicit smoke/bootstrap verification of the workflow, bootstrap and validate run state, then stop without unrelated repo exploration.\nValid smoke evidence is the real `.circuit` run state and workflow scaffold on disk; repo hygiene or branch status alone does not ",
+      "reason": "negation_or_correction_language",
+      "session_id": "81151565-e868-4fc6-be60-b01b1c76399a"
+    },
+    {
+      "idx": 5,
+      "ts": "2026-04-16T04:51:21.891Z",
+      "text": "Direct custom slash-command invocation for `/circuit:docs-polish`.\n\nThis command is overlay-managed from the user-global custom circuit catalog.\nBefore broader repo exploration, verify `/Users/petepetrash/.claude/circuit/skills/docs-polish/SKILL.md` and `/Users/petepetrash/.claude/circuit/skills/docs-polish/circuit.yaml` both exist.\nRead `/Users/petepetrash/.claude/circuit/skills/docs-polish/SKILL.md` directly and treat it as the authoritative execution contract for this command.\nFor explicit sm",
+      "reason": "negation_or_correction_language",
+      "session_id": "81151565-e868-4fc6-be60-b01b1c76399a"
+    },
+    {
+      "idx": 1,
+      "ts": "2026-04-23T02:21:49.977Z",
+      "text": "Stop hook feedback:\nAuto-continuity guard: HEAD (cc47f2fc) has advanced past the latest continuity record's base_commit (f12c6c2e). Before this turn ends, invoke the `circuit:handoff` skill with `save` (or run `.circuit/bin/circuit-engine continuity save` directly) to persist a continuity record capturing this chunk of work \u2014 author --goal, --next, --state-markdown, and --debt-markdown from the session so the next thread can resume cleanly with /circuit:handoff resume. If there is genuinely no w",
+      "reason": "negation_or_correction_language",
+      "session_id": "8ba9caad-bcd0-4143-9e58-e9f500b74da2"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-23T04:37:57.922Z",
+      "text": "Stop hook feedback:\nAuto-continuity guard: continuity-index pending_record is null (cleared) but HEAD or working tree has changes \u2014 save a fresh record before stopping. Before this turn ends, invoke the `circuit:handoff` skill with `save` (or run `.circuit/bin/circuit-engine continuity save` directly) to persist a continuity record capturing this chunk of work \u2014 author --goal, --next, --state-markdown, and --debt-markdown from the session so the next thread can resume cleanly with /circuit:hando",
+      "reason": "negation_or_correction_language",
+      "session_id": "91fce543-c34e-4700-8cb7-0bb8b0d51b10"
+    },
+    {
+      "idx": 6,
+      "ts": "2026-04-23T05:02:05.939Z",
+      "text": "Stop hook feedback:\nAuto-continuity guard: uncommitted work is present and the latest continuity record is 1420s old (stale). Before this turn ends, invoke the `circuit:handoff` skill with `save` (or run `.circuit/bin/circuit-engine continuity save` directly) to persist a continuity record capturing this chunk of work \u2014 author --goal, --next, --state-markdown, and --debt-markdown from the session so the next thread can resume cleanly with /circuit:handoff resume. If there is genuinely no work wo",
+      "reason": "negation_or_correction_language",
+      "session_id": "91fce543-c34e-4700-8cb7-0bb8b0d51b10"
+    },
+    {
+      "idx": 8,
+      "ts": "2026-04-23T05:06:53.655Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "negation_or_correction_language",
+      "session_id": "91fce543-c34e-4700-8cb7-0bb8b0d51b10"
+    },
+    {
+      "idx": 9,
+      "ts": "2026-04-23T05:10:26.056Z",
+      "text": "Stop hook feedback:\nAuto-continuity guard: uncommitted work is present and the latest continuity record is 438s old (stale). Before this turn ends, invoke the `circuit:handoff` skill with `save` (or run `.circuit/bin/circuit-engine continuity save` directly) to persist a continuity record capturing this chunk of work \u2014 author --goal, --next, --state-markdown, and --debt-markdown from the session so the next thread can resume cleanly with /circuit:handoff resume. If there is genuinely no work wor",
+      "reason": "negation_or_correction_language",
+      "session_id": "91fce543-c34e-4700-8cb7-0bb8b0d51b10"
+    },
+    {
+      "idx": 1,
+      "ts": "2026-04-17T05:49:20.674Z",
+      "text": "Direct slash-command invocation for `/circuit:run <task>`.\n\n## Purpose\n\nThe primary Circuit router.\n\n## Examples\n\nPrefix a task with a built-in intent to skip classification and dispatch directly:\n\n| Prefix | Workflow | Rigor |\n|--------|----------|-------|\n| `fix:` | Repair | Lite |\n| `repair:` | Repair | Deep |\n| `develop:` | Build | Standard |\n| `decide:` | Explore | Tournament |\n| `migrate:` | Migrate | Deep |\n| `cleanup:` | Sweep | Standard |\n| `overnight:` | Sweep | Autonomous |\n| (none) |",
+      "reason": "negation_or_correction_language",
+      "session_id": "b12fc3bd-1107-46ef-92c5-53a7fd06e6f1"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-17T05:49:26.410Z",
+      "text": "Direct slash-command invocation for `/circuit:run <task>`.\n\n## Purpose\n\nThe primary Circuit router.\n\n## Examples\n\nPrefix a task with a built-in intent to skip classification and dispatch directly:\n\n| Prefix | Workflow | Rigor |\n|--------|----------|-------|\n| `fix:` | Repair | Lite |\n| `repair:` | Repair | Deep |\n| `develop:` | Build | Standard |\n| `decide:` | Explore | Tournament |\n| `migrate:` | Migrate | Deep |\n| `cleanup:` | Sweep | Standard |\n| `overnight:` | Sweep | Autonomous |\n| (none) |",
+      "reason": "negation_or_correction_language",
+      "session_id": "b12fc3bd-1107-46ef-92c5-53a7fd06e6f1"
+    },
+    {
+      "idx": 1,
+      "ts": "2026-04-16T20:31:02.923Z",
+      "text": "Direct slash-command invocation for `/circuit:sweep`.\n\nLaunch the `circuit:sweep` skill immediately.\nUse hook-authored helper wrappers from `.circuit/bin/` instead of rediscovering plugin paths or cache layout.\nIf the request is an explicit smoke/bootstrap verification of the workflow, bootstrap and validate run state, then stop without unrelated repo exploration.\nValid smoke evidence is the real `.circuit` run state and workflow scaffold on disk; repo hygiene or branch status alone does not cou",
+      "reason": "negation_or_correction_language",
+      "session_id": "be9ec307-4e18-48b9-aec4-ad459068f25c"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-16T20:37:29.708Z",
+      "text": "<task-notification>\n<task-id>a24181009f70a23ec</task-id>\n<tool-use-id>toolu_01381J9MaSt8kcPCiPCs7gtV</tool-use-id>\n<output-file>/private/tmp/claude-501/-Users-petepetrash-Code-circuit/ebba6154-fe56-407e-b712-8de4f0c5d149/tasks/a24181009f70a23ec.output</output-file>\n<status>completed</status>\n<summary>Agent \"Survey hooks and session lifecycle UX\" completed</summary>\n<result>Perfect. Now let me provide a summary:\n\n## Summary\n\nI've completed the hooks &amp; session lifecycle UX survey for the Circu",
+      "reason": "negation_or_correction_language",
+      "session_id": "be9ec307-4e18-48b9-aec4-ad459068f25c"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-16T20:37:37.482Z",
+      "text": "<task-notification>\n<task-id>a90838cb161052db6</task-id>\n<tool-use-id>toolu_01VkE3mtLMEAyt1kXM39DJFT</tool-use-id>\n<output-file>/private/tmp/claude-501/-Users-petepetrash-Code-circuit/ebba6154-fe56-407e-b712-8de4f0c5d149/tasks/a90838cb161052db6.output</output-file>\n<status>completed</status>\n<summary>Agent \"Survey docs consistency UX\" completed</summary>\n<result>Perfect. Now I'll report back to the user:\n\n## Findings Report\n\n**File:** `/Users/petepetrash/Code/circuit/.circuit/circuit-runs/ux-iss",
+      "reason": "negation_or_correction_language",
+      "session_id": "be9ec307-4e18-48b9-aec4-ad459068f25c"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-23T03:27:50.530Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "negation_or_correction_language",
+      "session_id": "cc3f5848-cda4-41c8-927f-415754e19da4"
+    }
+  ],
+  "friction_samples": [
+    {
+      "idx": 1,
+      "ts": "2026-04-23T19:38:08.704Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "frustration_language",
+      "session_id": "03422d07-4eac-435c-91b6-62e3e3e49654"
+    },
+    {
+      "idx": 1,
+      "ts": "2026-04-23T08:18:21.213Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "frustration_language",
+      "session_id": "2b691fa5-da22-400b-9fd9-7ad9fcb19000"
+    },
+    {
+      "idx": 12,
+      "ts": "2026-04-17T16:44:06.223Z",
+      "text": "there's a layout shift that happens within the drawer when collapsing it, when the thread content transitions out. the thread content, like the suggested prompts, seem to instantly vanish instead of fading out gracefully similar to the entrance animation. why?",
+      "reason": "frustration_language",
+      "session_id": "50db8177-466e-4b84-9252-f251293959e8"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-23T16:49:51.717Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "frustration_language",
+      "session_id": "57173ff0-8e31-4e56-a0e9-ddada1c4aed9"
+    },
+    {
+      "idx": 2,
+      "ts": "2026-04-17T16:59:49.760Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "frustration_language",
+      "session_id": "68295abb-6609-479b-800e-9e5253aa8207"
+    },
+    {
+      "idx": 1,
+      "ts": "2026-04-23T02:46:18.512Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "frustration_language",
+      "session_id": "7bba5176-b0fa-44df-b7ea-1c341634a4e1"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-23T03:03:50.108Z",
+      "text": "Direct utility invocation for `/circuit:handoff`.\n\n## Purpose\n\nSave, explicitly resume, or clear session continuity across session boundaries.\n\n## Examples\n\nFast modes are positional subcommands:\n\n```\n/circuit:handoff                            # Draft continuity from conversation and save\n/circuit:handoff resume                     # Present saved continuity and pick up\n/circuit:handoff done                       # Clear continuity and detach the current run\n```\n\n## Bootstrap Contract\n\nLaunch t",
+      "reason": "frustration_language",
+      "session_id": "7bba5176-b0fa-44df-b7ea-1c341634a4e1"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-16T04:47:32.964Z",
+      "text": "Help me understand why this effort has taken SO long. I've totally forgotten what we're even doing.",
+      "reason": "frustration_language",
+      "session_id": "81151565-e868-4fc6-be60-b01b1c76399a"
+    },
+    {
+      "idx": 8,
+      "ts": "2026-04-23T05:06:53.655Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "frustration_language",
+      "session_id": "91fce543-c34e-4700-8cb7-0bb8b0d51b10"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-16T20:37:37.482Z",
+      "text": "<task-notification>\n<task-id>a90838cb161052db6</task-id>\n<tool-use-id>toolu_01VkE3mtLMEAyt1kXM39DJFT</tool-use-id>\n<output-file>/private/tmp/claude-501/-Users-petepetrash-Code-circuit/ebba6154-fe56-407e-b712-8de4f0c5d149/tasks/a90838cb161052db6.output</output-file>\n<status>completed</status>\n<summary>Agent \"Survey docs consistency UX\" completed</summary>\n<result>Perfect. Now I'll report back to the user:\n\n## Findings Report\n\n**File:** `/Users/petepetrash/Code/circuit/.circuit/circuit-runs/ux-iss",
+      "reason": "frustration_language",
+      "session_id": "be9ec307-4e18-48b9-aec4-ad459068f25c"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-23T03:27:50.530Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "frustration_language",
+      "session_id": "cc3f5848-cda4-41c8-927f-415754e19da4"
+    },
+    {
+      "idx": 3,
+      "ts": "2026-04-23T01:14:17.489Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "frustration_language",
+      "session_id": "f33baece-b2ac-492b-a9aa-4951501f7ad2"
+    },
+    {
+      "idx": 5,
+      "ts": "2026-04-23T15:03:19.033Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "frustration_language",
+      "session_id": "f81f89e2-7748-49cc-ba9e-5d6338a8e65b"
+    },
+    {
+      "idx": 6,
+      "ts": "2026-04-23T15:24:54.164Z",
+      "text": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user and `codex exec` \u2014 nothing more. You are not the author of a decision about whether Codex should handle this task; the user already made that decision when they invoked the skill.\n\n## Trigger contract\n\nThe skill fires when **one** of these is true:\n- The user's message begins with `/codex` as a com",
+      "reason": "frustration_language",
+      "session_id": "f81f89e2-7748-49cc-ba9e-5d6338a8e65b"
+    }
+  ],
+  "high_error_sessions": [
+    {
+      "session_id": "56b47668-ee59-4756-8e60-2987402fed2f",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-capacitor/56b47668-ee59-4756-8e60-2987402fed2f.jsonl",
+      "errors": 10,
+      "tool_counts": {
+        "Bash": 72,
+        "ToolSearch": 3,
+        "TaskOutput": 3,
+        "Grep": 45,
+        "Read": 31,
+        "Agent": 4,
+        "Write": 8,
+        "TaskCreate": 4,
+        "TaskUpdate": 11,
+        "SendMessage": 1,
+        "Edit": 23,
+        "AskUserQuestion": 1
+      },
+      "first_prompt": "Direct utility invocation for `/circuit:handoff`.\n\nLaunch the `circuit:handoff` skill immediately.\nExecute argument-selected fast modes before context gathering.\nUse hook-authored helper wrappers from"
+    },
+    {
+      "session_id": "32905b6f-dc67-4f7e-9d20-6dd4da47c27e",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/32905b6f-dc67-4f7e-9d20-6dd4da47c27e.jsonl",
+      "errors": 9,
+      "tool_counts": {
+        "Bash": 348,
+        "Read": 40,
+        "ToolSearch": 3,
+        "TaskCreate": 16,
+        "TaskUpdate": 21,
+        "Write": 17,
+        "ScheduleWakeup": 1,
+        "Monitor": 9,
+        "Edit": 131,
+        "TaskList": 2,
+        "Skill": 2
+      },
+      "first_prompt": "hey claude, i'm headed to bed. as we did last night, i need you to go into\n  full autonomy mode and drive this project forward as far as you can, along\n  with Codex. i trust you both to make the right"
+    },
+    {
+      "session_id": "50db8177-466e-4b84-9252-f251293959e8",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-ever-arc-design-studio/50db8177-466e-4b84-9252-f251293959e8.jsonl",
+      "errors": 9,
+      "tool_counts": {
+        "Skill": 4,
+        "Bash": 36,
+        "Read": 17,
+        "Glob": 4,
+        "Grep": 10,
+        "Write": 3,
+        "ToolSearch": 3,
+        "TaskCreate": 7,
+        "TaskUpdate": 14,
+        "Edit": 17,
+        "mcp__claude-in-chrome__tabs_context_mcp": 6,
+        "Agent": 1
+      },
+      "first_prompt": "resume handoff"
+    },
+    {
+      "session_id": "2b691fa5-da22-400b-9fd9-7ad9fcb19000",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/2b691fa5-da22-400b-9fd9-7ad9fcb19000.jsonl",
+      "errors": 7,
+      "tool_counts": {
+        "Read": 31,
+        "Bash": 150,
+        "ToolSearch": 1,
+        "TaskCreate": 6,
+        "TaskUpdate": 12,
+        "Write": 38,
+        "Edit": 101,
+        "Skill": 2
+      },
+      "first_prompt": "claude, i have to go back to sleep. please continue as you were. it's fine that you amended commits to fix errors. continue to do so, ensuring we don't continue accumulating errors. any error, even sm"
+    },
+    {
+      "session_id": "03422d07-4eac-435c-91b6-62e3e3e49654",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/03422d07-4eac-435c-91b6-62e3e3e49654.jsonl",
+      "errors": 6,
+      "tool_counts": {
+        "Read": 30,
+        "Bash": 78,
+        "ToolSearch": 1,
+        "TaskCreate": 10,
+        "TaskUpdate": 15,
+        "Edit": 34,
+        "Write": 9,
+        "Skill": 1
+      },
+      "first_prompt": "resume. i confirm and sign off on the plan."
+    },
+    {
+      "session_id": "57173ff0-8e31-4e56-a0e9-ddada1c4aed9",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/57173ff0-8e31-4e56-a0e9-ddada1c4aed9.jsonl",
+      "errors": 5,
+      "tool_counts": {
+        "Skill": 2,
+        "Bash": 69,
+        "Read": 7,
+        "ToolSearch": 1,
+        "TaskCreate": 14,
+        "TaskUpdate": 27,
+        "Write": 7,
+        "Edit": 13
+      },
+      "first_prompt": "resume. make sure to use Codex to harden our plan."
+    },
+    {
+      "session_id": "68295abb-6609-479b-800e-9e5253aa8207",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-ever-arc-design-studio/68295abb-6609-479b-800e-9e5253aa8207.jsonl",
+      "errors": 5,
+      "tool_counts": {
+        "Skill": 4,
+        "Bash": 89,
+        "Write": 13,
+        "Read": 6,
+        "Agent": 1,
+        "Edit": 5
+      },
+      "first_prompt": "resume"
+    },
+    {
+      "session_id": "8ba9caad-bcd0-4143-9e58-e9f500b74da2",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/8ba9caad-bcd0-4143-9e58-e9f500b74da2.jsonl",
+      "errors": 5,
+      "tool_counts": {
+        "Bash": 73,
+        "Read": 25,
+        "ToolSearch": 1,
+        "TaskCreate": 5,
+        "TaskUpdate": 10,
+        "Write": 3,
+        "Edit": 24
+      },
+      "first_prompt": "resume"
+    },
+    {
+      "session_id": "a0c8538e-afce-4ffb-8e77-f056fe40734e",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit/a0c8538e-afce-4ffb-8e77-f056fe40734e.jsonl",
+      "errors": 5,
+      "tool_counts": {
+        "Skill": 1,
+        "Bash": 60,
+        "Read": 62,
+        "ToolSearch": 1,
+        "TaskCreate": 6,
+        "TaskUpdate": 12,
+        "Grep": 41,
+        "Edit": 31,
+        "Write": 2
+      },
+      "first_prompt": "resume handoff"
+    },
+    {
+      "session_id": "d4b55b23-4f5a-40f0-af86-2ebd0b82233d",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/d4b55b23-4f5a-40f0-af86-2ebd0b82233d.jsonl",
+      "errors": 4,
+      "tool_counts": {
+        "Bash": 54,
+        "Read": 6,
+        "ToolSearch": 2,
+        "TaskCreate": 5,
+        "TaskUpdate": 9,
+        "Write": 3,
+        "TaskOutput": 1,
+        "Monitor": 2,
+        "TaskList": 1,
+        "TaskGet": 1,
+        "Skill": 1
+      },
+      "first_prompt": "Claude, development of this project is currently happening in a parallel session. While that's occurring, I wanted to start this new session to ask you to do a deep analysis of the past several days o"
+    },
+    {
+      "session_id": "f33baece-b2ac-492b-a9aa-4951501f7ad2",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/f33baece-b2ac-492b-a9aa-4951501f7ad2.jsonl",
+      "errors": 4,
+      "tool_counts": {
+        "Skill": 4,
+        "Bash": 56,
+        "Read": 26,
+        "ToolSearch": 1,
+        "TaskCreate": 8,
+        "TaskUpdate": 16,
+        "Write": 2,
+        "Edit": 27
+      },
+      "first_prompt": "resume"
+    },
+    {
+      "session_id": "f3f8afbb-7dfa-4f94-a1ff-e20baedaaf2f",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/f3f8afbb-7dfa-4f94-a1ff-e20baedaaf2f.jsonl",
+      "errors": 4,
+      "tool_counts": {
+        "Skill": 2,
+        "Bash": 22,
+        "ToolSearch": 1,
+        "TaskCreate": 4,
+        "TaskUpdate": 9,
+        "Write": 5
+      },
+      "first_prompt": "resume"
+    },
+    {
+      "session_id": "f81f89e2-7748-49cc-ba9e-5d6338a8e65b",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/f81f89e2-7748-49cc-ba9e-5d6338a8e65b.jsonl",
+      "errors": 4,
+      "tool_counts": {
+        "Skill": 4,
+        "Bash": 112,
+        "Read": 43,
+        "Edit": 31,
+        "ToolSearch": 1,
+        "TaskCreate": 6,
+        "TaskUpdate": 16,
+        "Write": 4
+      },
+      "first_prompt": "resume"
+    },
+    {
+      "session_id": "7bba5176-b0fa-44df-b7ea-1c341634a4e1",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/7bba5176-b0fa-44df-b7ea-1c341634a4e1.jsonl",
+      "errors": 3,
+      "tool_counts": {
+        "ToolSearch": 1,
+        "TaskCreate": 9,
+        "Bash": 30,
+        "Read": 25,
+        "TaskUpdate": 15,
+        "Write": 1,
+        "Skill": 2,
+        "Edit": 12
+      },
+      "first_prompt": "resume"
+    },
+    {
+      "session_id": "81151565-e868-4fc6-be60-b01b1c76399a",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-capacitor/81151565-e868-4fc6-be60-b01b1c76399a.jsonl",
+      "errors": 3,
+      "tool_counts": {
+        "Bash": 37,
+        "Read": 33,
+        "Grep": 7,
+        "Skill": 1,
+        "ToolSearch": 2,
+        "TaskCreate": 8,
+        "TaskUpdate": 22,
+        "Write": 13,
+        "Agent": 6,
+        "Edit": 19,
+        "AskUserQuestion": 1
+      },
+      "first_prompt": "Direct utility invocation for `/circuit:handoff`.\n\nLaunch the `circuit:handoff` skill immediately.\nExecute argument-selected fast modes before context gathering.\nUse hook-authored helper wrappers from"
+    },
+    {
+      "session_id": "cc3f5848-cda4-41c8-927f-415754e19da4",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/cc3f5848-cda4-41c8-927f-415754e19da4.jsonl",
+      "errors": 3,
+      "tool_counts": {
+        "Skill": 3,
+        "Bash": 70,
+        "Read": 22,
+        "ToolSearch": 1,
+        "TaskCreate": 10,
+        "TaskUpdate": 19,
+        "Write": 12,
+        "Edit": 14
+      },
+      "first_prompt": "resume"
+    }
+  ],
+  "likely_abandoned_sessions": [
+    {
+      "session_id": "03422d07-4eac-435c-91b6-62e3e3e49654",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/03422d07-4eac-435c-91b6-62e3e3e49654.jsonl",
+      "interrupts": 0,
+      "first_prompt": "resume. i confirm and sign off on the plan.",
+      "final_prompt": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex\n\n# Codex\n\n`/codex` is an imperative handoff, not a suggestion. When the trigger fires, you are a transport layer between the user"
+    },
+    {
+      "session_id": "50db8177-466e-4b84-9252-f251293959e8",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-ever-arc-design-studio/50db8177-466e-4b84-9252-f251293959e8.jsonl",
+      "interrupts": 1,
+      "first_prompt": "resume handoff",
+      "final_prompt": "Direct utility invocation for `/circuit:handoff`.\n\n## Purpose\n\nSave, explicitly resume, or clear session continuity across session boundaries.\n\n## Examples\n\nFast modes are positional subcommands:\n\n```"
+    },
+    {
+      "session_id": "57173ff0-8e31-4e56-a0e9-ddada1c4aed9",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/57173ff0-8e31-4e56-a0e9-ddada1c4aed9.jsonl",
+      "interrupts": 2,
+      "first_prompt": "resume. make sure to use Codex to harden our plan.",
+      "final_prompt": "Stop hook feedback:\nAuto-continuity guard: HEAD (0cef8175) has advanced past the latest continuity record's base_commit (46cfceeb). Before this turn ends, invoke the `circuit:handoff` skill with `save"
+    },
+    {
+      "session_id": "91fce543-c34e-4700-8cb7-0bb8b0d51b10",
+      "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit-next/91fce543-c34e-4700-8cb7-0bb8b0d51b10.jsonl",
+      "interrupts": 0,
+      "first_prompt": "resume",
+      "final_prompt": "1. Absolutely the meta-arc. It's alarming that we're this late in the game and we're still discovering major issues that weren't caught automatically by our adversarial review steps. I had to manually"
+    }
+  ],
+  "first_prompt_samples": [
+    "resume. i confirm and sign off on the plan.",
+    "resume from handoff",
+    "claude, i have to go back to sleep. please continue as you were. it's fine that you amended commits to fix errors. continue to do so, ensuring we don't continue accumulating errors. any error, even small, could propogate and multiply in subsequent slices. we need to identify and address the root cause, even if it means rewinding things and reconsidering our approach at times. simply make a log of this and compile a report that i'll review in the morning. please keep it simple for my ADHD brain! good night.",
+    "hey claude, i'm headed to bed. as we did last night, i need you to go into\n  full autonomy mode and drive this project forward as far as you can, along\n  with Codex. i trust you both to make the right call should there be any\n  questions before tomorrow morning. please make ample use of your task list to\n  ensure work doesn't stop prematurely. err on the side of doing too much than\n  too little. we will go back and review everything tomorrow to ensure our\n  foundation remains strong.",
+    "I need your help doing a deep evaluation of the Paddock prototype from an architectural POV. I want to audit our nextjs architecture -- the components, the navigation, our layouts and pages, etc. -- to ensure we're leveraging the right nextjs apis, optimizing all the right things for our use case, and ensuring our implementation is idiomatic. One of the primary concerns I have is ensuring navigation is snappy and visually stable. The composer is intended to be a truly global component that's context aware depending on the current page; it needs to always remain mounted and be very smart about re-rendering, especially when toggling between modes when on a Customer Details / Messages page. Also critical is the triage workflow experience: moving between triage items should be as fast and visu",
+    "Create an Agent with subagent_type \"statusline-setup\" and the prompt \"please add the cwd and current branch\"",
+    "resume handoff",
+    "Direct utility invocation for `/circuit:handoff`.\n\nLaunch the `circuit:handoff` skill immediately.\nExecute argument-selected fast modes before context gathering.\nUse hook-authored helper wrappers from `.circuit/bin/` when the utility needs Circuit helpers.\nDo not do broad repo exploration unless the utility contract explicitly requires it.\n\n\nARGUMENTS: resume",
+    "resume. make sure to use Codex to harden our plan.",
+    "resume",
+    "continue from handoff",
+    "resume",
+    "Direct utility invocation for `/circuit:handoff`.\n\nLaunch the `circuit:handoff` skill immediately.\nExecute argument-selected fast modes before context gathering.\nUse hook-authored helper wrappers from `.circuit/bin/` when the utility needs Circuit helpers.\nDo not do broad repo exploration unless the utility contract explicitly requires it.\n\n\nARGUMENTS: resume",
+    "resume",
+    "resume",
+    "resume handoff",
+    "Claude, I'm going to sleep. I need you to resume the handoff and autonomously follow everything through to\n  the end. Please use your task list to capture all remaining tasks, and please add additional tasks you think\n  will help ensure our code changes are super solid. thank you.",
+    "Direct slash-command invocation for `/circuit:sweep`.\n\nLaunch the `circuit:sweep` skill immediately.\nUse hook-authored helper wrappers from `.circuit/bin/` instead of rediscovering plugin paths or cache layout.\nIf the request is an explicit smoke/bootstrap verification of the workflow, bootstrap and validate run state, then stop without unrelated repo exploration.\nValid smoke evidence is the real `.circuit` run state and workflow scaffold on disk; repo hygiene or branch status alone does not count.\nFor smoke/bootstrap requests, manual `Write`/`Edit` creation of `circuit.manifest.yaml`, `events.ndjson`, the derived `state.json` snapshot, or `artifacts/active-run.md` is a failure; use `.circuit/bin/circuit-engine bootstrap` instead.\nInside that skill, execute its compiled contract block befo",
+    "Direct slash-command invocation for `/circuit:run <task>`.\n\nLaunch the `circuit:run` skill immediately.\nUse hook-authored helper wrappers from `.circuit/bin/` instead of rediscovering plugin paths or cache layout.\nIf the request is an explicit smoke/bootstrap verification of the workflow, bootstrap and validate run state, then stop without unrelated repo exploration.\nValid smoke evidence is the real `.circuit` run state and workflow scaffold on disk; repo hygiene or branch status alone does not count.\nFor smoke/bootstrap requests, manual `Write`/`Edit` creation of `circuit.manifest.yaml`, `events.ndjson`, the derived `state.json` snapshot, or `artifacts/active-run.md` is a failure; use `.circuit/bin/circuit-engine bootstrap` instead.\nInside that skill, execute its compiled contract block b",
+    "resume",
+    "Claude, development of this project is currently happening in a parallel session. While that's occurring, I wanted to start this new session to ask you to do a deep analysis of the past several days of work by poring over our sessions, with the goal of identifying issues and opportunities in our execution methodology as well as our overall process. I'd also like Codex to do its own analysis in parallel.",
+    "resume",
+    "resume",
+    "resume",
+    "resume"
+  ]
+}

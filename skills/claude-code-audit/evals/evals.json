@@ -1,0 +1,59 @@
+{
+  "skill_name": "claude-code-audit",
+  "evals": [
+    {
+      "id": 1,
+      "name": "direct-audit-request",
+      "prompt": "Do a deep audit of a large sample of my recent Claude Code sessions. Analyze how I actually use Claude Code and find the issues and opportunities that would meaningfully improve my workflow. I don't want marginal observations — I want the few changes that would lead to step-change improvements in how I work with Claude Code. Scope it so it finishes in under 20 minutes, but do the best analysis you can within that time.",
+      "expected_output": "Short prioritized report with 2-4 step-change recommendations, each with quantitative evidence, specific session-id citations, and drafted implementations ready to install.",
+      "files": [],
+      "assertions": [
+        {"id": "report_exists", "text": "An outputs/report.md file exists and is at least 800 bytes", "type": "machine"},
+        {"id": "sampled_many", "text": "The run sampled or processed at least 10 distinct sessions (inventory/sample JSONs show >=10 sessions OR report references >=10 sessions)", "type": "machine"},
+        {"id": "cites_session_ids", "text": "Report cites at least 2 distinct 8-char+ session-id hex/UUID fragments as evidence", "type": "machine"},
+        {"id": "uses_numbers", "text": "Report contains at least 3 numeric counts (patterns like 'N of M', 'N sessions', 'N corrections', percentages)", "type": "machine"},
+        {"id": "has_drafts", "text": "outputs/drafts/ (or outputs/audit/drafts/) directory exists with at least one file (SKILL.md, hook, CLAUDE.md additions, or settings diff)", "type": "machine"},
+        {"id": "top_recs_bounded", "text": "Report presents a bounded top-list of 2-5 recommendations (not 20+ observations)", "type": "semantic"},
+        {"id": "step_change_framing", "text": "Recommendations are leverage-style (correction→rule, workflow→skill, tool→hook) rather than 'try harder' advice", "type": "semantic"},
+        {"id": "drafts_installable", "text": "Drafted implementations are concrete and ready to paste in (not pseudocode / placeholder text)", "type": "semantic"},
+        {"id": "evidence_real", "text": "Evidence quotes/session-ids point to real sessions, not fabricated", "type": "semantic"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "casual-phrasing",
+      "prompt": "I've been using Claude Code a ton lately across a bunch of projects. Can you look back at my recent usage and figure out what I should change? I want to get more leverage out of this tool — focus on big wins, not polish. Cap your work at ~20 minutes.",
+      "expected_output": "Same shape as eval 1 — casual phrasing should still trigger a methodical audit with drafted implementations.",
+      "files": [],
+      "assertions": [
+        {"id": "report_exists", "text": "An outputs/report.md file exists and is at least 800 bytes", "type": "machine"},
+        {"id": "sampled_many", "text": "The run sampled or processed at least 10 distinct sessions", "type": "machine"},
+        {"id": "cites_session_ids", "text": "Report cites at least 2 distinct 8-char+ session-id fragments as evidence", "type": "machine"},
+        {"id": "uses_numbers", "text": "Report contains at least 3 numeric counts", "type": "machine"},
+        {"id": "has_drafts", "text": "drafts/ directory exists with at least one file", "type": "machine"},
+        {"id": "triggers_on_casual_phrasing", "text": "Approach is systematic (inventory, sample, extract, synthesize) not ad-hoc", "type": "semantic"},
+        {"id": "top_recs_bounded", "text": "Report presents a bounded top-list of 2-5 recommendations", "type": "semantic"},
+        {"id": "step_change_framing", "text": "Recommendations are leverage-style rather than 'try harder' advice", "type": "semantic"},
+        {"id": "drafts_installable", "text": "Drafted implementations are concrete and ready to paste in", "type": "semantic"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "specific-leverage-framing",
+      "prompt": "I want to find step-change improvements in my Claude Code workflow. Analyze my recent sessions forensically — look at patterns in what I correct, what I repeat, what I miss — and tell me the 3 highest-leverage changes I could make to my setup. Draft the actual implementations (skills / CLAUDE.md rules / hooks) so I can install them directly. Budget: 20 minutes.",
+      "expected_output": "Exactly 3 high-leverage recommendations with drafted implementations ready to install.",
+      "files": [],
+      "assertions": [
+        {"id": "report_exists", "text": "An outputs/report.md file exists and is at least 800 bytes", "type": "machine"},
+        {"id": "sampled_many", "text": "The run sampled or processed at least 10 distinct sessions", "type": "machine"},
+        {"id": "cites_session_ids", "text": "Report cites at least 2 distinct 8-char+ session-id fragments as evidence", "type": "machine"},
+        {"id": "uses_numbers", "text": "Report contains at least 3 numeric counts", "type": "machine"},
+        {"id": "has_drafts", "text": "drafts/ directory exists with at least one file", "type": "machine"},
+        {"id": "three_recs", "text": "Report has exactly 3 top recommendations (user explicitly requested 3)", "type": "machine"},
+        {"id": "drafts_per_rec", "text": "Each of the 3 recommendations has a corresponding drafted implementation", "type": "semantic"},
+        {"id": "step_change_framing", "text": "Recommendations are leverage-style rather than 'try harder' advice", "type": "semantic"},
+        {"id": "drafts_installable", "text": "Drafted implementations are concrete and ready to paste in", "type": "semantic"}
+      ]
+    }
+  ]
+}

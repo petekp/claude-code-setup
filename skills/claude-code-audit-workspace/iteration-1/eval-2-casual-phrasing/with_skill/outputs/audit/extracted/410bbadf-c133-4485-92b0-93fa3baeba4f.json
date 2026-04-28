@@ -1,0 +1,43 @@
+{
+  "session_id": "410bbadf-c133-4485-92b0-93fa3baeba4f",
+  "path": "/Users/petepetrash/.claude/projects/-Users-petepetrash-Code-circuit/410bbadf-c133-4485-92b0-93fa3baeba4f.jsonl",
+  "project_cwd": "/Users/petepetrash/Code/circuit",
+  "first_ts": "2026-03-30T02:39:14.161Z",
+  "last_ts": "2026-03-30T02:41:39.014Z",
+  "duration_s": 144,
+  "version": "2.1.87",
+  "git_branch": "main",
+  "tool_counts": {
+    "Agent": 2
+  },
+  "tool_sequence": [
+    "Agent",
+    "Agent"
+  ],
+  "tool_errors": [],
+  "user_prompts": [
+    {
+      "idx": 0,
+      "ts": "2026-03-30T02:39:14.161Z",
+      "text": "Create an Agent with subagent_type \"statusline-setup\" and the prompt \"please add the cwd and current branch\"",
+      "is_correction": false
+    },
+    {
+      "idx": 1,
+      "ts": "2026-03-30T02:40:59.207Z",
+      "text": "can we add a bit more detail regarding the uncommitted changes, like # of files?",
+      "is_correction": false
+    }
+  ],
+  "slash_commands": [],
+  "skill_invocations": [],
+  "hook_events": {},
+  "interrupts": 0,
+  "input_tokens": 11,
+  "output_tokens": 442,
+  "correction_markers": [],
+  "friction_markers": [],
+  "outcome_hint": "unknown",
+  "final_user_prompt": "can we add a bit more detail regarding the uncommitted changes, like # of files?",
+  "final_assistant_text_tail": "Done. Your status line now shows the file count, e.g.:\n\n```\n~/Code/circuit git:(main) 3 changed\n```\n\nClean working tree just shows the path and branch with no suffix."
+}

@@ -1,0 +1,154 @@
+{
+  "batch_id": 1,
+  "method": "Main analyst acting as own subagent due to time budget. Combined rendered session reads of 68295abb, 81151565, 91fce543, 03422d07, 7bba5176, 50db8177, 2b691fa5, plus deep dive of aggregate.json correction_samples and first_prompt_samples.",
+  "session_ids_read_directly": [
+    "68295abb-6609-479b-800e-9e5253aa8207",
+    "81151565-e868-4fc6-be60-b01b1c76399a",
+    "91fce543-c34e-4700-8cb7-0bb8b0d51b10",
+    "03422d07-4eac-435c-91b6-62e3e3e49654",
+    "50db8177-466e-4b84-9252-f251293959e8"
+  ],
+  "findings": [
+    {
+      "pattern": "circuit ecosystem is context-bomb: every slash invocation re-injects the full skill body",
+      "category": "dead_code",
+      "evidence": [
+        {
+          "session_id": "68295abb-6609-479b-800e-9e5253aa8207",
+          "quote": "Direct slash-command invocation for `/circuit:run <task>`. ... [2kb table of prefixes and contracts re-injected every single invocation]",
+          "why_it_matters": "This block is re-injected as a USER event on every circuit:run invocation. In session 68295abb it appears 4+ times. In sessions where the user is already mid-circuit workflow it is pure context tax."
+        },
+        {
+          "session_id": "91fce543-c34e-4700-8cb7-0bb8b0d51b10",
+          "quote": "Base directory for this skill: /Users/petepetrash/.claude/skills/codex ... [7kb of codex skill body injected every /codex call]",
+          "why_it_matters": "277 codex-skill-body re-injections across 30 days. Each is ~7kB of text the model has to re-attend to. At 57 /codex dispatches this is roughly 2MB of re-emitted skill text. Of the 52 correction markers in the sample, 31 are actually these injected skill bodies, not real corrections."
+        }
+      ],
+      "frequency_in_batch": 25,
+      "severity": "high",
+      "leverage_hypothesis": "Skill bodies should not be re-injected as user turns after the Skill tool fires. This is a harness-level issue but the user-facing symptom is that half of every session is the user's own skill prose staring back at them. A CLAUDE.md rule cannot fix this; only a smaller/leaner skill body or a prompt-based hook suppression strategy can.",
+      "anti_evidence": "These are Claude Code native behavior not under the user's direct control. But the user CAN make the skill bodies shorter — the codex skill body is ~400 lines; circuit:run contract block is ~60 lines. A half-sized skill body halves the context tax."
+    },
+    {
+      "pattern": "Auto-continuity stop hook is badgering in an infinite loop",
+      "category": "tool_failure",
+      "evidence": [
+        {
+          "session_id": "91fce543-c34e-4700-8cb7-0bb8b0d51b10",
+          "quote": "Stop hook feedback: Auto-continuity guard: continuity-index pending_record is null (cleared) but HEAD or working tree has changes — save a fresh record before stopping. ... [fires 5+ times in a row in same session; each fire injects ~1KB; Claude keeps dutifully saving records that immediately go stale]",
+          "why_it_matters": "The auto-continuity guard sees 'uncommitted work present, last record is 1420s old (stale)' and nags Claude to save. Claude saves. Guard re-fires on next Stop. Classic unbounded feedback loop. Session ends with 4+ nags when the user has already gone to bed."
+        },
+        {
+          "session_id": "57173ff0-8e31-4e56-a0e9-ddada1c4aed9",
+          "quote": "Stop hook feedback: Auto-continuity guard: HEAD (0cef8175) has advanced past the latest continuity record's base_commit (46cfceeb). ... [4 firings in 15 min]",
+          "why_it_matters": "Same pattern. The guard's 'staleness' definition (seconds since last record) means it always nags whenever Claude works for more than N minutes without stopping for continuity — which is normal for the autonomous workflows the user runs overnight."
+        }
+      ],
+      "frequency_in_batch": 3,
+      "severity": "high",
+      "leverage_hypothesis": "The Stop hook nag threshold is poorly tuned. It should either (a) not re-nag within the same session after Claude has acknowledged it once, or (b) raise the staleness floor substantially, or (c) skip the nag when the session is running in autonomous/overnight mode. A small auto-handoff-on-compact.sh already exists — the Stop variant needs debouncing.",
+      "anti_evidence": "Only 3 sessions in the 25-session sample show the 3+ nag pattern (globally: 3 of 776 last-30d). Low absolute count, but each incident is highly visible and each nag costs ~1kB of context. Might be a niche finding; only high-severity for overnight autonomous sessions."
+    },
+    {
+      "pattern": "'resume' is the dominant session opener — 14 of 25 sessions (56%)",
+      "category": "session_lifecycle",
+      "evidence": [
+        {
+          "session_id": "50db8177-466e-4b84-9252-f251293959e8",
+          "quote": "First prompt: 'resume handoff'",
+          "why_it_matters": "The user's entire workflow is organized around /circuit:handoff save + /circuit:handoff resume. This is fine per se, but it means: (a) every session has a ~2KB continuity record re-read, (b) half the sessions start with Claude immediately launching a skill instead of doing work, (c) sessions end ambiguously and the 'where were we' re-bootstrapping tax is paid constantly."
+        },
+        {
+          "session_id": "68295abb-6609-479b-800e-9e5253aa8207",
+          "quote": "User 20 turns in: 'oh, perhaps, i actually forget what we've been focused on in this session. i think things might have gotten tangled a bit.'",
+          "why_it_matters": "The resume-chains are SO long that the user loses track even within a single resumed session. Continuity is over-succeeding at moving state forward and under-succeeding at keeping the human oriented."
+        },
+        {
+          "session_id": "81151565-e868-4fc6-be60-b01b1c76399a",
+          "quote": "User: 'Help me understand why this effort has taken SO long. I've totally forgotten what we're even doing.'",
+          "why_it_matters": "Explicit disorientation after a chain of resumed sessions. This is the human cost of the continuity system working as designed: the machine never loses state, the operator does."
+        }
+      ],
+      "frequency_in_batch": 14,
+      "severity": "high",
+      "leverage_hypothesis": "The /circuit:handoff resume flow reloads machine state but doesn't give the operator a narrative orientation snapshot. A lightweight 'start-of-session orientation card' that Claude MUST deliver as its first visible text on resume — goal, last-commit sha, next action, 1-line blocker if any — would pay for itself in seconds. The continuity JSON already contains all the fields; the issue is they're consumed by the machine and then Claude jumps to tool-using rather than showing the human.",
+      "anti_evidence": "The user may actually prefer the fast resume. But 2 of 25 sessions contain explicit frustration at lost orientation, which is high signal."
+    },
+    {
+      "pattern": "'autonomous overnight' sessions have high tool count + many errors + abandon risk",
+      "category": "capability_mismatch",
+      "evidence": [
+        {
+          "session_id": "32905b6f-dc67-4f7e-9d20-6dd4da47c27e",
+          "quote": "First prompt: 'hey claude, i'm headed to bed. as we did last night, i need you to go into full autonomy mode and drive this project forward as far as you can, along with Codex. i trust you both to make the right call...' → 348 Bash calls, 131 Edits, 9 tool errors",
+          "why_it_matters": "This is the biggest single-session tool-count in the sample, with high error rate. The user trusts Claude to go autonomous overnight, but the setup has no budget cap, no per-slice commit ratchet, and no 'bail out if error rate exceeds X' guard. Errors compound."
+        },
+        {
+          "session_id": "2b691fa5-da22-400b-9fd9-7ad9fcb19000",
+          "quote": "First prompt: 'claude, i have to go back to sleep. please continue as you were. it's fine that you amended commits to fix errors. continue to do so, ensuring we don't continue accumulating errors...' → 150 Bash, 101 Edits, 7 errors",
+          "why_it_matters": "The user explicitly knows errors are a problem, knows commit amending to fix is happening, and STILL sends it back to autonomous. No structural guardrail exists between 'try again' and 'stop and wake the user'."
+        }
+      ],
+      "frequency_in_batch": 4,
+      "severity": "high",
+      "leverage_hypothesis": "There's an existing 'loop' skill and 'schedule' skill, but no autonomous-mode governor. A drafted skill + SessionStart injection that enforces: 'If in autonomous-overnight mode, (1) commit-first per slice, (2) on 3 consecutive tool errors pause and save continuity + notification, (3) cap total wall-time to N hours' would turn this pattern from 'wakes up to chaos' into 'wakes up to controlled progress'.",
+      "anti_evidence": "Only 4 of 25 sessions have this pattern, but their cost is disproportionate — they're the biggest sessions and carry the errors forward into other sessions via commits. Mid-frequency, very-high severity."
+    },
+    {
+      "pattern": "Bash-heavy workflow: 46% of all tool uses are Bash, Bash→Bash bigram is #1",
+      "category": "tool_failure",
+      "evidence": [
+        {
+          "session_id": "aggregate",
+          "quote": "Top tools: Bash 1666, Edit 512, Read 501, TaskUpdate 329. Top bigram: Bash → Bash = 877 (25% of all tool uses).",
+          "why_it_matters": "A Bash→Bash chain usually means: (a) long shell pipelines that should be a script, or (b) trial-and-error shell invocations where one should be designed up-front. Either way, Bash-heavy tool use correlates with higher error rates in the sample."
+        }
+      ],
+      "frequency_in_batch": 25,
+      "severity": "medium",
+      "leverage_hypothesis": "Not a single-lever fix. But the heavy Bash→Bash pattern specifically on circuit-engine commands (`.circuit/bin/circuit-engine continuity save` with 4+ retries to get the --debt-markdown format right) suggests circuit-engine CLIs have poor first-pass ergonomics. A better fix belongs in circuit itself, not Claude Code configuration.",
+      "anti_evidence": "Bash heaviness is largely structural to the circuit workflow and not an obvious config fix. Noting for awareness; not promoting to top-tier."
+    },
+    {
+      "pattern": "Dead-code / dead-skill bloat in user's skill catalog",
+      "category": "dead_code",
+      "evidence": [
+        {
+          "session_id": "aggregate",
+          "quote": "Top Skill invocations in 30d: circuit:handoff (91), circuit:run (34), codex (11). Out of 100+ installed skills, the long tail sees near-zero invocations.",
+          "why_it_matters": "Every session carries a ~15KB skill catalog in the system reminder. Skills like ubiquitous-language, literate-guide, grill-me, clean-architecture, ai-sdk, swiftui-expert-skill may be zero-triggered in the sample. Each never-used skill description is pure context tax on every prompt."
+        }
+      ],
+      "frequency_in_batch": 25,
+      "severity": "medium",
+      "leverage_hypothesis": "Run skill-manager to prune zero-triggered skills over 30d. Conservative target: remove skills that didn't fire once. Aggressive target: keep only the top 15 by invocation count + any skills the user explicitly wants around.",
+      "anti_evidence": "Some skills are intentionally low-trigger (e.g. security-review, skill-creator). Removing them would hurt when needed. Needs user curation, not blind prune."
+    },
+    {
+      "pattern": "TaskCreate → TaskUpdate spam bigram = 141 + 141 suggests over-granular tasklist",
+      "category": "capability_mismatch",
+      "evidence": [
+        {
+          "session_id": "aggregate",
+          "quote": "TaskCreate appears 173 times, TaskUpdate 329 times, TaskCreate→TaskCreate bigram = 141 (82% of TaskCreates follow another TaskCreate in immediate succession).",
+          "why_it_matters": "A healthy tasklist is 'create N tasks up front, update them as you go'. The 141 consecutive TaskCreates is 'create task, think, create another, think'. This is what the user's global CLAUDE.md explicitly asked to AVOID ('Create tasks upfront'). The instruction is being violated at scale."
+        }
+      ],
+      "frequency_in_batch": 25,
+      "severity": "medium",
+      "leverage_hypothesis": "Strengthen the CLAUDE.md rule on tasklist use: 'Create ALL expected tasks in a single TaskCreate call. Only re-create if a task truly didn't exist at planning time. Consecutive TaskCreate calls are a smell.' Then follow up with: if the pattern continues, the rule isn't doing its job and a hook blocking consecutive TaskCreates would be the next step.",
+      "anti_evidence": "Some consecutive TaskCreate calls are legitimate — long-running sweeps genuinely discover work. Rule should emphasize 'upfront' not 'never-consecutive'."
+    }
+  ],
+  "notable_sessions": [
+    {"session_id": "68295abb-6609-479b-800e-9e5253aa8207", "why": "maximally broken — user explicitly loses orientation mid-session ('forget what we've been focused on') after chain of /circuit:run invocations"},
+    {"session_id": "81151565-e868-4fc6-be60-b01b1c76399a", "why": "surprising — explicit frustration quote 'help me understand why this effort has taken SO long' — the human failure mode of the continuity system"},
+    {"session_id": "32905b6f-dc67-4f7e-9d20-6dd4da47c27e", "why": "maximally broken — overnight autonomous session with 348 Bash calls, 9 errors, no guardrails"},
+    {"session_id": "91fce543-c34e-4700-8cb7-0bb8b0d51b10", "why": "exemplary stop-hook nag loop"}
+  ],
+  "sanity_checks": {
+    "sessions_read_fully": 5,
+    "sessions_skimmed_via_extracted_json": 20,
+    "global_verification": "Cross-checked pattern counts against all 776 sessions last-30-days: resume-start 14%, stop-hook nag 3-loop 3/776 sessions, codex skill body re-injections 277, codex dispatches 57."
+  }
+}

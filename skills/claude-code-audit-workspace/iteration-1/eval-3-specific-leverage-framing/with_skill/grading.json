@@ -1,0 +1,46 @@
+{
+  "expectations": [
+    {
+      "text": "An outputs/report.md file exists and is at least 800 bytes",
+      "passed": true,
+      "evidence": "report.md bytes: 12429  path: /Users/petepetrash/.claude/skills/claude-code-audit-workspace/iteration-1/eval-3-specific-leverage-framing/with_skill/outputs/report.md"
+    },
+    {
+      "text": "The run sampled or processed at least 10 distinct sessions",
+      "passed": true,
+      "evidence": "sessions processed (from sample.json or extracted/): 25"
+    },
+    {
+      "text": "Report cites at least 2 distinct 8-char+ session-id hex fragments",
+      "passed": true,
+      "evidence": "distinct session-id-like hex fragments: 16"
+    },
+    {
+      "text": "Report contains at least 3 numeric counts",
+      "passed": true,
+      "evidence": "numeric claim matches: 15"
+    },
+    {
+      "text": "drafts/ directory exists with at least one file",
+      "passed": true,
+      "evidence": "drafts file count: 6 at /Users/petepetrash/.claude/skills/claude-code-audit-workspace/iteration-1/eval-3-specific-leverage-framing/with_skill/outputs/drafts"
+    },
+    {
+      "text": "Report has exactly 3 top recommendations",
+      "passed": true,
+      "evidence": "numbered recommendations detected: 3"
+    }
+  ],
+  "pass_rate": 1.0,
+  "machine_only": true,
+  "_diagnostics": {
+    "report_bytes": 12429,
+    "report_path": "/Users/petepetrash/.claude/skills/claude-code-audit-workspace/iteration-1/eval-3-specific-leverage-framing/with_skill/outputs/report.md",
+    "drafts_count": 6,
+    "drafts_dir": "/Users/petepetrash/.claude/skills/claude-code-audit-workspace/iteration-1/eval-3-specific-leverage-framing/with_skill/outputs/drafts",
+    "sessions_processed": 25,
+    "session_id_citations": 16,
+    "numeric_claims": 15,
+    "recommendations_counted": 3
+  }
+}

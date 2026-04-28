@@ -1,0 +1,16 @@
+{
+  "eval_id": 2,
+  "eval_name": "casual-phrasing",
+  "prompt": "I've been using Claude Code a ton lately across a bunch of projects. Can you look back at my recent usage and figure out what I should change? I want to get more leverage out of this tool — focus on big wins, not polish. Cap your work at ~20 minutes.",
+  "assertions": [
+    {"id": "report_exists", "text": "An outputs/report.md file exists and is at least 800 bytes", "type": "machine"},
+    {"id": "sampled_many", "text": "The run sampled or processed at least 10 distinct sessions", "type": "machine"},
+    {"id": "cites_session_ids", "text": "Report cites at least 2 distinct 8-char+ session-id hex fragments", "type": "machine"},
+    {"id": "uses_numbers", "text": "Report contains at least 3 numeric counts", "type": "machine"},
+    {"id": "has_drafts", "text": "drafts/ directory exists with at least one file", "type": "machine"},
+    {"id": "triggers_on_casual_phrasing", "text": "Approach is systematic not ad-hoc", "type": "semantic"},
+    {"id": "top_recs_bounded", "text": "Report presents a bounded top-list of 2-5 recommendations", "type": "semantic"},
+    {"id": "step_change_framing", "text": "Recommendations are leverage-style", "type": "semantic"},
+    {"id": "drafts_installable", "text": "Drafted implementations are concrete and ready to paste in", "type": "semantic"}
+  ]
+}

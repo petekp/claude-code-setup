@@ -1,0 +1,16 @@
+{
+  "eval_id": 3,
+  "eval_name": "specific-leverage-framing",
+  "prompt": "I want to find step-change improvements in my Claude Code workflow. Analyze my recent sessions forensically — look at patterns in what I correct, what I repeat, what I miss — and tell me the 3 highest-leverage changes I could make to my setup. Draft the actual implementations (skills / CLAUDE.md rules / hooks) so I can install them directly. Budget: 20 minutes.",
+  "assertions": [
+    {"id": "report_exists", "text": "An outputs/report.md file exists and is at least 800 bytes", "type": "machine"},
+    {"id": "sampled_many", "text": "The run sampled or processed at least 10 distinct sessions", "type": "machine"},
+    {"id": "cites_session_ids", "text": "Report cites at least 2 distinct 8-char+ session-id hex fragments", "type": "machine"},
+    {"id": "uses_numbers", "text": "Report contains at least 3 numeric counts", "type": "machine"},
+    {"id": "has_drafts", "text": "drafts/ directory exists with at least one file", "type": "machine"},
+    {"id": "three_recs", "text": "Report has exactly 3 top recommendations", "type": "machine"},
+    {"id": "drafts_per_rec", "text": "Each recommendation has a corresponding drafted implementation", "type": "semantic"},
+    {"id": "step_change_framing", "text": "Recommendations are leverage-style", "type": "semantic"},
+    {"id": "drafts_installable", "text": "Drafted implementations are concrete and ready to paste in", "type": "semantic"}
+  ]
+}

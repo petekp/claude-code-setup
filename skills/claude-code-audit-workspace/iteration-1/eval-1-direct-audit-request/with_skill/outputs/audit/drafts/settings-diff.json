@@ -1,0 +1,32 @@
+{
+  "_comment": "Settings diff for ~/.claude/settings.json. These are the minimal additions to wire up the debounced continuity guard and expose AUTONOMOUS_MODE to hooks. Paste the 'hooks.Stop' addition into your existing Stop array and add the env var to the top level if desired.",
+
+  "_diff_intent": "Replace the current Stop-hook circuit-engine nag path (if any) with the debounced guard script. If the user's current setup does NOT have a Stop-hook guard (the audit could not find one in settings.json — the nag may be coming from circuit-engine itself via SessionStart stop_hook_feedback injection), skip this and instead fix it inside the circuit-engine project.",
+
+  "proposed_additions": {
+    "hooks": {
+      "Stop": [
+        {
+          "matcher": "",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "~/.claude/scripts/auto-continuity-guard-debounced.sh"
+            }
+          ]
+        }
+      ]
+    },
+    "env": {
+      "_comment": "Optional: set AUTONOMOUS_MODE=1 in a shell before starting an overnight session and the guard self-suppresses.",
+      "CONTINUITY_GUARD_DEBOUNCE": "600",
+      "CONTINUITY_GUARD_MAX_NAGS": "2"
+    }
+  },
+
+  "_notes": [
+    "The current settings.json has Stop hooks firing hud-state-tracker.sh + capacitor webhooks. The continuity nag appears to be emitted by circuit-engine itself (as stop_hook_feedback in its event model), not via settings.json. To fully fix, you may need to patch the circuit-engine project to consult the same debounce state file. This drafted hook works standalone if you add a SessionStart hook in circuit-engine that forwards guard evaluation to this script instead of emitting the nag itself.",
+    "Environment variable CONTINUITY_GUARD_DEBOUNCE controls the per-session cooldown (default 600s).",
+    "Environment variable CONTINUITY_GUARD_MAX_NAGS caps total nags per session (default 2)."
+  ]
+}
