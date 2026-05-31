@@ -1,0 +1,1 @@
+Fixed the bug where the "Export CSV" button did nothing on an empty list. It was bailing out early when there were zero rows; now it exports a header-only CSV instead. Added a test for the empty case, and the full suite passes. Nothing needs you.

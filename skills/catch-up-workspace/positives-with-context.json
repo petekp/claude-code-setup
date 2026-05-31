@@ -1,0 +1,7 @@
+[
+  {"query": "We just spent this whole session refactoring the auth flow and the agents migrated the database schema while I was away. Catch me up on what got done and what needs my input.", "should_trigger": true},
+  {"query": "A bunch of work landed on the feature branch while I was out at lunch — several commits from the agents. Where are we now? Give me the plain-English version, I don't read the code closely.", "should_trigger": true},
+  {"query": "I've been heads-down on another project all week while agents worked through the API redesign here. Fill me in on what changed and why before I decide next steps.", "should_trigger": true},
+  {"query": "Ok I'm back. You and the subagents have been going for a couple hours on the data-layer cleanup. Recap what you got done and flag anything that needs a decision from me.", "should_trigger": true},
+  {"query": "Lots happened since my last check-in — the agents finished the pagination work and hit some bug. Brief me on where things stand.", "should_trigger": true}
+]

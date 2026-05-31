@@ -17,10 +17,11 @@ so up front. Do not bury the lede.>
 - **Executing host:** <Claude Code | Codex> (cross-host: <yes | no>)
 - **Plugin root:** <absolute path>
 - **Plugin version:** <from .claude-plugin/plugin.json or .codex-plugin/plugin.json>
-- **circuit-next CLI commit:** <`git -C <repo> rev-parse HEAD` from the repo
+- **Circuit repo commit:** <`git -C <repo> rev-parse HEAD` from the repo
   whose plugin you are testing>
 - **Runtime source:** <direct | bundled | unresolved>
 - **Wrapper doctor:** <ok | warning | failed; include warning names>
+- **Installed package doctor:** <ok | warning | failed | not checked; include source/target counts when checked>
 - **Scratch repo:** <absolute path>
 - **Report dir:** <absolute path>
 - **Native invocation available:** <yes | no — if no, list the rows that
@@ -34,27 +35,29 @@ you actually ran.
 
 ### Commands and Host Packages
 
-- **Claude commands present:** <build, create, explore, fix, handoff, review, run>
-- **Codex skills present:** <build, create, explore, fix, handoff, review, run>
-- **Public generated flow packages:** <review, fix, pursue, build, explore>
-- **Internal generated flow packages:** <runtime-proof; host mirror absent?>
-- **Host-only limits:** <e.g., pursue has packaged JSON but no direct command/skill>
+- **Claude commands present:** <run, handoff>
+- **Codex commands/skills present:** <run, handoff>
+- **Public generated flow packages (mirrors only):** <review, fix, pursue, prototype, build, explore>
+- **Internal generated flow packages:** <goal, runtime-proof; host mirrors absent?>
+- **Host-only limits:** <no flow has a direct command/skill — all routed through Run; create is CLI-only; goal is internal and never auto-selected>
 
 ### CLI Flags
 
 - **Run-axis flags observed:** <--rigor, --tournament, --tournament-n, --autonomous>
 - **Evidence flags observed:** <--include-untracked-content, --progress jsonl, --run-folder>
-- **Rejected stale/unsafe flags checked:** <--mode, --depth, --dry-run, if checked>
+- **Rejected unsupported flags checked:** <--mode, --depth, --dry-run, if checked>
 
 ### Axis Allow-List
 
-| Flow | Allowed rigor | Tournament | Autonomous | Direct host command/skill |
-|---|---|---|---|---|
-| review | standard | no | no | yes |
-| fix | lite, standard, deep | no | yes | yes |
-| build | lite, standard, deep | no | yes | yes |
-| explore | lite, standard, deep | yes | yes | yes |
-| pursue | standard | no | yes | no |
+| Flow | Visibility | Allowed rigor | Tournament | Autonomous | Direct host command/skill |
+|---|---|---|---|---|---|
+| review | public | standard | no | no | none; via Run |
+| fix | public | lite, standard, deep | no | yes | none; via Run |
+| build | public | lite, standard, deep | no | yes | none; via Run |
+| explore | public | lite, standard, deep | yes | yes | none; via Run |
+| prototype | public | standard, deep | yes | yes | none; via Run |
+| pursue | public | standard | no | yes | none; via Run |
+| goal | internal | lite, standard, deep | no | yes | none; internal, never auto-selected |
 
 ### Operator Summary Fields
 
@@ -72,11 +75,13 @@ recommended for scanning.
 
 | ID | Item | Status (pass / pass-with-finding / fail / skipped / partial-skip) | Run folder | Notes |
 |---|---|---|---|---|
-| A0.1 | explore — default | pass / fail / skipped | <abs path or — > | <one line> |
+| A0.0 | run — native host pick | pass / fail / skipped | <abs path or — > | <one line> |
+| A0.1 | explore — default | … | … | … |
 | A0.2 | review — default | … | … | … |
 | A0.3 | fix — default | … | … | … |
 | A0.4 | build — default | … | … | … |
-| A0.5 | pursue — packaged CLI | … | … | … |
+| A0.5 | prototype — default | … | … | … |
+| A0.6 | pursue — default | … | … | … |
 
 ### Section A — flow and axis surface
 
@@ -202,9 +207,9 @@ codes and run folders. This is the audit trail. Future readers (including
 LLMs) read this when they need to understand what was actually exercised.
 
 ```text
-[01] /circuit:explore explain how the catalog wires flows into the engine
+[01] /circuit:run briefly explain the repo layout (selected_flow=explore)
      exit=0  run=<abs path>
-[02] /circuit:explore --rigor deep compare lite vs deep tradeoffs for explore
+[02] run explore --rigor deep --goal 'compare lite vs deep tradeoffs for explore'
      exit=0  run=<abs path>
 …
 ```

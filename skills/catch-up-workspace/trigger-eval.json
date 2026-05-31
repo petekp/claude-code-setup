@@ -1,0 +1,22 @@
+[
+  {"query": "ok im back from lunch -- what did you and the agents get done while i was out?", "should_trigger": true},
+  {"query": "catch me up on where this project's at, been a few days since i looked", "should_trigger": true},
+  {"query": "i've been heads-down in another repo all week, give me the rundown on what changed in circuit", "should_trigger": true},
+  {"query": "where are we now? kinda lost track after the auth refactor landed", "should_trigger": true},
+  {"query": "fill me in on the state of things since we kicked off the data-layer cleanup this morning", "should_trigger": true},
+  {"query": "i haven't been following this one closely. summarize what's happened so far so i can decide what to point you at next", "should_trigger": true},
+  {"query": "quick recap of what's changed since yesterday? skip the code, i just want the gist so i can steer", "should_trigger": true},
+  {"query": "what's the headline on what landed here recently -- i've got like 4 projects going and can't keep up with each", "should_trigger": true},
+  {"query": "been afk a while. whats the high level on what the agents did, and is there anything that needs a decision from me", "should_trigger": true},
+  {"query": "what changed in src/runtime/engine.ts? show me the actual diff for that file", "should_trigger": false},
+  {"query": "catch me up on the latest react 19 features, specifically the new use() hook", "should_trigger": false},
+  {"query": "where are we storing the auth tokens right now? trying to find the config file", "should_trigger": false},
+  {"query": "give me a rundown of which tests are currently failing so i can start fixing them one by one", "should_trigger": false},
+  {"query": "can you summarize what this reducer function does, line by line", "should_trigger": false},
+  {"query": "what's the status of the vercel deploy, did it actually go through or is it still building", "should_trigger": false},
+  {"query": "recap the key points from the meeting notes i just pasted above", "should_trigger": false},
+  {"query": "fill in the missing fields on this TypeScript interface for me", "should_trigger": false},
+  {"query": "brief me on how oauth token refresh works in general, i never fully got the flow", "should_trigger": false},
+  {"query": "the build broke right after the last commit -- dig into what that commit changed and figure out why", "should_trigger": false},
+  {"query": "update the changelog file with everything that's changed since v2.1", "should_trigger": false}
+]

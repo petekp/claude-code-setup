@@ -1,0 +1,864 @@
+{
+  "exit_reason": "max_iterations (3)",
+  "original_description": "Give the human a fast, plain-English catch-up on what changed in the project: what the agents did, why, and what decisions need their input. Use this whenever the user asks to \"catch me up\", \"what changed\", \"where are we\", \"recap\", \"brief me\", \"give me the rundown\", \"what did you do\", \"summarize the session\", \"fill me in\", or otherwise signals they have been away and want to get back up to speed quickly. Built for someone steering several agent-driven projects at once who does not read the code closely but needs to grasp the core ideas, the choices made, and the open decisions well enough to steer. Trigger even if they do not use these exact words: any request to get oriented on recent progress should use this skill.",
+  "best_description": "Give the human a fast, plain-English catch-up on what changed in the project: what the agents did, why, and what decisions need their input. Use this whenever the user asks to \"catch me up\", \"what changed\", \"where are we\", \"recap\", \"brief me\", \"give me the rundown\", \"what did you do\", \"summarize the session\", \"fill me in\", or otherwise signals they have been away and want to get back up to speed quickly. Built for someone steering several agent-driven projects at once who does not read the code closely but needs to grasp the core ideas, the choices made, and the open decisions well enough to steer. Trigger even if they do not use these exact words: any request to get oriented on recent progress should use this skill.",
+  "best_score": "4/7",
+  "best_train_score": "7/13",
+  "best_test_score": "4/7",
+  "final_description": "Catch the user up on a project after they've been away. Use this whenever someone returns and wants to get oriented on recent progress \u2014 they've been afk, out, heads-down in another repo, back from lunch, or gone for days, and now ask what happened while they were gone. Triggers include \"catch me up\", \"where are we\", \"what changed\", \"what did you get done\", \"fill me in\", \"give me the rundown\", \"summarize what's happened so far\", \"what should I point you at next\" \u2014 and any equivalent return-and-orient phrasing, even partial or casual. Deliver a fast, plain-English account of what you and other agents did, why, and what decisions need their input. Do NOT use it for explaining external tech or general concepts, showing one file's diff, checking a single deploy's status, recapping text the user pasted, or writing a changelog file.",
+  "iterations_run": 3,
+  "holdout": 0.4,
+  "train_size": 13,
+  "test_size": 7,
+  "history": [
+    {
+      "iteration": 1,
+      "description": "Give the human a fast, plain-English catch-up on what changed in the project: what the agents did, why, and what decisions need their input. Use this whenever the user asks to \"catch me up\", \"what changed\", \"where are we\", \"recap\", \"brief me\", \"give me the rundown\", \"what did you do\", \"summarize the session\", \"fill me in\", or otherwise signals they have been away and want to get back up to speed quickly. Built for someone steering several agent-driven projects at once who does not read the code closely but needs to grasp the core ideas, the choices made, and the open decisions well enough to steer. Trigger even if they do not use these exact words: any request to get oriented on recent progress should use this skill.",
+      "train_passed": 7,
+      "train_failed": 6,
+      "train_total": 13,
+      "train_results": [
+        {
+          "query": "been afk a while. whats the high level on what the agents did, and is there anything that needs a decision from me",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "i've been heads-down in another repo all week, give me the rundown on what changed in circuit",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "fill me in on the state of things since we kicked off the data-layer cleanup this morning",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "i haven't been following this one closely. summarize what's happened so far so i can decide what to point you at next",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "catch me up on where this project's at, been a few days since i looked",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what's the status of the vercel deploy, did it actually go through or is it still building",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "ok im back from lunch -- what did you and the agents get done while i was out?",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what changed in src/runtime/engine.ts? show me the actual diff for that file",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "fill in the missing fields on this TypeScript interface for me",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "recap the key points from the meeting notes i just pasted above",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "update the changelog file with everything that's changed since v2.1",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "catch me up on the latest react 19 features, specifically the new use() hook",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "brief me on how oauth token refresh works in general, i never fully got the flow",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "test_passed": 4,
+      "test_failed": 3,
+      "test_total": 7,
+      "test_results": [
+        {
+          "query": "where are we now? kinda lost track after the auth refactor landed",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "quick recap of what's changed since yesterday? skip the code, i just want the gist so i can steer",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what's the headline on what landed here recently -- i've got like 4 projects going and can't keep up with each",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "give me a rundown of which tests are currently failing so i can start fixing them one by one",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "can you summarize what this reducer function does, line by line",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "the build broke right after the last commit -- dig into what that commit changed and figure out why",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "where are we storing the auth tokens right now? trying to find the config file",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "passed": 7,
+      "failed": 6,
+      "total": 13,
+      "results": [
+        {
+          "query": "been afk a while. whats the high level on what the agents did, and is there anything that needs a decision from me",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "i've been heads-down in another repo all week, give me the rundown on what changed in circuit",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "fill me in on the state of things since we kicked off the data-layer cleanup this morning",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "i haven't been following this one closely. summarize what's happened so far so i can decide what to point you at next",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "catch me up on where this project's at, been a few days since i looked",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what's the status of the vercel deploy, did it actually go through or is it still building",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "ok im back from lunch -- what did you and the agents get done while i was out?",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what changed in src/runtime/engine.ts? show me the actual diff for that file",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "fill in the missing fields on this TypeScript interface for me",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "recap the key points from the meeting notes i just pasted above",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "update the changelog file with everything that's changed since v2.1",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "catch me up on the latest react 19 features, specifically the new use() hook",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "brief me on how oauth token refresh works in general, i never fully got the flow",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "iteration": 2,
+      "description": "Use this when the user returns to an agent-driven project after stepping away and wants to get back up to speed \u2014 a fast, plain-English account of what you and other agents did while they were gone, why it was done, and what decisions now need their input. This is the classic \"I've been heads-down elsewhere, catch me up / where are we / what changed / what did you get done\" situation: they want the shape of recent progress and the open choices, not a diff or file-by-file log. Trigger for any return-and-orient intent however it's worded \u2014 being afk or out, back from lunch, checking in after days away, or asking what to point you at next. Don't trigger for explaining external tech or general concepts, fetching one file's diff or a single deploy's status, recapping pasted text, or writing a changelog file.",
+      "train_passed": 7,
+      "train_failed": 6,
+      "train_total": 13,
+      "train_results": [
+        {
+          "query": "been afk a while. whats the high level on what the agents did, and is there anything that needs a decision from me",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "i've been heads-down in another repo all week, give me the rundown on what changed in circuit",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "fill me in on the state of things since we kicked off the data-layer cleanup this morning",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "i haven't been following this one closely. summarize what's happened so far so i can decide what to point you at next",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "catch me up on where this project's at, been a few days since i looked",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "ok im back from lunch -- what did you and the agents get done while i was out?",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what's the status of the vercel deploy, did it actually go through or is it still building",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "what changed in src/runtime/engine.ts? show me the actual diff for that file",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "fill in the missing fields on this TypeScript interface for me",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "recap the key points from the meeting notes i just pasted above",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "update the changelog file with everything that's changed since v2.1",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "catch me up on the latest react 19 features, specifically the new use() hook",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "brief me on how oauth token refresh works in general, i never fully got the flow",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "test_passed": 4,
+      "test_failed": 3,
+      "test_total": 7,
+      "test_results": [
+        {
+          "query": "quick recap of what's changed since yesterday? skip the code, i just want the gist so i can steer",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what's the headline on what landed here recently -- i've got like 4 projects going and can't keep up with each",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "give me a rundown of which tests are currently failing so i can start fixing them one by one",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "where are we now? kinda lost track after the auth refactor landed",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "can you summarize what this reducer function does, line by line",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "the build broke right after the last commit -- dig into what that commit changed and figure out why",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "where are we storing the auth tokens right now? trying to find the config file",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "passed": 7,
+      "failed": 6,
+      "total": 13,
+      "results": [
+        {
+          "query": "been afk a while. whats the high level on what the agents did, and is there anything that needs a decision from me",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "i've been heads-down in another repo all week, give me the rundown on what changed in circuit",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "fill me in on the state of things since we kicked off the data-layer cleanup this morning",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "i haven't been following this one closely. summarize what's happened so far so i can decide what to point you at next",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "catch me up on where this project's at, been a few days since i looked",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "ok im back from lunch -- what did you and the agents get done while i was out?",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what's the status of the vercel deploy, did it actually go through or is it still building",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "what changed in src/runtime/engine.ts? show me the actual diff for that file",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "fill in the missing fields on this TypeScript interface for me",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "recap the key points from the meeting notes i just pasted above",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "update the changelog file with everything that's changed since v2.1",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "catch me up on the latest react 19 features, specifically the new use() hook",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "brief me on how oauth token refresh works in general, i never fully got the flow",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "iteration": 3,
+      "description": "Catch the user up on a project after they've been away. Use this whenever someone returns and wants to get oriented on recent progress \u2014 they've been afk, out, heads-down in another repo, back from lunch, or gone for days, and now ask what happened while they were gone. Triggers include \"catch me up\", \"where are we\", \"what changed\", \"what did you get done\", \"fill me in\", \"give me the rundown\", \"summarize what's happened so far\", \"what should I point you at next\" \u2014 and any equivalent return-and-orient phrasing, even partial or casual. Deliver a fast, plain-English account of what you and other agents did, why, and what decisions need their input. Do NOT use it for explaining external tech or general concepts, showing one file's diff, checking a single deploy's status, recapping text the user pasted, or writing a changelog file.",
+      "train_passed": 7,
+      "train_failed": 6,
+      "train_total": 13,
+      "train_results": [
+        {
+          "query": "i've been heads-down in another repo all week, give me the rundown on what changed in circuit",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "fill me in on the state of things since we kicked off the data-layer cleanup this morning",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "been afk a while. whats the high level on what the agents did, and is there anything that needs a decision from me",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "i haven't been following this one closely. summarize what's happened so far so i can decide what to point you at next",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "catch me up on where this project's at, been a few days since i looked",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what's the status of the vercel deploy, did it actually go through or is it still building",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "ok im back from lunch -- what did you and the agents get done while i was out?",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what changed in src/runtime/engine.ts? show me the actual diff for that file",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "fill in the missing fields on this TypeScript interface for me",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "recap the key points from the meeting notes i just pasted above",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "update the changelog file with everything that's changed since v2.1",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "catch me up on the latest react 19 features, specifically the new use() hook",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "brief me on how oauth token refresh works in general, i never fully got the flow",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "test_passed": 4,
+      "test_failed": 3,
+      "test_total": 7,
+      "test_results": [
+        {
+          "query": "where are we now? kinda lost track after the auth refactor landed",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "quick recap of what's changed since yesterday? skip the code, i just want the gist so i can steer",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what's the headline on what landed here recently -- i've got like 4 projects going and can't keep up with each",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "give me a rundown of which tests are currently failing so i can start fixing them one by one",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "can you summarize what this reducer function does, line by line",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "the build broke right after the last commit -- dig into what that commit changed and figure out why",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "where are we storing the auth tokens right now? trying to find the config file",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "passed": 7,
+      "failed": 6,
+      "total": 13,
+      "results": [
+        {
+          "query": "i've been heads-down in another repo all week, give me the rundown on what changed in circuit",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "fill me in on the state of things since we kicked off the data-layer cleanup this morning",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "been afk a while. whats the high level on what the agents did, and is there anything that needs a decision from me",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "i haven't been following this one closely. summarize what's happened so far so i can decide what to point you at next",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "catch me up on where this project's at, been a few days since i looked",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what's the status of the vercel deploy, did it actually go through or is it still building",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "ok im back from lunch -- what did you and the agents get done while i was out?",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "what changed in src/runtime/engine.ts? show me the actual diff for that file",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "fill in the missing fields on this TypeScript interface for me",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "recap the key points from the meeting notes i just pasted above",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "update the changelog file with everything that's changed since v2.1",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "catch me up on the latest react 19 features, specifically the new use() hook",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "brief me on how oauth token refresh works in general, i never fully got the flow",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ]
+    }
+  ]
+}

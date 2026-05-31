@@ -19,10 +19,14 @@ per-command details.
 
 The user's argument tells you which plugin package to test:
 
-- `claude` — the Claude Code plugin at `plugins/claude/` (slash commands like
-  `/circuit:build`, `/circuit:run`, etc.)
-- `codex` — the Codex plugin at `plugins/circuit/` (Codex skills like
-  `@Circuit`, `@build`, etc.)
+- `claude` — the Claude Code plugin at `plugins/claude/`. The published slash
+  commands are `/circuit:run` and `/circuit:handoff` only. Built-in flows
+  (build, explore, fix, prototype, pursue, review) are routed through Run; they
+  ship as compiled flow mirrors under `plugins/claude/skills/<flow>/`, not as
+  separate slash commands.
+- `codex` — the Codex plugin at `plugins/codex/`. The published Codex
+  commands/skills are `run` and `handoff` only; flows are routed through Run and
+  ship as compiled mirrors under `plugins/codex/flows/<flow>/`.
 
 If the argument is missing or ambiguous, ask one short question before
 proceeding. Do not guess.
@@ -46,20 +50,20 @@ report's `Environment` block so the operator isn't misled.
 
 ## Why this skill exists
 
-CI for circuit-next runs every flow's runtime tests against a stubbed
-relayer (search `tests/runner/*-runtime-wiring.test.ts` for
-`relay: async`). The stubs hand-code valid-shape worker bodies. So a
-flow can ship to alpha with a structural bug — like a missing schema
-hint that causes the real worker to return the wrong shape every time —
-and CI will be green. **The whole point of this protocol is exercising
-unstubbed worker subprocesses against strict schemas.**
+Circuit's automated tests cover runtime contracts, generated surfaces, and
+focused connector paths. They do not prove every installed host package path,
+native rendering path, wrapper injection, and real worker subprocess shape in
+one user-facing pass. **The whole point of this protocol is exercising the
+installed or packaged host surface against strict schemas.**
 
 Concrete consequence: before declaring a clean run, you must have executed at
-least one default-axis invocation per public flow against the real connector or
-recorded why that public flow is not directly host-invokable. If a default-axis
-flow aborts on its first relay step, that is the headline finding and the rest
-of the surface coverage is moot until it's fixed. Section A0 of the checklist
-exists for exactly this reason — run it first, stop on structural failure.
+least one default-axis invocation per public flow against the real connector,
+reached either through Run (host recommendation or the deterministic router) or
+the explicit CLI flow start, since no flow ships its own host command. If a
+default-axis flow aborts on its first relay step, that is the headline finding
+and the rest of the surface coverage is moot until it's fixed. Section A0 of the
+checklist exists for exactly this reason — run it first, stop on structural
+failure.
 
 ## Why you should be checklist-first, exploratory-second
 
@@ -118,40 +122,24 @@ verify-style steps have an executable target.
 Add more fixture files only if a checklist item asks for one.
 
 For Explore and Review you can stay inside the scratch repo (or, if the user
-explicitly asks, the live circuit-next repo) — those flows do not mutate.
+explicitly asks, the live Circuit repo) — those flows do not mutate.
 
-### Isolation when testing against a worktree
+### Development override when testing a source checkout
 
-The default scratch-repo flow is enough for most runs. But when you want
-to test a worktree's compiled CLI without the user's main-checkout `dist/`
-poisoning the result, the wrapper at
-`plugins/claude/scripts/circuit-next.mjs` couples two concerns that you
-need to separate:
-
-1. **Where to find the launcher.** The wrapper resolves `bin/circuit-next`
-   from `CLAUDE_PROJECT_DIR ?? cwd`.
-2. **What cwd the CLI runs under.** The wrapper passes the same
-   resolved value to the spawned child as `cwd`, which becomes the
-   project root the flows operate on.
-
-Setting `CLAUDE_PROJECT_DIR=$WORKTREE` to make the wrapper find the
-worktree's bin therefore ALSO forces the CLI to operate on `$WORKTREE`
-instead of your scratch fixture. To break that coupling:
+Most surface tests should use the installed plugin root or the repo plugin root.
+The wrapper uses its bundled runtime by default. If you explicitly need to test
+a source checkout while operating on the scratch repo, pass the source CLI as a
+development override and keep the shell cwd at `$SCRATCH`:
 
 ```bash
-mkdir -p "$SCRATCH/bin"
-ln -sf "$WORKTREE/bin/circuit-next" "$SCRATCH/bin/circuit-next"
-# run the wrapper from cwd=$SCRATCH; do NOT export CLAUDE_PROJECT_DIR
 cd "$SCRATCH"
-node "$WORKTREE/plugins/claude/scripts/circuit-next.mjs" run <flow> ...
+CIRCUIT_CLI="$WORKTREE/bin/circuit" \
+  node "$WORKTREE/plugins/claude/scripts/circuit.ts" run <flow> ...
 ```
 
-The wrapper finds `$SCRATCH/bin/circuit-next` (which `realpath`s to
-the worktree's compiled CLI) and inherits `cwd=$SCRATCH` from the
-shell. This keeps "test the worktree's bits" and "operate on the
-fixture" on independent levers.
-
-Skip this section if you are testing the user's main checkout in-place.
+Do not set project-root environment variables just to make the wrapper find a
+runtime. The project root the flow operates on should stay the scratch repo
+unless the operator explicitly asked for live-repo coverage.
 
 ## Report path
 
@@ -178,9 +166,11 @@ phases exist to keep the report honest.
 ### 1. Refresh the source inventory
 
 Read `references/current-surface-inventory.md` in full, then run its evidence
-commands from the current `circuit-next` checkout. Record the observed commit,
+commands from the current Circuit checkout. Record the observed commit,
 dirty state, host packages, CLI help, wrapper versions, and wrapper doctor
-summaries in the report.
+summaries in the report. When testing a release or installed host package, also
+record `npm run doctor:plugins:installed` so the report proves the local host
+caches match the source package being tested.
 
 The generated source map, generated host packages, local CLI/help output,
 runtime bundles, contracts, and specs are authority. If the checklist and the
@@ -200,18 +190,19 @@ Create the scratch repo as described above. Resolve the plugin root for the
 chosen host:
 
 ```bash
+CIRCUIT_REPO="${CIRCUIT_REPO:-/Users/petepetrash/Code/circuit}"
 # Claude Code
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-/Users/petepetrash/Code/circuit-next/plugins/claude}"
-# Codex (resolve from the installed Codex plugin or fall back to repo)
-PLUGIN_ROOT="/Users/petepetrash/Code/circuit-next/plugins/circuit"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$CIRCUIT_REPO/plugins/claude}"
+# Codex
+PLUGIN_ROOT="${CODEX_PLUGIN_ROOT:-$CIRCUIT_REPO/plugins/codex}"
 ```
 
 Sanity-check the plugin actually exists and the CLI runs:
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" --help | head -5
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" version --json
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" doctor --json
+node "$PLUGIN_ROOT/scripts/circuit.ts" --help
+node "$PLUGIN_ROOT/scripts/circuit.ts" version --json
+node "$PLUGIN_ROOT/scripts/circuit.ts" doctor --json
 ```
 
 If any of those fail, stop. Record the failure in the report's `Environment`
@@ -221,9 +212,9 @@ Then snapshot the version under test so the report names exactly what
 got exercised:
 
 ```bash
-git -C "$PLUGIN_ROOT" log -1 --format='%H %s'
-git -C "$PLUGIN_ROOT" status --short
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" version --json
+git -C "$CIRCUIT_REPO" log -1 --format='%H %s'
+git -C "$CIRCUIT_REPO" status --short
+node "$PLUGIN_ROOT/scripts/circuit.ts" version --json
 ```
 
 Record the commit, plugin version, and any uncommitted-files list in
@@ -236,7 +227,7 @@ actually being tested is itself a finding worth surfacing.
 
 ### 3b. Wrapper vs. bare CLI
 
-The plugin ships a wrapper at `$PLUGIN_ROOT/scripts/circuit-next.mjs` which
+The plugin ships a wrapper at `$PLUGIN_ROOT/scripts/circuit.ts` which
 injects packaged-flow paths and other host-specific arguments before
 forwarding to the underlying CLI. The wrapper has its own injection logic
 and is a separate failure surface from the bare bin.
@@ -246,7 +237,7 @@ wrapper. CLI fallback rows in the checklists already use the wrapper path,
 so most coverage is automatic. But if you spot a wrapper-specific bug
 (e.g. wrapper injects a flag the underlying subcommand rejects), confirm it
 also fails through the host and reproduces against the wrapper from a
-plain shell — not just against `bin/circuit-next` directly. Wrapper-only
+plain shell — not just against `bin/circuit` directly. Wrapper-only
 bugs are easy to miss if the bare bin is your default debugging path.
 
 ### 4. Phase 1 — run the checklist
@@ -323,9 +314,9 @@ protocol can be followed without depending on a live worker connector. Good
 minimum smokes:
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" version --json
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" doctor --json
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" handoff save \
+node "$PLUGIN_ROOT/scripts/circuit.ts" version --json
+node "$PLUGIN_ROOT/scripts/circuit.ts" doctor --json
+node "$PLUGIN_ROOT/scripts/circuit.ts" handoff save \
   --goal 'surface-test protocol smoke' \
   --next 'confirm wrapper accepts utility subcommand args' \
   --state-markdown 'scratch session' \
@@ -382,13 +373,13 @@ A finding is anything a real user would notice and complain about. Concretely:
 
 - A command crashes or returns a non-zero exit code where success was
   expected.
-- The host fails to render a major progress event (`display.importance: major`
-  or any warning/error/checkpoint/success).
+- The host fails to render visible `presentation.status_text`, or when
+  `presentation` is absent, a visible `display.text` event.
 - The final operator summary is missing, truncated, or differs from the file
   it claims to render.
 - A documented flag is rejected, silently ignored, or behaves opposite to
   its description.
-- A stale flag such as `--mode` or `--depth` appears in a generated host
+- An unsupported flag such as `--mode` or `--depth` appears in a generated host
   surface or checklist row.
 - A generated public flow is missing from the surface inventory, or a host
   direct command/skill is claimed for a flow that only has packaged CLI JSON.
@@ -420,5 +411,5 @@ report is a real result.
 - `references/checklist-codex.md` — Codex surface checklist
 - `references/current-surface-inventory.md` — current source-backed surface map
 - `assets/report-template.md` — report structure
-- The Circuit plugin source under `plugins/claude/` and `plugins/circuit/`
+- The Circuit plugin source under `plugins/claude/` and `plugins/codex/`
 - The CLI source at `src/cli/circuit.ts`

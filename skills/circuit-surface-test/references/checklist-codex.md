@@ -8,19 +8,34 @@ Every item below is a discrete test. Run them in order. For each item, record:
 - **Notes** for progress rendering, missing summaries, warning doctor checks,
   or native Codex UI limits.
 
-Native invocation means using the Codex Circuit skill surface. CLI fallback
-means invoking the plugin wrapper directly via Bash.
+## Surface model (read first)
+
+The Codex plugin publishes exactly two skills (and matching command mirrors):
+`run` and `handoff`. There are no per-flow skills. Built-in flows (build,
+explore, fix, prototype, pursue, review) are reached two ways:
+
+- **Through Run** — "Use the Circuit run skill on <task>": the run skill
+  recommends a flow from the task and invokes it. This is the normal user path.
+- **Explicit CLI flow start** — `run <flow> --goal '<task>'` through the plugin
+  wrapper: the deterministic way to exercise a specific flow and axis.
+
+`create` is a CLI-only utility, not a skill. `goal` is an internal flow: no
+skill, never auto-selected by the classifier, only reachable as an explicit
+`run goal` start kept for reader-compat with old `goal.*@v1` run folders. Treat
+any `@build`, `@goal`, `@create`, or `@Circuit` skill as a finding — those do
+not exist; the skills are `run` and `handoff`.
 
 ## Conventions
 
 - `$PLUGIN_ROOT` - the absolute directory containing
   `.codex-plugin/plugin.json`. Default development location:
-  `/Users/petepetrash/Code/circuit-next/plugins/circuit`.
+  `/Users/petepetrash/Code/circuit/plugins/codex`.
 - `$SCRATCH` - the scratch repo created in `SKILL.md`.
 - `$REPORT_ROOT` - the durable report dir from `SKILL.md`. Pass
   `--run-folder "$REPORT_ROOT/<row-id>"` to every CLI invocation that accepts
   it.
-- Every CLI fallback row uses `--progress jsonl`.
+- Every CLI fallback row uses `--progress jsonl` and runs with cwd at `$SCRATCH`.
+- "Native" means invoking the Codex `run` or `handoff` skill.
 
 ## Pass Criteria for Every Flow Row
 
@@ -30,14 +45,16 @@ A row passes when all applicable criteria hold:
 2. The final JSON has `outcome === "complete"` unless the row expects
    `checkpoint_waiting`, `aborted`, or rejected arguments.
 3. Codex prefers `presentation.status_text`, suppresses
-   `presentation.line_mode === "suppress"`, and only falls back to legacy
-   `display.text` for major, warning, error, checkpoint, or success events.
+   `presentation.line_mode === "suppress"`, and only falls back to
+   `display.text` when `presentation` is absent and the display contract makes
+   the event visible.
 4. Codex renders `operator_summary_markdown_path` verbatim. If native
    rendering is unavailable, do the file-only check and mark `partial-skip`.
 5. The final JSON envelope surfaces `flow_id`, `outcome`, `run_folder`,
    `trace_entries_observed`, `operator_summary_path`, and
    `operator_summary_markdown_path`. Verify `operator_summary_status_text` and
-   `operator_summary_html_path` when present.
+   `operator_summary_html_path` when present. For Run, also verify
+   `selected_flow`, `routed_by`, and `router_reason`.
 6. Unsupported axis rows fail before worker execution and include the flow's
    allow-list in the error.
 
@@ -53,6 +70,9 @@ full surface walk. If any row aborts with schema validation, missing required
 fields, or unrecognized keys, stop, record a Critical finding, and ask the
 operator before continuing.
 
+No flow has a direct skill, so A0 drives each public flow at default axis through
+the explicit CLI flow start, and proves the native run skill separately in A0.0.
+
 **A0 pre-setup**:
 
 ```bash
@@ -65,14 +85,17 @@ Do not commit.
 
 | ID | Flow | Invocation |
 |---|---|---|
-| A0.1 | explore | Native: "Use Circuit explore - briefly explain the repo layout" |
-| A0.2 | review | Native: "Use Circuit review - flag any safety problems in the staged evil.js" |
-| A0.3 | fix | Native: "Use Circuit fix - bug.js subtracts instead of adding" |
-| A0.4 | build | Native: "Use Circuit build - add an exported double(n) function to add.js" |
-| A0.5 | pursue | CLI fallback: `node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run pursue --goal 'coordinate two tiny pursuits: document add.js; verify npm scripts' --run-folder "$REPORT_ROOT/A0.5-pursue" --progress jsonl` |
+| A0.0 | run (native) | Native: "Use the Circuit run skill - briefly explain the repo layout"; confirm `selected_flow`, `routed_by`, `router_reason` |
+| A0.1 | explore | CLI: `run explore --goal 'briefly explain the repo layout' --run-folder "$REPORT_ROOT/A0.1-explore" --progress jsonl` |
+| A0.2 | review | CLI: `run review --goal 'flag any safety problems in the staged evil.js' --run-folder "$REPORT_ROOT/A0.2-review" --progress jsonl` |
+| A0.3 | fix | CLI: `run fix --goal 'bug.js subtracts instead of adding' --run-folder "$REPORT_ROOT/A0.3-fix" --progress jsonl` |
+| A0.4 | build | CLI: `run build --goal 'add an exported double(n) function to add.js' --run-folder "$REPORT_ROOT/A0.4-build" --progress jsonl` |
+| A0.5 | prototype | CLI: `run prototype --goal 'sketch a disposable README note for the fixture' --run-folder "$REPORT_ROOT/A0.5-prototype" --progress jsonl` |
+| A0.6 | pursue | CLI: `run pursue --goal 'coordinate two tiny pursuits: document add.js; verify npm scripts' --run-folder "$REPORT_ROOT/A0.6-pursue" --progress jsonl` |
 
-Pass: every row exits 0 with `complete` or is pass-with-finding eligible. A0.5
-is packaged CLI coverage because Codex has no direct `pursue` skill.
+Pass: every row exits 0 with `complete` or is pass-with-finding eligible. All A0
+flow rows are CLI flow starts because Codex has no direct per-flow skill; A0.0
+proves the native run skill recommendation path.
 
 **A0 cleanup**:
 
@@ -87,61 +110,51 @@ git checkout -- bug.js add.js README.md
 
 ## Section A - Flow and Axis Surface
 
-### A1. `@explore` - default
+All Section A flow rows use the explicit CLI flow start so the target flow and
+axis are unambiguous. Run them through the wrapper with the cwd at `$SCRATCH`.
 
-Native: "Use Circuit explore - explain how the catalog wires flows into the
-engine"
+### A1. explore - default
+
+CLI: `run explore --goal 'explain how the catalog wires flows into the engine'`
 
 Pass: criteria above + summary names at least one source file. Working tree
 stays unchanged.
 
-### A2. `@explore` - `--rigor lite`
+### A2. explore - `--rigor lite`
 
-Native: "Use Circuit explore with lite rigor - summarize the scratch repo
-structure"
+CLI: `run explore --rigor lite --goal 'summarize the scratch repo structure'`
 
 Pass: run completes and lite rigor is reflected.
 
-### A3. `@explore` - `--rigor deep`
+### A3. explore - `--rigor deep`
 
-Native: "Use Circuit explore with deep rigor - compare small vs broad
-investigation"
+CLI: `run explore --rigor deep --goal 'compare small vs broad investigation'`
 
 Pass: run completes and deep rigor is reflected.
 
-### A4. `@explore` - tournament
-
-Native: "Use Circuit explore tournament with two options - decide whether this
-fixture should use one file or two files for examples"
-
-CLI fallback:
+### A4. explore - tournament
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run explore \
+run explore --tournament --tournament-n 2 \
   --goal 'decide: one file or two files for examples' \
-  --tournament --tournament-n 2 \
-  --run-folder "$REPORT_ROOT/A4-explore-tournament" \
-  --progress jsonl
+  --run-folder "$REPORT_ROOT/A4-explore-tournament" --progress jsonl
 ```
 
 Pass: run reaches a well-formed tournament outcome, emits tournament reports,
 and includes `operator_summary_html_path` when emitted by the runtime.
 
-### A5. `@explore` - autonomous tournament
-
-CLI fallback:
+### A5. explore - autonomous tournament
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run explore \
+run explore --tournament --tournament-n 2 --autonomous \
   --goal 'decide: clearer README structure' \
-  --tournament --tournament-n 2 --autonomous \
-  --run-folder "$REPORT_ROOT/A5-explore-autonomous-tournament" \
-  --progress jsonl
+  --run-folder "$REPORT_ROOT/A5-explore-autonomous-tournament" --progress jsonl
 ```
 
-Pass: supported checkpoints auto-resolve without a Codex prompt.
+Pass: supported checkpoints auto-resolve without a Codex prompt; an
+`autonomous_loop` field is present (see A-Loop).
 
-### A6. `@review` - staged change
+### A6. review - staged change
 
 Set up:
 
@@ -151,61 +164,49 @@ echo "function unsafe(s) { return eval(s); }" > evil.js
 git add evil.js
 ```
 
-Native: "Use Circuit review - flag any safety problems in the staged evil.js"
+CLI: `run review --goal 'flag any safety problems in the staged evil.js'`
 
 Pass: Review surfaces the `eval()` use as a High or Critical finding. Working
 tree is otherwise unchanged.
 
-### A7. `@review` - unsupported axes reject
-
-CLI fallback:
+### A7. review - unsupported axes reject
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run review \
-  --goal 'review the staged evil.js' \
-  --rigor deep \
-  --run-folder "$REPORT_ROOT/A7-review-deep-reject" \
-  --progress jsonl
+run review --goal 'review the staged evil.js' --rigor deep \
+  --run-folder "$REPORT_ROOT/A7-review-deep-reject" --progress jsonl
 ```
 
 Repeat with `--tournament` and `--autonomous` if time allows.
 
 Pass: rejected before worker execution with Review's allow-list.
 
-### A8. `@review` - untracked content flag
+### A8. review - untracked content flag
 
 Set up: `cd "$SCRATCH" && echo "secret = 42" > untracked.txt`
 
-Run default and included variants:
-
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run review \
-  --goal 'look at untracked.txt' \
-  --run-folder "$REPORT_ROOT/A8-review-untracked-default" \
-  --progress jsonl
+run review --goal 'look at untracked.txt' \
+  --run-folder "$REPORT_ROOT/A8-review-untracked-default" --progress jsonl
 
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run review \
-  --goal 'look at untracked.txt' \
-  --include-untracked-content \
-  --run-folder "$REPORT_ROOT/A8-review-untracked-included" \
-  --progress jsonl
+run review --goal 'look at untracked.txt' --include-untracked-content \
+  --run-folder "$REPORT_ROOT/A8-review-untracked-included" --progress jsonl
 ```
 
 Pass: default omits untracked contents and the flag changes behavior.
 
-### A9. `@fix` - default
+### A9. fix - default
 
-Native: "Use Circuit fix - buggyAdd in bug.js subtracts instead of adds"
+CLI: `run fix --goal 'buggyAdd in bug.js subtracts instead of adds'`
 
 Pass: criteria above + `bug.js` is corrected.
 
-### A10. `@fix` - `--rigor lite`
+### A10. fix - `--rigor lite`
 
-Native: "Use Circuit fix lite rigor for a README typo"
+CLI: `run fix --rigor lite --goal 'a README typo - change "fixture" to "fixtures"'`
 
 Pass: run completes and lite skips only flow-declared optional review.
 
-### A11. `@fix` - `--rigor deep`
+### A11. fix - `--rigor deep`
 
 Set up:
 
@@ -215,109 +216,106 @@ echo "README expects buggyAdd to add numbers." >> README.md
 echo "function buggyAdd(a, b) { return a - b; }" > bug.js
 ```
 
-Native: "Use Circuit fix deep rigor to make buggyAdd match the README expectation that it adds numbers"
+CLI: `run fix --rigor deep --goal 'make buggyAdd match the README expectation that it adds numbers'`
 
 Pass: run completes and deep rigor is reflected.
 
-### A12. `@fix` - autonomous
-
-Native: "Use Circuit fix autonomous for a small README wording issue"
-
-Pass: supported checkpoints auto-resolve. Document any Codex prompt.
-
-### A13. `@fix` - unsupported tournament rejects
-
-CLI fallback:
+### A12. fix - unsupported tournament rejects
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run fix \
-  --goal 'fix the buggyAdd implementation' \
-  --tournament \
-  --run-folder "$REPORT_ROOT/A13-fix-tournament-reject" \
-  --progress jsonl
+run fix --goal 'fix the buggyAdd implementation' --tournament \
+  --run-folder "$REPORT_ROOT/A12-fix-tournament-reject" --progress jsonl
 ```
 
 Pass: rejected before worker execution with Fix's allow-list.
 
-### A14. `@build` - default
+### A13. build - default
 
-Native: "Use Circuit build - add a multiply function to add.js"
+CLI: `run build --goal 'add a multiply function to add.js'`
 
 Pass: criteria above + the export exists.
 
-### A15. `@build` - `--rigor lite`
+### A14. build - `--rigor lite`
 
-Native: "Use Circuit build lite rigor to export TWO = 2 from add.js"
+CLI: `run build --rigor lite --goal 'export TWO = 2 from add.js'`
 
 Pass: run completes and lite rigor is reflected.
 
-### A16. `@build` - `--rigor deep`
+### A15. build - `--rigor deep`
 
-Native: "Use Circuit build deep rigor to add a small module-level comment and
-verify exported functions"
+CLI: `run build --rigor deep --goal 'add a small module-level comment and verify exported functions'`
 
 Pass: run completes and deep rigor is reflected. If it waits for a checkpoint,
 continue under C1.
 
-### A17. `@build` - autonomous
-
-Native: "Use Circuit build autonomous for a tiny README wording change"
-
-Pass: supported checkpoints auto-resolve. Document any Codex prompt.
-
-### A18. `@build` - unsupported tournament rejects
-
-CLI fallback:
+### A16. build - unsupported tournament rejects
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run build \
-  --goal 'add a subtract helper' \
-  --tournament \
-  --run-folder "$REPORT_ROOT/A18-build-tournament-reject" \
-  --progress jsonl
+run build --goal 'add a subtract helper' --tournament \
+  --run-folder "$REPORT_ROOT/A16-build-tournament-reject" --progress jsonl
 ```
 
 Pass: rejected before worker execution with Build's allow-list.
 
-### A19. `pursue` - packaged CLI default
+### A17. prototype - default
 
-CLI fallback:
+CLI: `run prototype --goal 'sketch a disposable README note for the fixture'`
+
+Pass: criteria above + prototype evidence is written under the run folder. If
+the flow asks whether to keep, save, or discard the prototype, continue under
+C1.
+
+### A18. prototype - `--rigor deep`
+
+CLI: `run prototype --rigor deep --goal 'compare two small README note variants'`
+
+Pass: run completes and deep rigor is reflected.
+
+### A19. prototype - tournament
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run pursue \
-  --goal 'coordinate two pursuits: inspect add.js; update README wording' \
-  --run-folder "$REPORT_ROOT/A19-pursue-default" \
-  --progress jsonl
+run prototype --tournament --tournament-n 2 \
+  --goal 'compare two disposable README note variants' \
+  --run-folder "$REPORT_ROOT/A19-prototype-tournament" --progress jsonl
 ```
 
-Pass: packaged `pursue` flow runs or reaches a well-formed checkpoint/outcome.
-Record plainly that Codex has no direct `pursue` skill.
+Pass: run reaches a well-formed variant comparison, emits variant reports, and
+includes `operator_summary_html_path` when emitted by the runtime.
 
-### A20. `pursue` - autonomous
-
-CLI fallback:
+### A20. prototype - unsupported lite rejects
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run pursue \
+run prototype --goal 'sketch a disposable README note' --rigor lite \
+  --run-folder "$REPORT_ROOT/A20-prototype-lite-reject" --progress jsonl
+```
+
+Pass: rejected before worker execution with Prototype's allow-list.
+
+### A21. pursue - default
+
+```bash
+run pursue --goal 'coordinate two pursuits: inspect add.js; update README wording' \
+  --run-folder "$REPORT_ROOT/A21-pursue-default" --progress jsonl
+```
+
+Pass: `pursue` runs or reaches a well-formed checkpoint/outcome.
+
+### A22. pursue - autonomous
+
+```bash
+run pursue --autonomous \
   --goal 'coordinate two tiny pursuits in the scratch repo' \
-  --autonomous \
-  --run-folder "$REPORT_ROOT/A20-pursue-autonomous" \
-  --progress jsonl
+  --run-folder "$REPORT_ROOT/A22-pursue-autonomous" --progress jsonl
 ```
 
 Pass: supported checkpoints auto-resolve or the run fails closed with a clear
-unsupported-policy reason.
+unsupported-policy reason; an `autonomous_loop` field is present (see A-Loop).
 
-### A21. `pursue` - unsupported rigor/tournament rejects
-
-CLI fallback:
+### A23. pursue - unsupported rigor/tournament rejects
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run pursue \
-  --goal 'coordinate two tiny pursuits' \
-  --rigor deep \
-  --run-folder "$REPORT_ROOT/A21-pursue-deep-reject" \
-  --progress jsonl
+run pursue --goal 'coordinate two tiny pursuits' --rigor deep \
+  --run-folder "$REPORT_ROOT/A23-pursue-deep-reject" --progress jsonl
 ```
 
 Repeat with `--tournament` if time allows.
@@ -326,142 +324,215 @@ Pass: rejected before worker execution with Pursue's allow-list.
 
 ---
 
-## Section B - Utility Surface
+## Section A-Loop - Autonomous Continuation Loop
 
-### B1. `@Circuit` - Codex model picks Fix
+`--autonomous` auto-resolves supported checkpoints AND drives Run's bounded,
+evidence-driven continuation loop. Verify the loop surface.
 
-Native only: "Use Circuit on this - buggyAdd in bug.js subtracts instead of
-adds, fix it"
-
-Pass: Codex chooses Fix and announces it before running.
-
-### B2. `@Circuit` - Codex model picks Build
-
-Native only: "Use Circuit to add a square function to add.js"
-
-Pass: Codex chooses Build.
-
-### B3. `@Circuit` - Codex model picks Review
-
-Native only: "Use Circuit to review the current scratch diff for safety
-problems"
-
-Pass: Codex chooses Review and does not implement changes.
-
-### B4. `@Circuit` - Codex model picks Explore
-
-Native only: "Use Circuit to compare two implementation approaches before
-editing"
-
-Pass: Codex chooses Explore and remains read-only.
-
-### B5. Deterministic router picks Pursue
-
-CLI only:
+### AL1. Loop fires and persists its result
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run \
-  --goal 'pursue: coordinate two tiny goals in this repo' \
-  --run-folder "$REPORT_ROOT/B5-run-pursue-router" \
-  --progress jsonl
+run build --autonomous \
+  --goal 'add an exported triple(n) function to add.js and verify it' \
+  --run-folder "$REPORT_ROOT/AL1-build-autonomous" --progress jsonl
 ```
 
-Pass: `selected_flow` or progress reports `pursue`. This covers the generated
-public flow's router path, not a direct Codex skill.
+Pass: the final JSON includes an `autonomous_loop` object with `outcome`,
+`attempts`, and `stop_reason`, and `reports/autonomous-loop.json` exists. The
+loop never reports `complete` purely by exhausting attempts.
 
-### B6. `version --json`
-
-CLI fallback:
+### AL2. Default path has no loop
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" version --json
+run build \
+  --goal 'add an exported triple(n) function to add.js and verify it' \
+  --run-folder "$REPORT_ROOT/AL2-build-default" --progress jsonl
+```
+
+Pass: no `autonomous_loop` field and no `reports/autonomous-loop.json`. The
+default path is single-shot.
+
+---
+
+## Section G - Internal Goal Flow
+
+Goal was collapsed into an internal flow. Verify it is not a public surface and
+that its reader-compat path still works.
+
+### G1. No goal skill
+
+Confirm there is no `goal` Codex skill and `plugins/codex/skills/goal/` does not
+exist.
+
+Pass: there is no goal skill. A goal skill would be a finding.
+
+### G2. Classifier never auto-selects goal
+
+```bash
+run --goal 'finish this scoped objective: verify npm scripts and summarize the fixture' \
+  --run-folder "$REPORT_ROOT/G2-router-not-goal" --progress jsonl
+```
+
+Pass: `selected_flow` is a public flow (never `goal`). Repeat with goal-flavored
+phrasings; none route to `goal`.
+
+### G3. Goal is not shipped to the host; explicit start lives only in the repo CLI
+
+Through the installed host plugin, `goal` is not available: as an internal flow
+its compiled JSON is not mirrored into the host package (no
+`plugins/codex/flows/goal/`). Confirm the host wrapper cannot run it:
+
+```bash
+node "$PLUGIN_ROOT/scripts/circuit.ts" run goal --goal 'finish a tiny objective' \
+  --run-folder "$REPORT_ROOT/G3-goal-host" --progress jsonl
+```
+
+Pass: this fails (exit non-zero) with `flow fixture not found:
+.../flows/goal/circuit.json`, confirming goal ships no host surface. The
+explicit internal start and old `goal.*@v1` run-folder reader-compat live only
+in the repo CLI (`./bin/circuit run goal`, which resolves
+`generated/flows/goal/circuit.json`), not the host plugin. A host that actually
+ran goal would be a finding. (The generic fixture-not-found message for an
+internal flow is worth noting as a low-severity UX finding.)
+
+---
+
+## Section B - Run and Utility Surface
+
+### B1. run skill - Codex picks Fix
+
+Native only: "Use the Circuit run skill - buggyAdd in bug.js subtracts instead
+of adds, fix it"
+
+Pass: Codex announces Fix and runs it; `selected_flow` is `fix`.
+
+### B2. run skill - Codex picks Build
+
+Native only: "Use the Circuit run skill to add a square function to add.js"
+
+Pass: `selected_flow` is `build`.
+
+### B3. run skill - Codex picks Review
+
+Native only: "Use the Circuit run skill to review the current scratch diff for
+safety problems"
+
+Pass: Codex picks Review and does not implement changes.
+
+### B4. run skill - Codex picks Explore
+
+Native only: "Use the Circuit run skill to compare two implementation approaches
+before editing"
+
+Pass: Codex picks Explore and remains read-only.
+
+### B5. run skill - Codex picks Prototype
+
+Native only: "Use the Circuit run skill to sketch a disposable mockup before
+implementation"
+
+Pass: Codex picks Prototype before running.
+
+### B6. Deterministic router picks Pursue
+
+```bash
+run --goal 'pursue: coordinate two tiny goals in this repo' \
+  --run-folder "$REPORT_ROOT/B6-run-pursue-router" --progress jsonl
+```
+
+Pass: `selected_flow` or progress reports `pursue`. This covers the public
+flow's router path, not a direct Codex skill.
+
+### B7. `version --json`
+
+```bash
+node "$PLUGIN_ROOT/scripts/circuit.ts" version --json
 ```
 
 Pass: JSON includes `version`, `runtime_source: "bundled"`, `runtime_path`, and
 `plugin_root`.
 
-### B7. `doctor --json`
-
-CLI fallback:
+### B8. `doctor --json`
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" doctor --json
+node "$PLUGIN_ROOT/scripts/circuit.ts" doctor --json
 ```
 
-Pass: doctor status is `ok`, bundled runtime executes, generated skills are
-present, command files use the wrapper, Codex hook posture is reported, and
-temp-repo smoke checks pass. Record warnings such as hook feature visibility.
+Pass: doctor status is `ok`, bundled runtime executes, the published skills (run,
+handoff) and their command mirrors are present, Codex hook posture is reported,
+and temp-repo smoke checks pass. Record warnings such as hook feature
+visibility.
 
-### B8. `runs show --json`
+### B9. `runs show --json`
 
 After any completed run:
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" runs show \
-  --run-folder '<run_folder>' \
-  --json
+node "$PLUGIN_ROOT/scripts/circuit.ts" runs show --run-folder '<run_folder>' --json
 ```
 
 Pass: output is parseable and points to the same run evidence.
 
-### B9. `@create` - draft
+### B10. `create` - draft (CLI-only)
 
-Native: "Use Circuit create - a flow that runs a quick TypeScript type-check
-and reports errors"
+```bash
+node "$PLUGIN_ROOT/scripts/circuit.ts" create \
+  --description 'a flow that runs a quick TypeScript type-check and reports errors' \
+  --name 'typecheck-flow'
+```
 
-Pass: creates a draft and does not publish without confirmation.
+Pass: creates a draft and does not publish without `--publish --yes`. Confirm
+there is no `create` Codex skill (CLI-only utility).
 
-### B10. `@create` - publish
+### B11. `create` - publish
 
-Native: confirm publication only after Codex asks.
+Run `create ... --publish --yes` only when you intend to publish.
 
-Pass: `--publish --yes` runs only after explicit confirmation, and the path the
-summary names exists.
+Pass: `--publish --yes` runs the publish step and the path the summary names
+exists.
 
-### B11. `@handoff` - save
+### B12. handoff skill - save
 
 After a flow run, native:
 
-"Use Circuit handoff - context: in the middle of build flow testing"
+"Use the Circuit handoff skill - context: in the middle of build flow testing"
 
 Pass: continuity record exists at the path the summary names. Confirm
 `--run-folder` was passed when there was an active run.
 
-### B12. `@handoff` - brief/resume/done
+### B13. handoff skill - brief/resume/done
 
 Run native:
 
 ```text
-Use Circuit handoff brief
-Use Circuit handoff resume
-Use Circuit handoff done
+Use the Circuit handoff skill: brief
+Use the Circuit handoff skill: resume
+Use the Circuit handoff skill: done
 ```
 
-Pass: brief is read-only additional context, resume restores the saved handoff,
-done clears it, and a later brief reports empty.
+Pass: brief is read-only context, resume restores the saved handoff, done clears
+it, and a later brief reports empty.
 
-### B13. `@handoff` - hooks install/doctor/uninstall
+### B14. handoff hooks install/doctor/uninstall
 
 Native or CLI fallback:
 
 ```bash
-HOOKS_FILE="$REPORT_ROOT/B13-codex-hooks.json"
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" handoff hooks install --host codex --hooks-file "$HOOKS_FILE" --progress jsonl
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" handoff hooks doctor --host codex --hooks-file "$HOOKS_FILE" --progress jsonl
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" handoff hooks uninstall --host codex --hooks-file "$HOOKS_FILE" --progress jsonl
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" handoff hooks doctor --host codex --hooks-file "$HOOKS_FILE" --progress jsonl
+HOOKS_FILE="$REPORT_ROOT/B14-codex-hooks.json"
+node "$PLUGIN_ROOT/scripts/circuit.ts" handoff hooks install --host codex --hooks-file "$HOOKS_FILE" --progress jsonl
+node "$PLUGIN_ROOT/scripts/circuit.ts" handoff hooks doctor --host codex --hooks-file "$HOOKS_FILE" --progress jsonl
+node "$PLUGIN_ROOT/scripts/circuit.ts" handoff hooks uninstall --host codex --hooks-file "$HOOKS_FILE" --progress jsonl
+node "$PLUGIN_ROOT/scripts/circuit.ts" handoff hooks doctor --host codex --hooks-file "$HOOKS_FILE" --progress jsonl
 ```
 
 Pass: install writes the temp hook file, doctor reports it, uninstall removes
 it, and final doctor explains the expected missing state. Only touch the real
 user-level hooks file when the operator explicitly asks for that coverage.
 
-### B14. Handoff wrapper accepts utility subcommand args
-
-CLI fallback:
+### B15. Handoff wrapper accepts utility subcommand args
 
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" handoff save \
+node "$PLUGIN_ROOT/scripts/circuit.ts" handoff save \
   --goal 'wrapper smoke' \
   --next 'verify wrapper does not over-inject' \
   --state-markdown 'scratch session' \
@@ -486,10 +557,8 @@ Trigger a checkpoint, commonly via Explore tournament or Build deep. When
 3. Resume from a fresh shell:
 
    ```bash
-   node "$PLUGIN_ROOT/scripts/circuit-next.mjs" resume \
-     --run-folder '<run_folder>' \
-     --checkpoint-choice '<choice>' \
-     --progress jsonl
+   node "$PLUGIN_ROOT/scripts/circuit.ts" resume \
+     --run-folder '<run_folder>' --checkpoint-choice '<choice>' --progress jsonl
    ```
 
 Pass: the run continues from the checkpoint and reaches a well-formed outcome.
@@ -505,20 +574,15 @@ abort reason obvious.
 
 ### C3. Invalid handoff
 
-Manually corrupt a handoff record and run `Use Circuit handoff brief`.
+Manually corrupt a handoff record and run the handoff brief skill.
 
 Pass: `status: invalid`, error details are surfaced, and resume is refused.
 
 ### C4. `--tournament-n` without `--tournament`
 
-CLI fallback:
-
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run explore \
-  --goal 'decide between two options' \
-  --tournament-n 2 \
-  --run-folder "$REPORT_ROOT/C4-tournament-n-reject" \
-  --progress jsonl
+run explore --goal 'decide between two options' --tournament-n 2 \
+  --run-folder "$REPORT_ROOT/C4-tournament-n-reject" --progress jsonl
 ```
 
 Pass: rejected before worker execution with `--tournament-n requires
@@ -526,14 +590,9 @@ Pass: rejected before worker execution with `--tournament-n requires
 
 ### C5. `--dry-run` rejected
 
-CLI fallback:
-
 ```bash
-node "$PLUGIN_ROOT/scripts/circuit-next.mjs" run explore \
-  --goal 'dry run should not call the connector' \
-  --dry-run \
-  --run-folder "$REPORT_ROOT/C5-dry-run-reject" \
-  --progress jsonl
+run explore --goal 'dry run should not call the connector' --dry-run \
+  --run-folder "$REPORT_ROOT/C5-dry-run-reject" --progress jsonl
 ```
 
 Pass: rejected before worker execution with the safety explanation.
@@ -544,28 +603,28 @@ Pass: rejected before worker execution with the safety explanation.
 
 ### D1. Single-quote escape correctness
 
-Native: "Use Circuit build to add a comment 'don't break' to add.js"
+Native: "Use the Circuit run skill to add a comment 'don't break' to add.js"
 
 Pass: Bash does not error, the task reaches the CLI literally, and the edit
 preserves the apostrophe.
 
 ### D2. Backtick and `$()` literal handling
 
-Native: "Use Circuit explore - explain $(uname -a) and what shell builtins
+Native: "Use the Circuit run skill - explain $(uname -a) and what shell builtins
 matter here"
 
 Pass: `$(uname -a)` is treated as literal text and not executed.
 
 ### D3. Plugin root resolution
 
-Inspect at least one generated skill transcript.
+Inspect at least one generated skill transcript (run or handoff).
 
 Pass: the wrapper path is absolute under the installed `.codex-plugin`
 directory and is not derived from the user's project cwd.
 
 ### D4. Hook input identity
 
-Using the launcher command from B13's temp install, or a fresh temp hook
+Using the launcher command from B14's temp install, or a fresh temp hook
 install, trigger a SessionStart handoff event or run the hook with host stdin
 JSON.
 
@@ -593,7 +652,7 @@ drift check instead.
 
 ### E1. Status block rendering
 
-During any native flow, confirm Codex renders Circuit status text from
+During any native run, confirm Codex renders Circuit status text from
 `presentation.status_text`, suppresses `line_mode: "suppress"`, and does not
 show raw JSON.
 
@@ -616,13 +675,8 @@ contains the headings the flow contract promises. Mark `partial-skip`.
 
 ### E5. Defaults from interface block
 
-The Codex manifest has `defaultPrompt` entries:
-
-- `Use Circuit on this task`
-- `Use Circuit to fix this bug`
-- `Use Circuit to review this change`
-
-Try each verbatim and confirm Codex selects a sensible flow.
+Check the Codex manifest's `interface` block for any `defaultPrompt` entries and
+try each verbatim, confirming Codex selects a sensible flow through Run.
 
 ### E6. Rich summary HTML handling
 
