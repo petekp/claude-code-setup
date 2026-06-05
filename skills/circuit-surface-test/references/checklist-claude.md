@@ -21,9 +21,10 @@ The Claude plugin publishes exactly two slash commands: `/circuit:run` and
   for axis and reject coverage so the target flow is unambiguous.
 
 `create` is a CLI-only utility (`create ...`), not a slash command. `goal` is an
-internal flow: it has no slash command, the classifier never auto-selects it,
-and it is only reachable as an explicit `run goal` start kept for reader-compat
-with old `goal.*@v1` run folders. Treat any `/circuit:build`, `/circuit:goal`,
+internal flow: it has no slash command, and it is never auto-selected because no
+classifier exists (routing is model-only), and it is only reachable as an
+explicit `run goal` start kept for reader-compat with old `goal.*@v1` run
+folders. Treat any `/circuit:build`, `/circuit:goal`,
 `/circuit:create`, etc. as a finding — those commands do not exist.
 
 ## Conventions
@@ -44,20 +45,39 @@ with old `goal.*@v1` run folders. Treat any `/circuit:build`, `/circuit:goal`,
 A row passes when all applicable criteria hold:
 
 1. The CLI exits 0 or Claude Code reports success.
-2. The final JSON has `outcome === "complete"` unless the row expects
-   `checkpoint_waiting`, `aborted`, or rejected arguments.
+2. The final JSON `outcome` is one of the canonical closed outcomes —
+   `complete`, `aborted`, `handoff`, `stopped`, or `escalated` — plus the
+   non-closed `checkpoint_waiting`. A row passes with `complete` unless it
+   expects one of the others or rejected arguments. The failure set is
+   `{aborted, escalated, failed, blocked}`: any run landing in the failure set
+   must read honestly — never as a neutral or complete result. Every
+   non-complete closed run carries a `reason` on the envelope and in
+   `reports/result.json`.
 3. Native rendering prefers `presentation.status_text`, suppresses
    `presentation.line_mode === "suppress"`, and only falls back to
    `display.text` when `presentation` is absent and the display contract makes
    the event visible.
-4. The final answer renders `operator_summary_markdown_path` verbatim. If
-   native rendering is unavailable, do the file-only check and mark
-   `partial-skip`.
+4. The final answer renders `operator_summary_markdown_path` (the readable
+   digest) verbatim when present, and `run_surface_markdown_path` only as the
+   fallback when the digest path is absent or missing on disk
+   (`present-rendering.ts` `finalAnswerMarkdownPath`; host-rendering.md "Final
+   Rendering"). Assert the digest shape: line 1 is a `Circuit · <FlowName>`
+   headline and the brief-slots digest carries a `Next:` line. A host that
+   renders the compact `CIRCUIT` / `⎿ <status>` run surface as the final answer
+   while the digest exists on disk is a finding. If native rendering is
+   unavailable, do the file-only check and mark `partial-skip`.
 5. The final JSON envelope surfaces `flow_id`, `outcome`, `run_folder`,
    `trace_entries_observed`, `operator_summary_path`, and
    `operator_summary_markdown_path`. Verify `operator_summary_status_text` and
-   `operator_summary_html_path` when present. For Run, also verify
-   `selected_flow`, `routed_by`, and `router_reason`.
+   `operator_summary_html_path` when present. Also surface
+   `run_surface_markdown_path` and `run_surface_status_text` — note
+   `operator_summary_status_text` is the flow display NAME (e.g. `Fix`), not the
+   outcome, while `run_surface_status_text` is the outcome line (e.g.
+   `Failed: ...`); the two being identical, or a host treating the digest status
+   text as an outcome, is a finding. For Run, also verify `selected_flow`,
+   `routed_by` (now always `explicit` — model-only routing), and `router_reason`
+   (the explicit-path value is the fixed string `explicit flow positional
+   argument`).
 6. Unsupported axis rows fail before worker execution and include the flow's
    allow-list in the error.
 
@@ -101,6 +121,19 @@ intake, not baked into HEAD.
 Pass: every row exits 0 with `complete` or is pass-with-finding eligible. All A0
 flow rows are CLI flow starts because Claude has no direct per-flow command; A0.0
 proves the native `/circuit:run` host-recommendation path.
+
+Note: routing is model-only, so on every real run `routed_by` is `explicit` and
+`router_reason` for the explicit path is the fixed string `explicit flow
+positional argument`. The reason the operator hears for the flow choice is the
+MODEL's stated reason, not `router_reason`.
+
+Build grounding add-on (A0.4): once the Build run reaches its plan step, read
+`$REPORT_ROOT/A0.4-build/reports/build/plan.json` and assert a non-empty
+`slices` array (each `{id, intent, anticipated_file_extensions}`), a top-level
+`anticipated_file_extensions` array, and an `approach` string beginning
+`Grounded in a codebase read (`. These are FILE-only — do NOT look for them in
+the operator summary or final envelope. If the run stops at a checkpoint before
+plan.json is written, resume (or use `--autonomous`), else mark partial-skip.
 
 **A0 cleanup**:
 
@@ -244,18 +277,45 @@ CLI: `run build --goal 'add a multiply function to add.js exporting it as multip
 
 Pass: criteria above + the export exists.
 
+Negative slice assertion: under standard rigor there must be ZERO `(slice N)`
+suffixes in any progress `status_text`/`display.text` and ZERO `slice_index`
+keys in the trace — Build runs single-pass below deep. (`plan.json` may still
+contain a `slices` array; that is fine — the loop just does not iterate below
+deep.) A `(slice N)` suffix or `slice_index` under standard rigor means the loop
+activated below its deep floor — a regression.
+
 ### A14. build - `--rigor lite`
 
 CLI: `run build --rigor lite --goal 'export a constant TWO = 2 from add.js'`
 
 Pass: run completes and lite rigor is reflected.
 
-### A15. build - `--rigor deep`
+Negative slice assertion: same as A13 — under lite rigor there must be ZERO
+`(slice N)` progress suffixes and ZERO `slice_index` trace keys.
 
-CLI: `run build --rigor deep --goal 'add a small module-level comment and verify the exported functions'`
+### A15. build - `--rigor deep` (per-slice loop)
 
-Pass: run completes and deep rigor is reflected. If it waits for a checkpoint,
-continue under C1.
+CLI: `run build --rigor deep --goal 'add an exported double(n) and an exported triple(n) to add.js, each independently verifiable'`
+
+Drive past the frame/plan checkpoint if it waits (continue under C1, or use
+`--autonomous`).
+
+Pass: run completes and deep rigor is reflected. When `reports/build/plan.json`
+has more than one slice, `step.started` progress events for the act and verify
+steps carry a 1-based `(slice N)` suffix in BOTH `presentation.status_text`
+(e.g. `Making the change (slice 1)...`, `(slice 2)...`) and `display.text`
+(`Circuit: ... (slice N)...`), incrementing per slice. The trace carries a
+0-based `slice_index` on the loop-body steps; non-loop steps (frame, analyze,
+plan, review, close) carry NO `slice_index`. The loop iterates at most
+`maxSlices = 8`. A single-slice plan under deep showing one `(slice 1)` pass is
+correct, not a finding.
+
+Finding if: a deep run with a multi-slice plan shows no `(slice N)` suffix; OR
+the suffix never increments past `(slice 1)` despite more than one slice; OR
+act/verify run only once when the plan has multiple slices.
+
+Partial-skip when: no real worker produces a multi-slice plan; the slice surface
+needs a genuine relay.
 
 ### A16. build - unsupported tournament rejects
 
@@ -284,8 +344,24 @@ Pass: run completes and deep rigor is reflected.
 
 CLI: `run prototype --tournament --tournament-n 2 --goal 'compare two disposable README note variants'`
 
-Pass: run reaches a well-formed variant comparison, emits variant reports, and
-includes `operator_summary_html_path` when the runtime emits the rich summary.
+Prerequisite: the tournament axis fans out one relay per configured model
+variant, so it requires `circuits.prototype.variant_models` in the Circuit
+config (one entry per `--tournament-n` branch). The circuit repo's own
+`.circuit/config.yaml` defines this; a fresh `$SCRATCH` repo does not.
+
+Two cases:
+
+- **Config absent (e.g. from `$SCRATCH`):** the run rejects up-front (exit 2,
+  no run folder) with a message naming `circuits.prototype.variant_models`.
+  This is the F-M-2 fix — the missing prerequisite is caught at axis/config
+  setup like an unsupported axis, not aborted mid-run at the variant-options
+  step after framing and planning.
+- **Config present:** Pass when the run reaches a well-formed variant
+  comparison, emits variant reports, and includes `operator_summary_html_path`
+  when the runtime emits the rich summary.
+
+Finding if: with config absent the run still spawns a worker / creates a run
+folder / aborts mid-run instead of rejecting up-front.
 
 ### A20. prototype - unsupported lite rejects
 
@@ -346,6 +422,14 @@ Pass: the final JSON includes an `autonomous_loop` object with `outcome`,
 `attempts`, and `stop_reason`, and `reports/autonomous-loop.json` exists in the
 run folder. The loop never reports `complete` purely by exhausting attempts.
 
+Add-on (autonomous + deep slice loop coexist): rerun with
+`run build --rigor deep --autonomous --goal 'add an exported double(n) and an
+exported triple(n) to add.js, each independently verifiable'`. Pass: the frame
+checkpoint auto-resolves (no prompt), the deep slice loop iterates with
+`(slice N)` suffixes (per A15), AND the final JSON still carries the
+`autonomous_loop` object plus `reports/autonomous-loop.json`. The two loops
+coexist.
+
 ### AL2. Default path has no loop
 
 ```bash
@@ -379,15 +463,34 @@ Confirm `/circuit:goal` is not a recognized command and
 
 Pass: there is no goal slash command. A goal command would be a finding.
 
-### G2. Classifier never auto-selects goal
+### G2. No-flow goal-flavored text does NOT classify to a flow
 
 ```bash
 run --goal 'finish this scoped objective: verify npm scripts and summarize the fixture' \
-  --run-folder "$REPORT_ROOT/G2-router-not-goal" --progress jsonl
+  --run-folder "$REPORT_ROOT/G2-no-classify" --progress jsonl ; echo "exit=$?"
 ```
 
-Pass: `selected_flow` is a public flow (never `goal`). Repeat with a couple of
-goal-flavored phrasings; none route to `goal`.
+Pass: errors with `a flow name is required: pass one of
+build|fix|review|explore|prototype|pursue ...` and exit 2. There is no
+classifier, so goal-flavored text neither selects `goal` NOR auto-selects any
+public flow. Repeat with a couple of goal-flavored phrasings; all error.
+
+Finding if: any phrasing resolves to a flow (especially `goal`) instead of
+erroring. The "goal is never auto-selected" property still holds, but the
+mechanism is "no classifier exists", not "a classifier avoids goal".
+
+### G2b. Native host model recommends and names the flow (interactive-only)
+
+Real host session. Native: `/circuit:run briefly explain the repo layout`.
+
+Pass: Claude states a recommended flow + a one-line reason BEFORE invoking the
+CLI, then the run emits `selected_flow` (likely `explore`) with `routed_by` =
+`explicit` and `router_reason` = `explicit flow positional argument`. The reason
+the operator sees is the MODEL's stated reason, not the `router_reason` string.
+
+Finding if: the model invokes with no flow (causing the required-flow error); OR
+it narrates `router_reason` as its rationale; OR it fails to state a flow + reason
+before running. Partial-skip via CLI (this is native-host behavior).
 
 ### G3. Goal is not shipped to the host; explicit start lives only in the repo CLI
 
@@ -534,15 +637,42 @@ Native: `/circuit:run sketch a disposable mockup before implementation`
 
 Pass: Claude announces Prototype before running the Prototype flow.
 
-### B6. Deterministic router picks Pursue
+### B6. No-flow CLI run errors (model-only routing)
 
 ```bash
 run --goal 'pursue: coordinate two tiny goals in this repo' \
-  --run-folder "$REPORT_ROOT/B6-run-pursue-router" --progress jsonl
+  --run-folder "$REPORT_ROOT/B6-no-flow-errors" --progress jsonl ; echo "exit=$?"
 ```
 
-Pass: `selected_flow` or progress reports `pursue`. This covers the public
-flow's router path; it is not a direct slash-command proof.
+Pass: stderr contains `a flow name is required: pass one of
+build|fix|review|explore|prototype|pursue as the first argument` and a non-zero
+exit (2). NO `route.selected` event, NO `selected_flow`, NO worker call. There
+is no deterministic router, so a no-flow run cannot auto-select a flow from goal
+text.
+
+Finding if: the run does NOT error — i.e. it auto-selects pursue (or any flow),
+emits `selected_flow`, or starts a worker. That would mean a deterministic /
+goal-text classifier crept back in, contradicting model-only routing.
+
+### B6b. Explicit CLI flow start emits `routed_by` = `explicit`
+
+```bash
+run pursue --goal 'coordinate two tiny goals' \
+  --run-folder "$REPORT_ROOT/B6b-explicit" --progress jsonl
+```
+
+Inspect the `route.selected` progress event (in the `--progress jsonl` stream or
+`$REPORT_ROOT/B6b-explicit/trace.ndjson`). Safe to stop the run once the route
+event is observed.
+
+Pass: the `route.selected` event has `"selected_flow":"pursue"`,
+`"routed_by":"explicit"`, `"router_reason":"explicit flow positional argument"`,
+`presentation.status_text` `Chose pursue.` / `display.text`
+`Circuit: Chose pursue.`.
+
+Finding if: `routed_by` is anything other than `explicit`; OR `router_reason`
+differs from `explicit flow positional argument`; OR the status text is not
+`Chose pursue.`.
 
 ### B7. `version --json`
 
@@ -561,7 +691,37 @@ node "$PLUGIN_ROOT/scripts/circuit.ts" doctor --json
 
 Pass: doctor status is `ok`, bundled runtime executes, the published command
 files (run, handoff) use the wrapper, and temp-repo smoke checks pass. Record
-warnings.
+warnings. Note: `doctor --json` does NOT report skill-hook posture; its absence
+there is expected, not a finding.
+
+### B8a. `doctor --json` reports host identity (drives auto connector routing)
+
+```bash
+node "$PLUGIN_ROOT/scripts/circuit.ts" doctor --json | \
+  node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).host))'
+```
+
+Pass: the Claude wrapper prints `claude-code` (the Codex wrapper prints
+`codex`). `version --json` carries NO `host` key; a host/connector key appearing
+in `version --json` would itself be a finding.
+
+Finding if: the Claude wrapper reports anything but `claude-code` — a
+host-identity mismatch mis-routes the default `auto` connector.
+
+### B8b. Auto connector resolves to the host-matching worker (optional, run-dependent)
+
+The default relay connector is `auto`: it resolves to the worker matching host
+identity (`claude-code` on Claude, `codex` on Codex). On a real relayed run the
+run-folder traces carry `resolved_from: {source: "auto"}`; setting
+`CIRCUIT_HOST_KIND=codex` flips the resolved connector to `codex`.
+
+Pass (when a worker runs): some trace entry carries
+`"resolved_from":{"source":"auto"}` and the resolved connector matches host
+identity. Partial-skip when no worker runs (there is no connector to resolve).
+
+Finding if: `resolved_from` is not `auto` under default config; OR the auto
+connector does not match host identity; OR `CIRCUIT_HOST_KIND=codex` does not
+change the resolved connector.
 
 ### B9. `runs show --json`
 
@@ -654,14 +814,89 @@ Trigger a checkpoint, commonly via Explore tournament or Build deep. When
 
 Pass: the run continues from the checkpoint and reaches a well-formed outcome.
 
-### C2. Aborted
+### C2. Aborted (deterministic offline trigger)
 
-Trigger an abort with an unsupported or impossible task that gets past argument
-parsing.
+The `runtime-proof` internal flow is a deterministic offline abort fixture: its
+`compose-step` references an unregistered report schema and fails closed, so it
+aborts the same way every time with no connector. It must be run via
+`node bin/circuit` from the Circuit repo root — the host wrappers correctly
+reject internal flows (that rejection is itself proved in G3).
 
-Pass: final JSON has `outcome === "aborted"`, the host reads
-`reports/result.json` when `result_path` is present, and the summary makes the
-abort reason obvious.
+```bash
+cd /Users/petepetrash/Code/circuit && node bin/circuit run runtime-proof \
+  --goal 'abort path' --run-folder "$REPORT_ROOT/C2-aborted" --progress jsonl
+```
+
+Pass: `reports/result.json` has `outcome: "aborted"` and a specific `reason`
+(`step 'compose-step' handler threw: report schema 'plan.strategy@v1' is not
+registered ...`). The digest (`reports/operator-summary.md`) reads
+`Circuit · Runtime Proof`, then `The run aborted before this flow could finish.`,
+a `- Abort reason: <reason>` bullet, and `Next: fix the abort cause, then rerun
+the flow.`. The run surface (`reports/run-surface.md`) maps `aborted` → `Failed:`
+(`⎿ Failed: runtime-proof could not close with the required process evidence.`).
+The present wrapper renders the specific reason; in streamed mode it does not
+also print a generic "Run aborted" line.
+
+Finding if: the envelope omits `reason` for an aborted run; OR the present
+wrapper prints a generic "Run aborted" line instead of the specific reason; OR
+`run_surface_status_text` reads `Done`/`complete`.
+
+### C2b. Escalated renders as an honest failure, not false success
+
+`escalated` is a distinct failure outcome (maps to `blocked`), emitted for
+`@escalate` terminals. No clean deterministic offline trigger exists — mark
+**partial-skip** and assert the file contract on any escalated run folder you
+can produce (a flow whose recovery exhausts attempts).
+
+Pass: final JSON `outcome === "escalated"` with a `reason`. The digest assessment
+reads `The run escalated because Circuit could not close the flow safely.` with
+an `Escalation reason: <reason>` bullet. The run surface shows `Blocked: ...`
+(escalated normalizes to `blocked` there). This is the exact false-success
+regression the failure-legibility work fixed.
+
+Finding if: the digest reads as neutral or complete (no "escalated" language, no
+reason); OR the outcome is silently mapped to `complete` or `aborted`.
+
+### C2c. Handoff and stopped surface distinctly
+
+`stopped` trigger: `node bin/circuit run goal` from the repo root, against the
+real connector. `goal` runs a child sub-run and then evaluates the evidence; a
+child that cannot close `complete` (the common case for a vague objective)
+routes goal to `@stop`, so goal closes `stopped`. This is connector-driven, not
+offline — the child must actually run. (As of the F-M-1 fix, a non-complete
+child sub-run routes the parent's declared `stop` route instead of aborting it;
+before that fix `run goal` aborted on the child's missing verdict.) The
+deterministic `stopped` proof lives in the test suite, not this manual row:
+`tests/runtime/sub-run.test.ts` (non-complete child → stop route) and
+`tests/runner/goal-flow.test.ts` (`expectStoppedRunWithGoalOutcome`). `handoff`
+(an `@handoff` terminal) is flow-driven — partial-skip to the file contract.
+
+```bash
+cd /Users/petepetrash/Code/circuit && node bin/circuit run goal \
+  --goal 'a scoped objective' --run-folder "$REPORT_ROOT/C2c-stopped" --progress jsonl
+```
+
+Pass: `goal` closes `outcome: "stopped"` and the run surface reads
+`Blocked: goal did not produce enough process evidence.` (`stopped` also
+normalizes to `Blocked:` at the surface). If the run itself cannot proceed it
+may close an honest `aborted` instead — also acceptable, as long as it never
+renders `complete`. For a `handoff` run, the digest names the handoff and the
+surface is non-`Done`.
+
+Finding if: a stopped or handoff run renders as `complete`, carries no distinct
+language, or `run goal` aborts on a sub-run verdict error (the F-M-1 regression).
+
+### C2d. Status fields are not confused (digest name vs surface outcome)
+
+Reuse the C2-aborted run folder. Compare `operator_summary_status_text` vs
+`run_surface_status_text` in the final JSON.
+
+Pass: `operator_summary_status_text` is the flow display name (`Runtime Proof`)
+with NO outcome verb; `run_surface_status_text` is the outcome line
+(`Failed: ...`). They differ.
+
+Finding if: a host treats `operator_summary_status_text` as the outcome, or the
+two are identical.
 
 ### C3. Invalid handoff
 
@@ -687,6 +922,25 @@ run explore --goal 'dry run should not call the connector' --dry-run \
 ```
 
 Pass: rejected before worker execution with the safety explanation.
+
+### C6. Digest is the final answer, not the run surface (render order)
+
+Reuse the deterministic C2-aborted run folder (or any completed run folder). Read
+both `reports/operator-summary.md` (the digest) and `reports/run-surface.md`. In
+an interactive host, diff the rendered final answer against the digest.
+
+Pass: the final JSON carries BOTH `operator_summary_markdown_path` and
+`run_surface_markdown_path`. `operator-summary.md` begins with `Circuit ·
+<FlowName>` and the brief-slots digest carries a `Next:` line. The host's final
+answer matches the digest verbatim, NOT the compact `CIRCUIT` / `⎿ <status>` run
+surface. Fallback contract: the run surface is rendered only when the digest is
+absent or missing on disk (`present-rendering.ts` `finalAnswerMarkdownPath`).
+
+Finding if: the host renders the `CIRCUIT` / `⎿ <status>` run surface as the
+final answer while `operator-summary.md` exists on disk (inverts the digest-first
+contract); OR the host invents its own summary. Mark partial-skip on CLI (host
+render is interactive); the file-only digest-vs-run-surface check is the
+fallback.
 
 ---
 
@@ -723,6 +977,22 @@ npm run check-flow-drift
 Pass: generated surfaces and plugin runtime bundles are in sync. If this is too
 expensive for the run, mark skipped with reason and cite the latest available
 drift check instead.
+
+### D5. Build host mirror carries the slice `advance` route
+
+```bash
+grep -n '"advance"' "$PLUGIN_ROOT/skills/build/circuit.json"
+grep -c 'iteratesSliceLoop\|engineFlags' "$PLUGIN_ROOT/skills/build/circuit.json"
+```
+
+Pass: the Build mirror's verify-step routes include `"advance": "act-step"`
+(first grep matches), and the second grep is `0` — `iteratesSliceLoop` /
+`engineFlags` are trimmed from the host projection; the runtime resolves the flag
+from the catalog. Without `advance`, the deep slice loop would have nowhere to
+route.
+
+Finding if: `advance` is missing from the verify-step; OR `iteratesSliceLoop`
+leaks into the host mirror. Confirm with `npm run check-flow-drift`.
 
 ---
 
@@ -761,3 +1031,214 @@ For Explore tournament or any run with `operator_summary_html_path`, verify the
 path is absolute, ends in `.html`, and is surfaced safely. Claude wrapper
 auto-open failures are not findings when the path remains visible and the
 environment blocks GUI open.
+
+---
+
+## Section F - Skill-Hooks Surface
+
+Skill Hooks are an OPT-IN, config-gated surface (landed across several 2026-06
+commits). With NO `skill_hooks` config the entire surface is silent: no
+`## Skill hooks` digest section, no `run.skill-hook` trace, no
+`skill_hook_activations` field. That silence is the opt-in gate, NOT a
+regression. Before treating an absent surface as a bug, confirm the build under
+test actually includes Skill Hooks (`src/skill-hooks/` in the source, or the
+feature in the runtime bundle).
+
+Rendering is byte-identical on both hosts (one shared runtime renderer, no host
+branch), so these rows are identical on Claude and Codex.
+
+**Run order:** the cheap CLI rows (F3, F5, F6) need no worker — run them first.
+F1/F2/F4 are CLI-observable but **run-dependent**: they need a real run that
+reaches the firing signal (a connector). F7 is interactive/fault-injection only.
+
+**F pre-setup — where config and skills live.** Project policy lives at the
+scratch repo root in `$SCRATCH/.circuit/config.yaml` (user-global alternative:
+`~/.config/circuit/config.yaml`; project replaces user-global per hook key). All
+F rows run the flow through the wrapper with cwd at `$SCRATCH` — the wrapper
+injects the flow-root; bare `bin/circuit` from a scratch cwd fails flow
+resolution before config even loads. For auto-injection rows, pre-install a
+resolvable local skill — Circuit discovers ONLY flat `<root>/<id>/SKILL.md`
+folders under `~/.agents/skills/` then `~/.claude/skills/` (namespaced
+plugin/marketplace skills are NOT discoverable):
+
+```bash
+mkdir -p ~/.agents/skills/qa-probe-skill
+printf -- '---\nname: qa-probe-skill\ndescription: surface-test probe skill\n---\nprobe\n' \
+  > ~/.agents/skills/qa-probe-skill/SKILL.md
+# remove after Section F: rm -rf ~/.agents/skills/qa-probe-skill
+```
+
+### F1. `mute` hook fires and is disclosed WITHOUT injecting (CLI, run-dependent)
+
+`$SCRATCH/.circuit/config.yaml`:
+
+```yaml
+schema_version: 1
+skill_hooks:
+  policy:
+    after:verification-failed:
+      mode: mute
+```
+
+Run a flow whose verification step fails a `schema_sections` check (drive Fix or
+Build into a state where verification cannot pass), then read the run folder.
+
+Pass: `trace.ndjson` has a `kind:"run.skill-hook"` line with
+`event.hook == "after:verification-failed"` and `event.policy.mode == "mute"`.
+`operator-summary.md` has a `## Skill hooks` section with a line matching
+`` `after:verification-failed` fired (muted; nothing injected) — <provenance> ``.
+No skill id is reported as injected.
+
+Finding if: the hook fired but the summary omits the Skill hooks section; OR a
+mute hook reports any injected skill.
+
+Partial-skip when: a non-interactive run cannot reach a failing verification
+signal; fall back to the file-contract assertion on any run folder that did.
+
+### F2. `auto` edit-files hook injects a skill + discloses provenance (CLI, run-dependent)
+
+With `qa-probe-skill` installed (F pre-setup), `$SCRATCH/.circuit/config.yaml`:
+
+```yaml
+schema_version: 1
+skill_hooks:
+  policy:
+    after:edit-files:.js:
+      skills: [qa-probe-skill]
+```
+
+(`mode` omitted = `auto`.) Run `run fix --goal 'the buggyAdd in bug.js subtracts
+instead of adding' --run-folder "$REPORT_ROOT/F2-auto" --progress jsonl`. Fix
+touches a `.js` file, so `fix.change-set@v1` observed contains a `.js` path and
+the hook fires.
+
+Pass: `trace.ndjson` `run.skill-hook` event has hook `after:edit-files:.js`,
+`policy.mode "auto"`, `triggered_skills` including `qa-probe-skill`.
+`operator-summary.md` `## Skill hooks` line:
+`` `after:edit-files:.js` injected qa-probe-skill — <provenance> `` where
+provenance is the project config path. The hook fires AFTER the edit, so the
+injection reaches a LATER implementer relay (e.g. a verify-driven retry); if such
+a relay runs, its loaded skills include `qa-probe-skill` (the injection persists
+for the run). On a clean single-pass Fix nothing downstream consumes it — that is
+not a finding; the summary disclosure is the primary assertion.
+
+Finding if: the auto hook fired but `injected_skills` is empty in the summary; OR
+a later implementer relay ran but did NOT load the injected skill; OR provenance
+is missing/wrong.
+
+Partial-skip when: no real worker relay runs (the implementer-merge proof needs a
+connector); the trace + summary file contract is the offline fallback.
+
+### F3. Inert lifecycle + role gate: the hook does not fire/inject where it shouldn't (CLI)
+
+(a) Inert reserved hook. `$SCRATCH/.circuit/config.yaml`:
+
+```yaml
+schema_version: 1
+skill_hooks:
+  policy:
+    before:implementation:
+      skills: [qa-probe-skill]
+```
+
+Run any flow (`run build --goal 'add an exported double(n) to add.js'
+--run-folder "$REPORT_ROOT/F3-inert" --progress jsonl`). Pass: the config loads
+(`before:implementation` is a known reserved hook), but NO `run.skill-hook` event
+with hook `before:implementation` appears anywhere in `trace.ndjson`, and no
+Skill hooks line names it.
+
+(b) Role gate (run-dependent). On a run where an `auto` edit-files hook injects a
+skill (F2), inspect a researcher/reviewer relay request in the same run folder.
+Pass: the injected skill does NOT appear in any reviewer/researcher relay's
+loaded skills — injection is gated to `implementer` relays only.
+
+Finding if: a `before:*` lifecycle hook produces a `run.skill-hook` event (it
+must stay inert); OR an injected skill appears in a reviewer/researcher relay
+(role leak).
+
+### F4. Unavailable-skill disclosure (CLI, run-dependent)
+
+`$SCRATCH/.circuit/config.yaml` naming a skill that does NOT exist on disk:
+
+```yaml
+schema_version: 1
+skill_hooks:
+  policy:
+    after:edit-files:
+      skills: [definitely-not-a-real-skill]
+```
+
+Ensure no `~/.agents/skills/definitely-not-a-real-skill/SKILL.md` and none under
+`~/.claude/skills/`. Run `run fix --goal 'fix the buggyAdd in bug.js'
+--run-folder "$REPORT_ROOT/F4-unavailable" --progress jsonl` (bare
+`after:edit-files` matches any non-empty edit surface).
+
+Pass: the `run.skill-hook` event has
+`unavailable_skills:[{id:"definitely-not-a-real-skill", reason:"Circuit could not
+find skill ..."}]` and nothing injected. `operator-summary.md` `## Skill hooks`
+line contains `could not load definitely-not-a-real-skill (Circuit could not find
+skill ...)`. The run still completes; nothing is injected.
+
+Finding if: a missing skill is silently dropped (no unavailable disclosure); OR
+Circuit errors the run instead of recording unavailable and proceeding; OR the
+missing id leaks into `injected_skills`.
+
+Partial-skip when: Fix cannot reach a real edit offline; fall back to any run
+folder where `after:edit-files` fired.
+
+### F5. Default run (no `skill_hooks` config) shows no skill-hook surface (CLI)
+
+Remove `$SCRATCH/.circuit/config.yaml` (or omit the `skill_hooks` block). Use any
+completed (or offline) run folder.
+
+Pass: `reports/operator-summary.md` has NO `## Skill hooks` section (and no
+`Skill hooks:` brief line); the final JSON has no `skill_hook_activations` field;
+no `run.skill-hook` entry in `trace.ndjson`.
+
+Finding if: a Skill hooks section or `skill_hook_activations` appears with no
+`skill_hooks` config present.
+
+### F6. Config validation rejects bad `skill_hooks` shapes (CLI, cheap)
+
+Needs no worker. Write each `$SCRATCH/.circuit/config.yaml` variant and run any
+flow through the wrapper
+(`run fix --goal noop --run-folder "$REPORT_ROOT/F6" --progress jsonl`):
+
+- (a) `after:verification-failed: { mode: mute, skills: [x] }`
+- (b) `after:edit-files: { mode: auto, skills: [] }`
+- (c) `before:bogus: { skills: [x] }`
+- (d) `after:edit-files:js: { skills: [x] }` (extension suffix missing the leading dot)
+- (e) `after:edit-files: { mode: ask, skills: [x] }`
+
+Pass: each rejects at config load (before any worker) with `error: config
+validation failed for project at <path>/.circuit/config.yaml: [...]` whose body
+contains: (a) `mute Skill Hook policy must not declare skills`; (b) `auto Skill
+Hook policy requires at least one skill`; (c) `unknown shipped Skill Hook
+'before:bogus'`; (d) `custom Skill Hooks must be namespaced as
+<namespace>/<before|after>:<name>`; (e) an `invalid_value` for `mode`
+(`auto`|`mute` only — there is no `ask`).
+
+Finding if: any invalid config is accepted instead of failing validation.
+
+### F7. Dispatch-failed warning path (interactive / fault-injection only)
+
+The dispatcher catches all faults by design, so a real crash cannot be triggered
+from the plain CLI. Observable contract: if any `trace.ndjson` line has
+`kind:"run.skill-hook-error"` with a message, the operator summary shows a
+Warnings line `skill_hook_dispatch_failed: <first line of message>`.
+
+Non-interactive: assert the ABSENCE path — a healthy run shows NO
+`skill_hook_dispatch_failed` warning. To prove the positive path, hand-write a
+`run.skill-hook-error` line into a copied `trace.ndjson` and re-derive the
+summary.
+
+Pass: a healthy run = no `skill_hook_dispatch_failed` warning. If a
+`run.skill-hook-error` entry exists, the summary's Warnings section lists
+`skill_hook_dispatch_failed: <message>`.
+
+Finding if: a `run.skill-hook-error` entry exists but the summary shows no
+warning (silently swallowed); OR a dispatch failure aborts/breaks the run (it
+must be non-fatal). Mark `skipped - interactive-only` in non-interactive runs.
+
+**Section F cleanup:** `rm -rf ~/.agents/skills/qa-probe-skill` and remove
+`$SCRATCH/.circuit/config.yaml`.
