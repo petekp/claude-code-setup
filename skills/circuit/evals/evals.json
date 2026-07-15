@@ -1,0 +1,51 @@
+{
+  "skill_name": "circuit",
+  "evals": [
+    {
+      "id": 0,
+      "name": "fix-routing",
+      "prompt": "There's a bug in this project: applyDiscount in src/cart.js returns NaN when the tax rate is 0, so checkout totals come out broken. It's blocking today's release cut. Handle it properly. One constraint: before you execute anything long-running or anything that spawns model workers, show me the exact command(s) you'd run and why.",
+      "expected_output": "Routes the work through Circuit: recommends the fix flow with a one-line reason, constructs a shell-safe `circuit run fix --goal '...'` command (single-quoted goal, --why carrying the release stakes), and does not just hand-edit cart.js as the primary plan.",
+      "files": [],
+      "assertions": [
+        "Routes the task through Circuit instead of hand-editing cart.js as the primary plan (proposes a `circuit run` invocation)",
+        "Selects the fix flow (command contains `run fix`)",
+        "The --goal text is wrapped in single quotes (shell-safe construction)",
+        "Passes the user's stated release stakes via --why",
+        "States the recommended flow and a one-line reason before proposing execution",
+        "The user-facing response is succinct and plainly spoken: under roughly 300 words, no deep technical digressions, leads with the plan rather than the diagnosis narrative",
+        "Presents flow and dials as the skill's standard readout card: a fenced ASCII block with a `circuit · <flow> — <reason>` line and depth/power gauge lines ([#..]-style), not improvised prose or headers"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "flow-restraint",
+      "prompt": "we keep forgetting accessibility checks when we fix react components in this repo. can you create a new circuit flow called react-fix that adds an a11y checklist step? go ahead and set it up for this project",
+      "expected_output": "Declines to mint a new flow (territory overlap with fix, cognitive overload), explains why briefly, and instead wires the lighter lever: a skill_hooks rule (after:edit-files:.tsx) in .circuit/config.yaml pointing at an existing local a11y/react skill, with schema_version 1 and valid YAML.",
+      "files": [],
+      "assertions": [
+        "Does not create or publish a new flow named react-fix (no `circuit create`/`circuit generate` execution that publishes it)",
+        "Proposes the lighter lever: a skill_hooks rule keyed on edit-files with a .tsx extension in project config",
+        "The hook names a skill that actually exists as a flat local skill folder (e.g. ~/.claude/skills/<id>/SKILL.md)",
+        "Explains WHY a new flow is the wrong tool (overlap with fix / catalog cognitive load), not just does something else silently",
+        "Writes valid YAML at .circuit/config.yaml with schema_version: 1",
+        "Keeps CLI machinery and scaffolding out of chat: no inspection/verification commands shown (config show, preview), no meta-labels like 'Reason in one line'; states what was verified in plain words"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "config-and-preview",
+      "prompt": "Set up Circuit for this repo so reviewer and researcher relay steps run through codex while implementation stays on claude code, and default the power dial to low to keep costs down. Then prove the setup resolves the way I asked without spending anything on an actual run.",
+      "expected_output": "Writes .circuit/config.yaml with schema_version 1, relay.default claude-code, relay.roles.reviewer/researcher -> codex, defaults.power low; proves it with `circuit preview` (spawn-free) and reads back the resolved connector/power per step.",
+      "files": [],
+      "assertions": [
+        "Writes project config at .circuit/config.yaml with schema_version: 1",
+        "Routes reviewer AND researcher roles to the codex connector (relay.roles)",
+        "Keeps implementation on claude-code (relay.default or implementer mapping resolves to claude-code)",
+        "Sets defaults.power to low",
+        "Proves the resolution spawn-free by running `circuit preview` and showing resolved connectors/tiers",
+        "Does not paste raw YAML into chat: describes what the config does in plain one-per-lever lines plus the file path, and proves resolution with a compact readout rather than file dumps"
+      ]
+    }
+  ]
+}

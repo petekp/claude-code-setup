@@ -1,0 +1,158 @@
+/* ============================================================================
+ * tw-aurora — an annotated starter for a PURE-CSS Tailwind v4 plugin.
+ *
+ * A worked example of the architecture every effect in this skill uses:
+ *   1. @property        — register the animatable, typed custom properties.
+ *   2. @theme           — declare design tokens that auto-generate scale knobs.
+ *   3. @keyframes       — interpolate a registered property (NOT a raw var).
+ *   4. one core @utility — the effect, expressed as math over custom properties.
+ *   5. knob @utility-*   — small functional utilities that just SET those props.
+ *   6. @supports / @media — graceful fallback + reduced-motion.
+ *
+ * The effect: a slowly-rotating multi-hue conic glow you drop on cards, buttons,
+ * or hero sections. It rotates by animating a registered <angle> property that
+ * the conic-gradient reads via `from`. Zero JavaScript.
+ *
+ * Copy this file to src/index.css, rename the `aurora` token throughout, and
+ * swap the gradient body for your effect. Keep the SHAPE.
+ * ==========================================================================  */
+
+/* 1. REGISTER the animatable property -------------------------------------- */
+/* Only @property-registered customs INTERPOLATE in @keyframes. An unregistered
+ * --aurora-angle would jump 0→360 discretely at 50%; registered, it sweeps.
+ * Typed syntax ("<angle>") is what unlocks the smooth tween. inherits:false so a
+ * nested .aurora doesn't inherit its parent's current angle. */
+@property --aurora-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* 2. THEME TOKENS -----------------------------------------------------------
+ * Keys in a namespace generate matching utilities: --aurora-speed-slow here lets
+ * `aurora-speed-slow` resolve via --value(--aurora-speed-*) in the knob below.
+ * They're also available to consumers as CSS variables. */
+@theme {
+  --aurora-speed-slow: 24s;
+  --aurora-speed-md: 14s;
+  --aurora-speed-fast: 7s;
+
+  /* @keyframes declared inside @theme are emitted only when referenced. */
+  @keyframes tw-aurora-spin {
+    to {
+      --aurora-angle: 360deg;
+    }
+  }
+}
+
+/* 4. THE CORE UTILITY -------------------------------------------------------
+ * The whole effect lives here, written as a function of custom properties whose
+ * defaults are inline but which the knob utilities (step 5) or arbitrary
+ * properties can override. This is the spine: ONE utility consumes; many small
+ * utilities feed it. */
+@utility aurora {
+  /* Knobs with sensible defaults. `--aurora-*` are the PUBLIC surface (settable
+   * on any ancestor or via the utilities below); `--_*` are private locals. */
+  --_from: var(--aurora-from, oklch(0.72 0.18 255));
+  --_via: var(--aurora-via, oklch(0.74 0.19 330));
+  --_to: var(--aurora-to, oklch(0.78 0.16 195));
+  --_speed: var(--aurora-speed, var(--aurora-speed-md));
+  --_blur: var(--aurora-blur, 0px);
+  --_sat: var(--aurora-saturate, 1);
+
+  position: relative;
+  isolation: isolate; /* own stacking context so blend/blur stay contained */
+
+  /* A 7-stop conic wheel. The color-mix midpoints (in oklch — perceptually
+   * even) are what make the hue transitions read as smooth light rather than
+   * three hard bands. Reading `from var(--aurora-angle)` is what lets the
+   * keyframe rotate the whole wheel by animating a single registered prop. */
+  background: conic-gradient(
+    from var(--aurora-angle),
+    var(--_from) 0deg,
+    color-mix(in oklch, var(--_from), var(--_via)) 60deg,
+    var(--_via) 120deg,
+    color-mix(in oklch, var(--_via), var(--_to)) 180deg,
+    var(--_to) 240deg,
+    color-mix(in oklch, var(--_to), var(--_from)) 300deg,
+    var(--_from) 360deg
+  );
+  filter: blur(var(--_blur)) saturate(var(--_sat));
+  animation: tw-aurora-spin var(--_speed) linear infinite;
+
+  /* Per-variant retuning: dark surfaces want deeper, more saturated hues. */
+  @variant dark {
+    --_from: var(--aurora-from, oklch(0.62 0.2 264));
+    --_via: var(--aurora-via, oklch(0.6 0.22 328));
+    --_to: var(--aurora-to, oklch(0.66 0.2 205));
+  }
+}
+
+/* 5. KNOB UTILITIES ---------------------------------------------------------
+ * Functional utilities (the `-*` suffix). Each just SETS a public custom
+ * property; none re-declares the effect. --value() resolves, in order:
+ *   • a theme key in the namespace   (aurora-speed-slow)
+ *   • a bare data type / integer      (aurora-speed-10  → 10s)
+ * Supplying both makes the utility accept tokens AND raw numbers. */
+@utility aurora-speed-* {
+  --aurora-speed: --value(--aurora-speed-*); /* token: aurora-speed-fast */
+  --aurora-speed: calc(--value(integer) * 1s); /* raw:   aurora-speed-10 */
+}
+
+@utility aurora-blur-* {
+  --aurora-blur: calc(--value(integer) * 1px); /* aurora-blur-12 → blur(12px) */
+}
+
+@utility aurora-saturate-* {
+  --aurora-saturate: --value(number); /* aurora-saturate-1.5 */
+}
+
+/* Color knobs pull from the consumer's Tailwind palette OR an arbitrary color.
+ * --modifier() captures the /opacity suffix (aurora-from-blue-500/50). */
+@utility aurora-from-* {
+  --aurora-from: --alpha(--value(--color, [color]) / --modifier(integer));
+  --aurora-from: --value(--color, [color]);
+}
+@utility aurora-via-* {
+  --aurora-via: --value(--color, [color]);
+}
+@utility aurora-to-* {
+  --aurora-to: --value(--color, [color]);
+}
+
+/* 6a. FALLBACK --------------------------------------------------------------
+ * @property is Baseline 2024, but on an engine without it --aurora-angle never
+ * animates — it sits at the 0deg initial value, so a STATIC conic wheel still
+ * shows (graceful by construction). We only need an explicit fallback for
+ * engines with no conic-gradient at all: drop to a linear sweep, no animation. */
+@supports not (background: conic-gradient(from 0deg, red, blue)) {
+  .aurora {
+    background: linear-gradient(
+      135deg,
+      oklch(0.72 0.18 255),
+      oklch(0.74 0.19 330),
+      oklch(0.78 0.16 195)
+    );
+    animation: none;
+  }
+}
+
+/* 6b. REDUCED MOTION --------------------------------------------------------
+ * A continuously rotating glow is exactly what prefers-reduced-motion is for.
+ * Freeze it — the static wheel is still attractive. */
+@media (prefers-reduced-motion: reduce) {
+  .aurora {
+    animation: none;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * USAGE (after `@import "tailwindcss"; @import "tw-aurora";`)
+ *
+ *   <div class="aurora aurora-speed-slow aurora-blur-8 rounded-2xl p-8">…</div>
+ *   <button class="aurora aurora-from-fuchsia-500 aurora-to-sky-400">Go</button>
+ *   <section class="aurora aurora-speed-[30s] aurora-saturate-1.3">…</section>
+ *
+ * The angle property freeze-frames the animation — pin --aurora-angle to scrub
+ * it by hand (this is exactly how the workbench's lock+progress works).
+ * ------------------------------------------------------------------------  */

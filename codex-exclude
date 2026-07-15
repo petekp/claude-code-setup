@@ -1,0 +1,6 @@
+# Skills to skip when syncing into ~/.codex/skills
+# (one per line, lines starting with # are ignored)
+#
+# Consumed by scripts/sync-codex-skills.sh, which runs on every Claude Code
+# SessionStart. Add a skill name here if it conflicts with Codex built-ins
+# or shows up as a duplicate in Codex.

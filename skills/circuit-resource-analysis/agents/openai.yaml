@@ -1,0 +1,4 @@
+interface:
+  display_name: "Circuit Resource Analysis"
+  short_description: "Analyze resources through a Circuit lens"
+  default_prompt: "Use $circuit-resource-analysis to analyze this resource for Circuit lessons and flow ideas."

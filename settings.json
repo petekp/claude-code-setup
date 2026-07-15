@@ -1,0 +1,317 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Search",
+      "WebSearch",
+      "Write",
+      "Bash(./setup.sh *)",
+      "Bash(~/.claude/scripts/*)",
+      "Bash(agent-browser *)",
+      "Bash(agent-browser * && *)",
+      "Bash(agent-browser *; *)",
+      "Bash(agent-browser * 2>/dev/null*)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser *)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser close)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser open *)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser snapshot*)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser screenshot *)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser set *)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser click *)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser fill *)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser type *)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser wait *)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser * && *)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser *; *)",
+      "Bash(AGENT_BROWSER_SESSION=* agent-browser * 2>/dev/null*)",
+      "Bash(sleep *)",
+      "Bash(sleep)",
+      "Bash(cat *)",
+      "Bash(cd *)",
+      "Bash(cd * && swift build)",
+      "Bash(cd * && swift build *)",
+      "Bash(cd * && swift run)",
+      "Bash(cd * && swift run *)",
+      "Bash(chmod *)",
+      "Bash(claude plugin *)",
+      "Bash(claude skill --help *)",
+      "Bash(claude skills --help *)",
+      "Bash(curl *)",
+      "Bash(echo *)",
+      "Bash(env)",
+      "Bash(find *)",
+      "Bash(gh *)",
+      "Bash(git *)",
+      "Bash(grep *)",
+      "Bash(jq *)",
+      "Bash(lsof *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(node -e *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(pbcopy *)",
+      "Bash(pgrep *)",
+      "Bash(pkill *)",
+      "Bash(pkill -f *)",
+      "Bash(pnpm *)",
+      "Bash(sqlite3 *)",
+      "Bash(swift build *)",
+      "Bash(swift run *)",
+      "Bash(tree *)",
+      "Bash(vercel *)",
+      "Bash(wc *)",
+      "Bash(xargs *)",
+      "Bash(yes *)",
+      "mcp__context7__get-library-docs",
+      "mcp__context7__query-docs",
+      "mcp__context7__resolve-library-id",
+      "mcp__ide__getDiagnostics",
+      "Skill",
+      "WebFetch(domain:alistapart.com)",
+      "WebFetch(domain:ant.design)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:ariakit.org)",
+      "WebFetch(domain:blog.datawrapper.de)",
+      "WebFetch(domain:blog.maximeheckel.com)",
+      "WebFetch(domain:blog.sethcorker.com)",
+      "WebFetch(domain:bugzilla.mozilla.org)",
+      "WebFetch(domain:developer.chrome.com)",
+      "WebFetch(domain:developers.openai.com)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:docs.langchain.com)",
+      "WebFetch(domain:fumadocs.dev)",
+      "WebFetch(domain:fumadocs.vercel.app)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:horizon.servicenow.com)",
+      "WebFetch(domain:issues.chromium.org)",
+      "WebFetch(domain:issuetracker.google.com)",
+      "WebFetch(domain:itunes.apple.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:motion.dev)",
+      "WebFetch(domain:mui.com)",
+      "WebFetch(domain:nolanlawson.com)",
+      "WebFetch(domain:practicaltypography.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:react-resizable-panels.vercel.app)",
+      "WebFetch(domain:shiki.style)",
+      "WebFetch(domain:sinja.io)",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:stronglytyped.uk)",
+      "WebFetch(domain:tailgraph.com)",
+      "WebFetch(domain:tanstack.com)",
+      "WebFetch(domain:theme-toggle.rdsx.dev)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "WebFetch(domain:v6.carbondesignsystem.com)",
+      "WebFetch(domain:web.dev)",
+      "WebFetch(domain:www.assistant-ui.com)",
+      "WebFetch(domain:www.datawrapper.de)",
+      "WebFetch(domain:www.duetds.com)",
+      "WebFetch(domain:www.filamentgroup.com)",
+      "WebFetch(domain:www.imcorfitz.com)",
+      "WebFetch(domain:www.joshwcomeau.com)",
+      "WebFetch(domain:www.nicchan.me)",
+      "WebFetch(domain:www.nikolailehbr.ink)",
+      "WebFetch(domain:www.quantamagazine.org)",
+      "WebFetch(domain:www.radix-ui.com)",
+      "WebFetch(domain:www.tool-ui.com)",
+      "WebFetch(domain:www.tremor.so)",
+      "WebFetch(domain:www.uxmatters.com)",
+      "WebFetch(domain:vtbag.dev)",
+      "Bash(sw_vers)",
+      "Bash(system_profiler:*)",
+      "Bash(networksetup -listallhardwareports:*)",
+      "Bash(ifconfig:*)",
+      "Bash(scutil:*)",
+      "Bash(networksetup:*)",
+      "Bash(networksetup -getsearchdomains:*)",
+      "Bash(sysctl:*)",
+      "Bash(sudo pfctl:*)",
+      "Bash(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate:*)",
+      "Bash(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I)",
+      "Bash(networkQuality:*)",
+      "Bash(launchctl list:*)",
+      "Bash(netstat:*)",
+      "Bash(time dig:*)",
+      "Bash(defaults read:*)",
+      "Bash(sudo networksetup:*)",
+      "Bash(vm_stat:*)",
+      "Bash(memory_pressure)",
+      "Bash(diskutil info:*)",
+      "Bash(ps aux:*)",
+      "Bash(sort:*)",
+      "Bash(ps:*)",
+      "Bash(osascript:*)",
+      "Bash(mdutil -s:*)",
+      "Bash(sudo mdutil:*)",
+      "Bash(pmset:*)",
+      "Bash(brew services:*)",
+      "Bash(du:*)",
+      "Bash(tmutil listbackups:*)",
+      "Bash(tmutil status:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(top:*)",
+      "Bash(ioreg:*)",
+      "Bash(kill:*)",
+      "Bash(brew install:*)",
+      "Bash(open:*)",
+      "Bash(tmux source-file:*)",
+      "Bash(tmux show-options:*)",
+      "Bash(tmux show:*)",
+      "Bash(ghostty +show-config:*)",
+      "Bash(zsh:*)",
+      "Bash(bash:*)",
+      "Bash(test:*)",
+      "Skill(unix-macos-engineer)",
+      "Skill(plugin-dev:skill-development)",
+      "Bash(claude /doctor)",
+      "Bash(claude doctor)",
+      "Bash(/opt/homebrew/bin/claude *)",
+      "Bash(printf \"no\\\\nyes\\\\n\")",
+      "Bash(vercel deploy:*)",
+      "WebFetch(domain:www.agentation.com)",
+      "mcp__agentation__agentation_watch_annotations",
+      "mcp__agentation__agentation_list_sessions",
+      "mcp__agentation__agentation_get_all_pending"
+    ],
+    "deny": [
+      "**/.env*",
+      "**/*.env",
+      "**/secrets/**",
+      "**/*secret*",
+      "**/*credentials*",
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/*.log"
+    ],
+    "ask": [],
+    "defaultMode": "auto",
+    "additionalDirectories": [
+      "/Users/petepetrash/Dropbox/Screenshots",
+      "~/.claude/skills",
+      "~/Code"
+    ],
+    "respectGitignore": true
+  },
+  "model": "claude-fable-5[1m]",
+  "disabledMcpjsonServers": [
+    "vercel"
+  ],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/skill-usage-tracker.sh"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/session-end-cleanup.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/sync-codex-skills.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/fix-skill-symlinks.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/skill-usage-tracker.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "circuit@circuit": true,
+    "codex@openai-codex": true,
+    "notion@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "vercel@claude-plugins-official": true,
+    "slack@claude-plugins-official": true,
+    "linear@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "circuit": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/petepetrash/Code/circuit"
+      }
+    },
+    "circuit-next": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/petepetrash/Code/circuit-next"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    },
+    "petekp-agent-skills": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/petepetrash/Code/agent-skills"
+      }
+    }
+  },
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "xhigh",
+  "autoCompactWindow": 250000,
+  "autoUpdatesChannel": "latest",
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
+  "verbose": true,
+  "preferredNotifChannel": "notifications_disabled",
+  "terminalProgressBarEnabled": false,
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true,
+  "useAutoModeDuringPlan": true,
+  "feedbackSurveyState": {
+    "lastShownTime": 1753981396935
+  }
+}

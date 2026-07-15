@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Screenshot Comparison"
+  short_description: "Create polished before-and-after PR screenshots"
+  default_prompt: "Use $pr-screenshot-comparison to create and attach a cropped before-and-after image to this PR."

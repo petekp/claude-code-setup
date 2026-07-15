@@ -1,0 +1,562 @@
+<!doctype html>
+<!--
+  tw-aurora · workbench — a bespoke, framework-free tuning lab for the starter
+  plugin (examples/starter-plugin.css). Opens straight from disk (file://). No
+  build, no framework. This is the reference shape described in
+  references/workbench.md: a metadata-driven control panel driving CSS custom
+  properties live across a SPECIMEN MATRIX, with a freeze-frame lock for the
+  animation, presets, reset, and paste-ready export.
+
+  To tune the REAL compiled plugin instead of this inlined copy, delete the
+  <style id="effect"> block and `<link rel="stylesheet" href="../dist/...css">`,
+  then add the utility classes to the specimens.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>tw-aurora · workbench</title>
+
+    <!-- ░░ the effect under test (mirror of starter-plugin.css, de-Tailwinded) ░░ -->
+    <style id="effect">
+      @property --aurora-angle {
+        syntax: "<angle>";
+        inherits: false;
+        initial-value: 0deg;
+      }
+      @keyframes tw-aurora-spin {
+        to {
+          --aurora-angle: 360deg;
+        }
+      }
+      .aurora {
+        --_from: var(--aurora-from, oklch(0.72 0.18 255));
+        --_via: var(--aurora-via, oklch(0.74 0.19 330));
+        --_to: var(--aurora-to, oklch(0.78 0.16 195));
+        --_speed: var(--aurora-speed, 14s);
+        --_blur: var(--aurora-blur, 0px);
+        --_sat: var(--aurora-saturate, 1);
+        position: relative;
+        isolation: isolate;
+        background: conic-gradient(
+          from var(--aurora-angle),
+          var(--_from) 0deg,
+          color-mix(in oklch, var(--_from), var(--_via)) 60deg,
+          var(--_via) 120deg,
+          color-mix(in oklch, var(--_via), var(--_to)) 180deg,
+          var(--_to) 240deg,
+          color-mix(in oklch, var(--_to), var(--_from)) 300deg,
+          var(--_from) 360deg
+        );
+        filter: blur(var(--_blur)) saturate(var(--_sat));
+        animation: tw-aurora-spin var(--_speed) linear infinite;
+      }
+      /* lock = freeze-frame: stop the animation, drive the angle by hand. */
+      .aurora.is-locked {
+        animation: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .aurora {
+          animation: none;
+        }
+      }
+    </style>
+
+    <!-- ░░ lab chrome (utilitarian; spend craft on the effect, not here) ░░ -->
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      :root {
+        --ink: #fafafa;
+        --surface: #0a0a0a;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background: var(--surface);
+        font: 14px/1.5 ui-sans-serif, system-ui, sans-serif;
+      }
+
+      /* the specimen matrix: the same knobs proven against many element types */
+      .matrix {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 18px;
+        padding: 24px;
+        padding-right: 384px; /* clear the fixed panel */
+        max-width: 1400px;
+      }
+      .cell {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .cap {
+        font: 11px/1.3 ui-monospace, monospace;
+        color: #8a8a8a;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .card {
+        height: 150px;
+        border-radius: 18px;
+        padding: 16px;
+        display: flex;
+        align-items: flex-end;
+        font-weight: 600;
+      }
+      .btn {
+        align-self: flex-start;
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 20px;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .chip {
+        align-self: flex-start;
+        border-radius: 999px;
+        padding: 5px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .ring {
+        width: 120px;
+        height: 120px;
+        border-radius: 999px;
+        /* knockout center → glow reads as a ring (mask = pure CSS donut) */
+        mask: radial-gradient(closest-side, transparent 58%, #000 60%);
+      }
+      /* gradient text: clip the aurora to the glyphs */
+      .text {
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1.05;
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+      .swatch-light {
+        background: #f4f4f5;
+        color: #18181b;
+        border-radius: 18px;
+        padding: 14px;
+      }
+      .swatch-light .cap {
+        color: #71717a;
+      }
+
+      /* control panel */
+      #panel {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        width: 348px;
+        max-height: calc(100vh - 24px);
+        overflow-y: auto;
+        padding: 14px;
+        border: 1px solid rgb(255 255 255 / 0.14);
+        border-radius: 12px;
+        background: rgb(12 12 12 / 0.86);
+        backdrop-filter: blur(10px);
+        font: 12px/1.45 ui-monospace, Menlo, monospace;
+        z-index: 10;
+        box-shadow: 0 12px 40px rgb(0 0 0 / 0.5);
+      }
+      #panel.is-hidden {
+        transform: translateX(calc(100% + 18px));
+      }
+      #panel h1 {
+        margin: 0 0 2px;
+        font-size: 13px;
+      }
+      #panel .sub {
+        margin: 0 0 12px;
+        color: #8a8a8a;
+      }
+      .group {
+        margin: 0 0 12px;
+        padding: 10px;
+        border: 1px solid rgb(255 255 255 / 0.08);
+        border-radius: 9px;
+        background: rgb(255 255 255 / 0.02);
+      }
+      .group-title {
+        margin: 0 0 8px;
+        color: #6ee7b7;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .ctrl {
+        margin-bottom: 9px;
+      }
+      .ctrl:last-child {
+        margin-bottom: 0;
+      }
+      .ctrl-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
+        color: #c8c8c8;
+      }
+      .ctrl-label .val {
+        color: #fafafa;
+        font-variant-numeric: tabular-nums;
+      }
+      input[type="range"] {
+        width: 100%;
+        accent-color: #10b981;
+        margin: 0;
+      }
+      input[type="color"] {
+        width: 100%;
+        height: 26px;
+        padding: 0;
+        border: 1px solid rgb(255 255 255 / 0.14);
+        border-radius: 6px;
+        background: transparent;
+      }
+      label.check {
+        display: flex;
+        gap: 7px;
+        align-items: center;
+        color: #c8c8c8;
+        cursor: pointer;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
+      button.b {
+        appearance: none;
+        cursor: pointer;
+        border: 1px solid rgb(255 255 255 / 0.16);
+        border-radius: 7px;
+        background: rgb(255 255 255 / 0.04);
+        color: #ebebeb;
+        padding: 6px 9px;
+        font: inherit;
+        font-size: 11px;
+      }
+      button.b:hover {
+        background: rgb(255 255 255 / 0.09);
+      }
+      button.b.primary {
+        border-color: rgb(16 185 129 / 0.5);
+        background: rgb(16 185 129 / 0.16);
+        color: #d1fae5;
+      }
+      .readout {
+        margin: 6px 0 0;
+        color: #8a8a8a;
+        font-size: 11px;
+        word-break: break-all;
+      }
+      .readout b {
+        color: #fafafa;
+      }
+      #export {
+        width: 100%;
+        height: 120px;
+        margin-top: 8px;
+        resize: vertical;
+        border: 1px solid rgb(255 255 255 / 0.14);
+        border-radius: 7px;
+        background: rgb(0 0 0 / 0.5);
+        color: #bedccd;
+        font: 11px/1.4 ui-monospace, monospace;
+        padding: 8px;
+        display: none;
+      }
+      #showPanel {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 9;
+        display: none;
+      }
+      .hint {
+        margin-top: 8px;
+        color: #6a6a6a;
+        font-size: 10.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ░░ SPECIMEN MATRIX — every cell shares the same :root knobs ░░ -->
+    <main class="matrix" id="matrix">
+      <div class="cell">
+        <span class="cap">card · dark</span>
+        <div class="aurora card">on a card</div>
+      </div>
+      <div class="cell">
+        <span class="cap">card · light surface</span>
+        <div class="swatch-light">
+          <span class="cap">light</span>
+          <div class="aurora card" style="height: 110px">contrast check</div>
+        </div>
+      </div>
+      <div class="cell">
+        <span class="cap">button</span>
+        <button class="aurora btn">Get started</button>
+        <span class="cap">chip</span>
+        <span class="aurora chip">NEW</span>
+      </div>
+      <div class="cell">
+        <span class="cap">ring (mask knockout)</span>
+        <div class="aurora ring"></div>
+      </div>
+      <div class="cell">
+        <span class="cap">gradient text (clip)</span>
+        <div class="aurora text">Aurora</div>
+      </div>
+      <div class="cell" dir="rtl">
+        <span class="cap">rtl card</span>
+        <div class="aurora card">اختبار</div>
+      </div>
+      <div class="cell">
+        <span class="cap">nested (leak check)</span>
+        <div class="aurora card" style="padding: 10px">
+          <div class="aurora" style="width: 60px; height: 40px; border-radius: 8px"></div>
+        </div>
+      </div>
+      <div class="cell">
+        <span class="cap">tiny + huge</span>
+        <span class="aurora text" style="font-size: 16px">small</span>
+        <span class="aurora text" style="font-size: 64px">Big</span>
+      </div>
+    </main>
+
+    <button id="showPanel" class="b">params ▸</button>
+    <aside id="panel" aria-label="aurora controls">
+      <h1>aurora · workbench</h1>
+      <p class="sub">Drag to tune; every specimen updates live. Lock to scrub the spin frame-by-frame.</p>
+      <div id="groups"></div>
+      <div class="row">
+        <button class="b primary" id="btnExport">Export</button>
+        <button class="b" id="btnReset">Reset</button>
+        <button class="b" id="presetCalm">Calm</button>
+        <button class="b" id="presetVivid">Vivid</button>
+        <button class="b" id="btnHide">Hide</button>
+      </div>
+      <p class="readout" id="readout"></p>
+      <textarea id="export" readonly spellcheck="false"></textarea>
+      <p class="hint">Press <b>h</b> to hide the panel and judge the effect clean. Export copies the changed tokens + the equivalent utility string.</p>
+    </aside>
+
+    <script>
+      // ── parameter model: the panel is GENERATED from this ──────────────────
+      const META = {
+        speed:    { label: "speed (s)",   min: 2,  max: 40,  step: 1,    unit: "",   css: "--aurora-speed",    util: (v) => `aurora-speed-${v}` },
+        blur:     { label: "blur (px)",   min: 0,  max: 60,  step: 1,    unit: "px", css: "--aurora-blur",     util: (v) => `aurora-blur-${v}` },
+        saturate: { label: "saturate",    min: 0,  max: 3,   step: 0.05, unit: "",   css: "--aurora-saturate", util: (v) => `aurora-saturate-${v}` },
+      };
+      const COLORS = {
+        from: { label: "from", css: "--aurora-from" },
+        via:  { label: "via",  css: "--aurora-via"  },
+        to:   { label: "to",   css: "--aurora-to"   },
+      };
+      const DEFAULTS = {
+        speed: 14, blur: 0, saturate: 1,
+        from: "#5b8cff", via: "#e85bd9", to: "#3fd6c9",
+        surface: "#0a0a0a",
+        locked: false, progress: 0,
+      };
+      const params = structuredClone(DEFAULTS);
+      const root = document.documentElement;
+      const specimens = [...document.querySelectorAll(".aurora")];
+
+      // ── apply ──────────────────────────────────────────────────────────────
+      function applyKnob(key) {
+        const m = META[key];
+        if (m.css === "--aurora-speed") root.style.setProperty(m.css, params[key] + "s");
+        else root.style.setProperty(m.css, params[key] + m.unit);
+      }
+      function applyColor(key) {
+        root.style.setProperty(COLORS[key].css, params[key]);
+      }
+      function applyLock() {
+        for (const el of specimens) el.classList.toggle("is-locked", params.locked);
+        if (params.locked) root.style.setProperty("--aurora-angle", params.progress * 360 + "deg");
+        else root.style.removeProperty("--aurora-angle");
+      }
+      function applySurface() {
+        root.style.setProperty("--surface", params.surface);
+      }
+      function applyAll() {
+        Object.keys(META).forEach(applyKnob);
+        Object.keys(COLORS).forEach(applyColor);
+        applySurface();
+        applyLock();
+        updateReadout();
+      }
+
+      // ── widgets ──────────────────────────────────────────────────────────
+      const el = (t, c) => Object.assign(document.createElement(t), c ? { className: c } : {});
+      const groupsEl = document.getElementById("groups");
+      const refs = {};
+
+      function group(title) {
+        const g = el("div", "group");
+        const t = el("div", "group-title");
+        t.textContent = title;
+        g.appendChild(t);
+        groupsEl.appendChild(g);
+        return g;
+      }
+      function fmt(v, step) {
+        const dec = step >= 1 ? 0 : String(step).split(".")[1]?.length ?? 2;
+        return Number(v).toFixed(dec);
+      }
+      function slider(key, onInput) {
+        const m = META[key];
+        const wrap = el("div", "ctrl");
+        const lab = el("div", "ctrl-label");
+        const name = el("span"); name.textContent = m.label;
+        const val = el("span", "val"); val.textContent = fmt(params[key], m.step);
+        lab.append(name, val);
+        const input = Object.assign(document.createElement("input"),
+          { type: "range", min: m.min, max: m.max, step: m.step, value: params[key] });
+        input.addEventListener("input", () => {
+          params[key] = +input.value;
+          val.textContent = fmt(params[key], m.step);
+          onInput(key);
+          updateReadout();
+        });
+        wrap.append(lab, input);
+        refs[key] = { input, val };
+        return wrap;
+      }
+      function colorRow(key, target) {
+        const meta = target === "surface" ? { label: "surface" } : COLORS[key];
+        const wrap = el("div", "ctrl");
+        const lab = el("div", "ctrl-label");
+        const name = el("span"); name.textContent = meta.label;
+        lab.append(name);
+        const input = Object.assign(document.createElement("input"), { type: "color", value: params[key] });
+        input.addEventListener("input", () => {
+          params[key] = input.value;
+          target === "surface" ? applySurface() : applyColor(key);
+          updateReadout();
+        });
+        wrap.append(lab, input);
+        refs[key] = { input };
+        return wrap;
+      }
+
+      function renderPanel() {
+        const gMotion = group("motion + filter");
+        gMotion.append(slider("speed", applyKnob), slider("blur", applyKnob), slider("saturate", applyKnob));
+
+        const gColor = group("hues (from → via → to)");
+        gColor.append(colorRow("from"), colorRow("via"), colorRow("to"));
+
+        const gPrev = group("preview");
+        const lockWrap = el("div", "ctrl");
+        const lockLabel = el("label", "check");
+        const lockBox = Object.assign(document.createElement("input"), { type: "checkbox", checked: params.locked });
+        lockLabel.append(lockBox, document.createTextNode("lock (freeze-frame the spin)"));
+        lockBox.addEventListener("change", () => { params.locked = lockBox.checked; applyLock(); });
+        lockWrap.append(lockLabel);
+        refs.lock = lockBox;
+
+        const progMeta = { label: "progress (--aurora-angle)", min: 0, max: 1, step: 0.01 };
+        const progWrap = el("div", "ctrl");
+        const pl = el("div", "ctrl-label");
+        const pn = el("span"); pn.textContent = progMeta.label;
+        const pv = el("span", "val"); pv.textContent = fmt(params.progress, 0.01);
+        pl.append(pn, pv);
+        const pInput = Object.assign(document.createElement("input"),
+          { type: "range", min: 0, max: 1, step: 0.01, value: params.progress });
+        pInput.addEventListener("input", () => {
+          params.progress = +pInput.value;
+          pv.textContent = fmt(params.progress, 0.01);
+          if (!params.locked) { params.locked = true; lockBox.checked = true; }
+          applyLock();
+        });
+        progWrap.append(pl, pInput);
+        refs.progress = { input: pInput, val: pv };
+
+        gPrev.append(lockWrap, progWrap, colorRow("surface", "surface"));
+      }
+
+      // ── readout: derived values + the equivalent utility string ───────────
+      const readoutEl = document.getElementById("readout");
+      function utilityString() {
+        const u = ["aurora"];
+        for (const k of Object.keys(META)) if (params[k] !== DEFAULTS[k]) u.push(META[k].util(params[k]));
+        return u.join(" ");
+      }
+      function updateReadout() {
+        readoutEl.innerHTML =
+          `class <b>${utilityString()}</b><br/>` +
+          `one rotation every <b>${params.speed}s</b> · blur scales paint cost — keep an eye on the list cells.`;
+      }
+
+      // ── presets / reset / export ──────────────────────────────────────────
+      function syncControls() {
+        for (const k of Object.keys(META)) { refs[k].input.value = params[k]; refs[k].val.textContent = fmt(params[k], META[k].step); }
+        for (const k of Object.keys(COLORS)) refs[k].input.value = params[k];
+        refs.surface.input.value = params.surface;
+        refs.lock.checked = params.locked;
+        refs.progress.input.value = params.progress;
+        refs.progress.val.textContent = fmt(params.progress, 0.01);
+      }
+      function exportChanged() {
+        const tokenLines = [];
+        for (const k of Object.keys(META)) if (params[k] !== DEFAULTS[k])
+          tokenLines.push(`  ${META[k].css}: ${params[k]}${k === "speed" ? "s" : META[k].unit};`);
+        for (const k of Object.keys(COLORS)) if (params[k] !== DEFAULTS[k])
+          tokenLines.push(`  ${COLORS[k].css}: ${params[k]};`);
+        const text =
+          `<!-- utility form -->\n<div class="${utilityString()}">…</div>\n\n` +
+          `/* or set the tokens directly (only what changed from defaults) */\n` +
+          (tokenLines.length ? `:root {\n${tokenLines.join("\n")}\n}` : `/* nothing changed from defaults */`);
+        const ta = document.getElementById("export");
+        ta.style.display = "block";
+        ta.value = text;
+        ta.focus();
+        ta.select();
+        navigator.clipboard?.writeText(text).catch(() => {});
+      }
+
+      // ── boot ──────────────────────────────────────────────────────────────
+      renderPanel();
+      applyAll();
+      document.getElementById("btnExport").addEventListener("click", exportChanged);
+      document.getElementById("btnReset").addEventListener("click", () => {
+        Object.assign(params, structuredClone(DEFAULTS));
+        syncControls(); applyAll();
+      });
+      document.getElementById("presetCalm").addEventListener("click", () => {
+        Object.assign(params, { speed: 28, blur: 18, saturate: 0.85, from: "#3a6df0", via: "#6f6ff0", to: "#39c4d6" });
+        syncControls(); applyAll();
+      });
+      document.getElementById("presetVivid").addEventListener("click", () => {
+        Object.assign(params, { speed: 7, blur: 0, saturate: 1.8, from: "#ff4d8d", via: "#a64bff", to: "#19e3c1" });
+        syncControls(); applyAll();
+      });
+
+      const panel = document.getElementById("panel");
+      const showBtn = document.getElementById("showPanel");
+      const setPanel = (hidden) => {
+        panel.classList.toggle("is-hidden", hidden);
+        showBtn.style.display = hidden ? "block" : "none";
+      };
+      document.getElementById("btnHide").addEventListener("click", () => setPanel(true));
+      showBtn.addEventListener("click", () => setPanel(false));
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "h" && !/input|textarea/i.test(e.target.tagName))
+          setPanel(!panel.classList.contains("is-hidden"));
+      });
+    </script>
+  </body>
+</html>

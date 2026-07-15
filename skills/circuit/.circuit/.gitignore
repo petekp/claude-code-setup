@@ -1,0 +1,4 @@
+# Circuit machine-written records — do not commit
+*
+!.gitignore
+!config.yaml

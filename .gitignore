@@ -1,0 +1,12 @@
+.DS_Store
+
+*.local*
+*/.local*
+.local*/
+
+.claude/*
+skills/paddock*
+.relay/
+/.circuit/
+skills/my-voice/
+__pycache__

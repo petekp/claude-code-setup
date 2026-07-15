@@ -1,0 +1,62 @@
+{
+  "skill_name": "latent-potential",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "prelaunch-fresh-eyes",
+      "prompt": "I've been heads down on Lantern for months (repo at /Users/petepetrash/Code/lantern) and I'm close to announcing v1. Before I do, I want a genuine outside-expert pass: assess the project from first principles and tell me what latent potential I'm sitting on. Could be the north star, could be a missing feature, could be how I'm framing and messaging the whole thing. Don't review code quality; tell me what this could become and what you'd actually do about it. Write it up as a report I can chew on tomorrow morning.",
+      "expected_output": "A prioritized latent-potential report saved as a markdown file: committed one-sentence thesis, mechanism-level description of what the project actually is, stated-vs-revealed north star, asset inventory with real paths, 3-5 ranked opportunities each with evidence, mechanism of value, why-now, a cheap probe, and a skeptic objection; plus a reframe-level candidate, a worth-exploring tail, a stop-or-shrink section, and a skeptic's page. All citations verifiable in the repo.",
+      "files": [],
+      "expectations": [
+        "A markdown report file exists in the run's outputs directory with a real report structure (title plus multiple sections), not a stub or a chat-style answer pasted into a file.",
+        "The report opens with, or prominently contains, a committed one-sentence thesis naming the single most valuable direction for the project, rather than hedging across several directions.",
+        "The report presents an explicitly ranked or prioritized set of 3 to 5 top opportunities, clearly distinguished from any longer tail of minor ideas.",
+        "Every top opportunity cites at least one specific artifact of the target repo (file path, directory, named feature, doc, or commit), and spot-checks confirm the cited artifacts actually exist in the repo as described.",
+        "Every top opportunity includes a concrete cheap probe or next test that could realistically be executed within days, not quarters.",
+        "At least one top opportunity or dedicated section operates at the reframe level (north star, positioning, or category), not a feature or code change.",
+        "The report contains genuine contrarian content: an explicit stop-or-shrink/deprioritize recommendation and a skeptic's case that argues against the report's own top thesis.",
+        "Anti-generic bar: at most one of the top opportunities could plausibly have been written without reading this specific repo; the rest depend on repo-specific evidence.",
+        "The top opportunities span at least three distinct domains among: strategy/north star, positioning/messaging, product capability, architecture/technical leverage, distribution/growth, ecosystem/timing.",
+        "The report grounds its assessment in the project's actual stated goals (its docs) AND its actual development history, and explicitly compares what the docs claim against where the work has actually gone."
+      ]
+    },
+    {
+      "id": 1,
+      "eval_name": "personal-tooling-repo",
+      "prompt": "so /Users/petepetrash/Code/claude-code-setup is 'just' my personal claude code + codex config repo. skills, hooks, agents, setup script, the works, accumulated over months of daily use. i keep having this nagging feeling there's something more valuable in here than dotfiles. take a look with fresh eyes and tell me what i'm actually sitting on, if anything. be honest if the answer is 'not much'.",
+      "expected_output": "An honest latent-potential report saved as a markdown file that treats the repo from first principles (not as dotfiles), inventories its real assets with paths, offers 3-5 evidence-grounded opportunities with cheap probes and skeptic objections, includes at least one reframe-level candidate, and gives a straight answer about overall potential (including a modest verdict if warranted) rather than flattery.",
+      "files": [],
+      "expectations": [
+        "A markdown report file exists in the run's outputs directory with a real report structure (title plus multiple sections), not a stub or a chat-style answer pasted into a file.",
+        "The report opens with, or prominently contains, a committed one-sentence thesis naming the single most valuable direction for the project, rather than hedging across several directions.",
+        "The report presents an explicitly ranked or prioritized set of 3 to 5 top opportunities, clearly distinguished from any longer tail of minor ideas.",
+        "Every top opportunity cites at least one specific artifact of the target repo (file path, directory, named feature, doc, or commit), and spot-checks confirm the cited artifacts actually exist in the repo as described.",
+        "Every top opportunity includes a concrete cheap probe or next test that could realistically be executed within days, not quarters.",
+        "At least one top opportunity or dedicated section operates at the reframe level (north star, positioning, or category), not a feature or code change.",
+        "The report contains genuine contrarian content: an explicit stop-or-shrink/deprioritize recommendation and a skeptic's case that argues against the report's own top thesis.",
+        "Anti-generic bar: at most one of the top opportunities could plausibly have been written without reading this specific repo; the rest depend on repo-specific evidence.",
+        "The top opportunities span at least three distinct domains among: strategy/north star, positioning/messaging, product capability, architecture/technical leverage, distribution/growth, ecosystem/timing.",
+        "The report gives a direct verdict on the overall magnitude of the opportunity, explicitly allowing 'modest' as an answer, argued from evidence rather than politeness."
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "dormant-figma-plugin",
+      "prompt": "Old side project check: /Users/petepetrash/Code/chartline holds my FigJam plugin that generates diagrams from natural language (chartline-figma-plugin) plus its backend and account site (chartline.app). Shipped it a while back, added Anthropic support later, then let it go dormant. Given how much the AI landscape has shifted, is there anything still alive here? Fresh eyes please. What's the latent potential, and be straight with me if it's a museum piece.",
+      "expected_output": "A latent-potential report saved as a markdown file that reads both subprojects, gives a mechanism-level account of what exists, inventories assets with paths, and delivers a straight verdict on whether anything is alive, with 3-5 ranked evidence-grounded opportunities (or an honest modest/museum-piece verdict with the smallest honorable version), cheap probes, a reframe candidate, a stop-or-shrink call, and a skeptic's page. Timing claims carry staleness caveats since the run is offline.",
+      "files": [],
+      "expectations": [
+        "A markdown report file exists in the run's outputs directory with a real report structure (title plus multiple sections), not a stub or a chat-style answer pasted into a file.",
+        "The report opens with, or prominently contains, a committed one-sentence thesis naming the single most valuable direction for the project, rather than hedging across several directions.",
+        "The report presents an explicitly ranked or prioritized set of 3 to 5 top opportunities, clearly distinguished from any longer tail of minor ideas.",
+        "Every top opportunity cites at least one specific artifact of the target repos (file path, directory, named feature, doc, or commit), and spot-checks confirm the cited artifacts actually exist as described.",
+        "Every top opportunity includes a concrete cheap probe or next test that could realistically be executed within days, not quarters.",
+        "At least one top opportunity or dedicated section operates at the reframe level (north star, positioning, or category), not a feature or code change.",
+        "The report contains genuine contrarian content: an explicit stop-or-shrink/deprioritize recommendation and a skeptic's case that argues against the report's own top thesis.",
+        "Anti-generic bar: at most one of the top opportunities could plausibly have been written without reading these specific repos; the rest depend on repo-specific evidence.",
+        "The top opportunities span at least three distinct domains among: strategy/north star, positioning/messaging, product capability, architecture/technical leverage, distribution/growth, ecosystem/timing.",
+        "The report gives a direct alive-versus-museum-piece verdict on the dormant project, and market or ecosystem timing claims carry explicit staleness caveats given the offline run."
+      ]
+    }
+  ]
+}
