@@ -1,228 +1,176 @@
 ---
 name: pr-self-review
 description: >-
-  Leave short, casual first-person notes on your own pull request that head off
-  the questions a reviewer is likely to ask about specific changes — the
-  self-review pass good engineers do before requesting review. Use this whenever
-  the user wants to annotate, comment on, or leave notes on their PR / changes /
-  diff for a reviewer, pre-empt or anticipate reviewer questions, explain why a
-  change was made, or "self-review" before sending a PR out — even if they don't
-  say the word "skill" or name a specific PR. Posts the notes as inline review
-  comments on the exact lines, in the user's voice, after showing the drafts for
-  approval.
+  Draft short, plainspoken notes in the author's voice that help reviewers
+  understand non-obvious choices, boundaries, and preserved behavior in the
+  author's own pull request or local diff. Use when the user asks to
+  self-review, annotate, or add reviewer context to their PR or changes. Draft
+  locally when no PR exists, and post approved notes as one GitHub review when
+  a PR does exist. Do not use for reviewing someone else's PR, writing code
+  comments, explaining code generally, or drafting a PR description. Never
+  post without explicit approval.
 ---
 
 # PR self-review notes
 
-The goal is simple: read your own diff the way the reviewer will, and leave a
-quick note anywhere they'd stop and think *"wait, why did they do that?"* — so
-they get the answer inline instead of having to ask, guess, or bounce the PR
-back. A reviewer with your context moves faster and trusts the change more.
+Read the diff as a reviewer and answer the few questions the code cannot answer
+for itself. Zero notes is a good result when the change is already clear. Most
+PRs need zero to three; larger or unusually subtle changes may need more.
 
-These notes are casual asides in the author's voice, not documentation. Think of
-leaning over and saying one sentence to a teammate looking at your screen.
+These are quick asides to a teammate, not documentation or a defense of the
+change.
 
-## 1. Find the PR
+## 1. Establish the target and authorship
 
-Default to the PR for the current branch:
-
-```bash
-gh pr view --json number,title,headRefName,url
-```
-
-If the user named a PR (a number or URL), use that instead. If there's no PR for
-the current branch and none was named, say so and stop — there's nothing to
-annotate yet.
-
-## 2. Read the diff and pick the spots worth a note
+Default to the PR for the current branch. If the user names a PR number or URL,
+use that target and its repository for every command.
 
 ```bash
-gh pr diff <number>
+gh pr view \
+  --json number,title,body,author,headRefName,headRefOid,state,url
+gh api user --jq .login
 ```
 
-Read the whole diff, then be **selective**. The reviewer-would-ask test: would a
-competent teammate seeing this line pause and want an explanation? If the change
-speaks for itself, leave it alone. A note on every hunk is noise — it trains the
-reviewer to skim past your notes, which defeats the point. Usually a good
-self-review is a handful of notes, not one per file.
+Add the PR number or URL after `view` when the user names a target. Pass
+`--repo <owner/repo>` when a numbered target belongs to a repository other than
+the current one. A full PR URL can be used directly.
 
-**The sharpest filter: these notes carry *review-time* why, not *durable* why.**
-Review-time why is "I did it this way instead of the alternative you're about to
-suggest" — it matters to *this reviewer* on *this PR* and nobody a year from now.
-That belongs on the PR. Durable why — the reason a line is the way it is that a
-future editor with no memory of the PR still needs (a workaround for a library
-bug, a non-obvious ordering constraint) — belongs in a **code comment**, not a
-PR note. So before writing a note, check the diff: if the spot already has a
-comment explaining it, the point is covered — skip it. Don't duplicate a code
-comment as a PR note, and don't leave a note where a permanent comment is what
-the code actually needs.
+Record the PR URL, `owner/repo`, number, author, and `headRefOid`. Only write
+self-review notes when the signed-in account is the PR author and the PR is
+open. If the identities differ, stop rather than speaking as someone else.
 
-Spots that usually earn a note:
+If no PR exists, continue in draft-only mode. Read the local branch diff against
+its intended base plus any staged and unstaged changes. Ask for the base only if
+it cannot be discovered safely. Explain that the notes cannot be posted until a
+PR exists.
 
-- **A choice that looks odd until you know why** — a workaround, an unusual
-  pattern, doing it the "wrong" way for a real reason.
-- **A deletion that looks like lost functionality** — reassure them it's dead
-  code / moved / replaced, not an accident.
-- **Something that looks inconsistent** with the surrounding code, but isn't.
-- **A deliberate boundary** — "not handling X here, on purpose" — so they don't
-  flag the gap as an oversight.
-- **A decision you already know someone will second-guess** — get ahead of it.
+## 2. Gather the context before choosing notes
 
-Skip: renames, formatting, obvious one-liners, anything the code or the PR
-description already makes clear.
+Read, in this order:
 
-## 3. Write the notes in the author's voice
-
-Match how the author actually talks. If you don't have a strong read on their
-voice, keep it plain and human. The defaults:
-
-- **First person, casual.** Contractions, lowercase starts, the tone of a Slack
-  aside. "kept this local so nothing else moves" — not "This was intentionally
-  scoped locally to minimize blast radius."
-- **One or two sentences.** If a note needs a paragraph, the code or the PR
-  description probably needs the fix instead.
-- **Explain the *why*, not the *what*.** The reviewer can read what the code
-  does. Tell them the reason they can't see.
-- **No jargon, no invented terms.** If a normal person wouldn't say it out loud,
-  cut it. Avoid "by design", "invariant", "blast radius", "provenance" — say the
-  plain-English version.
-- **Answer the actual question.** The note should land as a reply to the "wait,
-  why?" the reviewer just thought.
-- **Backtick code references.** Wrap anything that's literally code in backticks:
-  variable and function names, file paths, string values like `'all'`, types.
-  GitHub renders it as inline code, so `drilldownRows` stands out from the prose
-  instead of blending in. Leave plain-English feature names alone ("the comms
-  log," "the scorecard") when they aren't a specific identifier.
-
-### Don't let it read as AI-written
-
-A self-review note works only because it reads as the author's own quick aside.
-The instant a reviewer thinks "a bot wrote this," the note stops earning trust
-and starts spending it — the opposite of the point. So cut the tells of
-machine-written text ([Wikipedia keeps a running
-list](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing)). Almost none
-of these show up when a real person dashes off a note, which is exactly why they
-give the game away. The ones that creep into short notes:
-
-- **Inflated words** — "crucial," "essential," "robust," "seamless," "leverage,"
-  "utilize," "ensure," "facilitate," "comprehensive." Use the plain verb: uses,
-  so, makes sure.
-- **Throat-clearing** — "it's worth noting," "importantly," "notably," "of
-  note." Just say the thing.
-- **Balanced-clause flourishes** — "not just X, but Y," or three adjectives in a
-  row ("clean, fast, and correct"). Nobody phrases a quick aside that carefully.
-- **Connective filler** — "moreover," "furthermore," "additionally," "thus,"
-  "hence." A one-liner has nothing to connect.
-- **The em-dash aside.** Skip em-dashes in the notes; they're one of the
-  strongest tells. Break the "statement, then reassuring clause" shape into a
-  period, a comma, or a fragment instead.
-- **Padding** — "essentially," "basically," "in order to," "due to the fact
-  that." Cut it.
-
-Matching the author's real voice already rules most of this out — people don't
-write like this. If a line sounds like docs or a changelog, rewrite it until it
-sounds like the author typing fast to a colleague.
-
-### Examples
-
-These show the shape and voice: a real question answered in one casual line.
-Code references sit in backticks so they read as code, not prose.
-
-**Example 1** — a deletion that looks like lost work
-Change: the old counts-only leads funnel is removed
-Note: "scorecard replaces this whole funnel now. left deals and appraisals alone."
-
-**Example 2** — an unusual pattern with a real reason
-Change: arcs are plain `<a>` tags instead of the router's `Link`
-Note: "plain `<a>` because `Link` breaks inside an svg. not a style slip."
-
-**Example 3** — a deliberate scope choice
-Change: a local wrapper instead of editing the shared helper
-Note: "kept this local instead of editing the shared helper, so nothing else shifts. easy to pull up later if we want it everywhere."
-
-**Example 4** — getting ahead of a second-guess
-Change: widening the list scope to `'all'` on a drill-down
-Note: "widening to `'all'` on purpose. otherwise a converted lead the ring counted drops out of the list and the counts stop matching."
-
-**Example 5** — a boundary, so it's not read as a gap
-Change: an empty AI column that's always zero for now
-Note: "stays 0 until the backend sends who finished the task. one line to wire up when it does."
-
-## 4. Show the drafts and get the OK
-
-Never post straight to the PR — these are public and teammates get notified, so
-the author gets a look first. Present the drafts as a simple list they can scan
-and edit:
-
-```
-src/features/home/use-home-runtime-data.ts:234
-  "scorecard replaces this whole funnel now. left deals and appraisals alone."
-
-src/features/home/leads-pipeline/home-lead-ring.tsx:174
-  "plain <a> because Link breaks inside an svg. not a style slip."
-```
-
-Let them cut, reword, or add. Then post what they approved.
-
-## 5. Post as one inline review
-
-Post everything as a **single review** so the team gets one notification, not one
-per note. Write the payload to a scratch file and send it with the reviews API
-(`gh` fills in `{owner}`/`{repo}` from the current repo):
-
-```jsonc
-// review.json
-{
-  "event": "COMMENT",
-  "comments": [
-    {
-      "path": "src/features/home/use-home-runtime-data.ts",
-      "line": 234,
-      "side": "RIGHT",
-      "body": "scorecard replaces this whole funnel now. left deals and appraisals alone."
-    }
-  ]
-}
-```
+1. The user's stated intent, PR title and body, and any linked issue.
+2. Existing PR discussion and review comments.
+3. The whole diff, then the nearby code and tests for any candidate note.
+4. Relevant history when the reason still is not clear.
 
 ```bash
-gh api --method POST "repos/{owner}/{repo}/pulls/<number>/reviews" --input review.json
+gh pr diff <target> --repo <owner/repo>
+gh api --paginate "repos/<owner>/<repo>/pulls/<number>/comments?per_page=100"
+gh api --paginate "repos/<owner>/<repo>/pulls/<number>/reviews?per_page=100"
+gh api --paginate "repos/<owner>/<repo>/issues/<number>/comments?per_page=100"
 ```
 
-Send bodies from the file, never inline with `-f body="..."`. A note with
-backticks in it (which most now have) would make the shell run whatever's inside
-the backticks; from a JSON file the text goes through untouched.
+Check recent comments the author wrote or approved in the same repository when
+you need a voice sample:
 
-`event: COMMENT` submits the notes as plain comments (this works on your own PR —
-it's not an approval). Line numbers work like this:
+```bash
+gh api "repos/<owner>/<repo>/pulls/comments?sort=created&direction=desc&per_page=100" \
+  --jq '.[] | select(.user.login == "<author-login>") | {body,path,created_at}'
+```
 
-- `side: RIGHT` + `line` = the line number **in the new version of the file**
-  (what you see in the file at the branch head). Use this for anything added or
-  changed — it's the common case.
-- `side: LEFT` + `line` = the line number in the **old** file. Use it only when
-  the note is about a removed line that no longer exists on the right.
+Copy the texture, never the wording. Prefer current user context over older
+examples.
 
-The line must be one that actually appears in the diff, or the API rejects the
-comment. If you're unsure of a number, read the file at the branch head and
-count to the exact line rather than eyeballing the hunk header.
+## 3. Pick only useful notes
 
-## 6. Confirm
+Draft a note only when all of these are true:
 
-Report back plainly: how many notes posted and the review/PR URL. If any comment
-was rejected (usually a line that wasn't in the diff), say which one and either
-retarget it to a nearby changed line or drop it — don't silently lose it.
+- A capable reviewer is likely to pause at this exact change.
+- The explanation helps them judge the change, not merely accept it.
+- The fact or reason is supported by the user, PR, code, tests, or history.
+- The PR body, code comments, and existing discussion do not already cover it.
+- It fits in one or two plain sentences.
+
+Good candidates include a surprising but verified choice, a deletion that may
+look like lost behavior, a narrow scope boundary, behavior that deliberately
+stays unchanged, or a known limitation the reviewer needs to judge now.
+
+Skip obvious edits, formatting, routine renames, and explanations that only
+repeat the diff. Never invent the author's intent. If the reason is unclear,
+state the visible effect without claiming intent, ask the user, or skip the
+note.
+
+A constraint that will still matter after merge may need a code comment. A PR
+note can help the current review, but it must not be the only place durable
+knowledge lives. Flag that separately; do not edit the code unless asked.
+
+## 4. Write in the author's PR-comment voice
+
+Use recent same-repo comments as the strongest style evidence. For Pete, use
+this dedicated PR-comment register rather than importing the broader
+`write-as-pete` tics:
+
+- Start with the fact. Lowercase starts are normal when they match the nearby
+  precedent; preserve official names and code casing.
+- Use one or two short sentences. A useful shape is what changes, followed by
+  what stays or why it matters.
+- Prefer direct, pronoun-light wording. Use `we` only for a documented shared
+  decision. Use `I` only when Pete explicitly stated a personal choice.
+- Use an exact code or domain term only when its exact meaning matters. Put code
+  identifiers in backticks; prefer the plain feature name otherwise.
+- Use the least technical words that stay accurate. If the reviewer must decode
+  two internal terms in one sentence, rewrite it around what changes, what
+  stays, or what breaks. Avoid abstract labels such as "client contract,"
+  "runtime payload," and "availability sanitizer" when the concrete behavior
+  is easier to say.
+- Keep punctuation quiet. Do not add hype, jokes, coined phrases, emojis,
+  ellipses, or decorative em dashes to make the note sound more like Pete.
+- Avoid defensive phrases such as "on purpose" and "not a style slip." State
+  the cause and effect, then let the reviewer judge it.
+- Avoid unsupported promises such as "easy to add later" or "one line to wire
+  up."
+
+Read every draft together before presenting it. Remove repeated openings and
+sentence shapes. Delete anything that sounds like PR-body copy, a changelog, or
+a bot explaining the code.
+
+### Shapes, not templates
+
+Never copy these sentences into a real review. Use them only to calibrate the
+level of detail, after verifying every claim.
+
+- Scope: "this size only applies to table selection. existing checkboxes keep
+  their current size."
+- Preserved behavior: "the old action fields are gone. message and recipient
+  checks still work as before."
+- Exact legacy input: "old links may still include `panel`. we ignore it here
+  and clear it on the next navigation."
+- Plain translation: prefer "the picker still switches when the current option
+  is unavailable" over "the availability sanitizer preserves the runtime
+  invariant."
+
+## 5. Show every public word and get approval
+
+Present the proposed review summary and every inline note. For each inline note,
+show the path, side, line, and body. If a claim needed investigation, show its
+basis outside the quoted comment so the user can verify it without making the
+public note denser.
+
+```text
+Review summary
+  "left one note inline."
+
+src/components/table.tsx:84 (RIGHT)
+  "this size only applies to table selection. existing checkboxes keep their current size."
+  Basis: the other checkbox callers still use the default size.
+```
+
+Wait for explicit approval before posting. Exact comment text paired with a
+clear instruction to post already counts as approval; do not ask twice. Post
+only the approved wording and anchors. If either changes, show the change and
+get approval again.
+
+## 6. Publish and verify
+
+After approval, read [references/github-posting.md](references/github-posting.md)
+and follow it exactly. Post one review, then compare what GitHub stored with the
+approved summary and comments.
 
 ## Edge cases
 
-- **A point spans several files or is more general** than one line — post it as a
-  short top-level comment instead of forcing it onto a single line:
-  `gh pr comment <number> --body "..."`.
-- **Nothing worth flagging** — say so. A clean, self-explanatory diff doesn't
-  need notes, and inventing them just to have some is worse than none.
-- **Re-running on a PR you've already annotated** — check existing review
-  comments first (`gh api "repos/{owner}/{repo}/pulls/<number>/comments"`) so you
-  don't repeat yourself; only add notes for spots you haven't covered.
-- **Reworking a note you already posted** — edit it in place instead of posting a
-  duplicate. Grab the id from the comments list, then PATCH it:
-  `gh api --method PATCH "repos/{owner}/{repo}/pulls/comments/<comment_id>" --input body.json`,
-  where `body.json` is `{"body": "..."}`. Same file-input trick keeps backticks safe.
+- If nothing earns a note, say so and post nothing.
+- Put a cross-file point in the review summary, not a separate PR comment.
+- Check existing comments on every run, not only when the skill is re-run.
+- Edit an existing note in place rather than duplicating it, but show any new
+  wording for approval first unless the user supplied the exact edit and told
+  you to post it.
