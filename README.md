@@ -27,6 +27,20 @@ The setup script symlinks this repo into `~/.claude/`:
 
 Edit files in either location — they're the same files. Commit and push to sync across machines.
 
+### Which Skills Are In This Repo
+
+`skills/` mixes directories authored here with symlinks to skills installed
+elsewhere, mostly by [skills.sh](https://skills.sh) into `~/.agents/skills`.
+
+Only the real directories are committed. A symlink stores just its target, and
+those targets are absolute paths under one machine's home directory — committing
+them would give anyone cloning this repo a dangling link to a directory they
+don't have. The linked skills and their sources are recorded in
+[SKILLS.md](SKILLS.md) instead, so the set can be rebuilt elsewhere.
+
+Run `./scripts/gen-skills-manifest.sh` after adding or removing a skill to
+regenerate `SKILLS.md` and `skills/.gitignore`.
+
 ### Codex Skill Syncing
 
 Skills are symlinked individually into `~/.codex/skills/` (Codex doesn't support directory-level symlinks) by `scripts/sync-codex-skills.sh`, which runs automatically on every Claude Code session start. Skills listed in `codex-exclude` are skipped — these conflict with Codex built-ins or would show up as duplicates.
