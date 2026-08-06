@@ -36,18 +36,19 @@ the updated set before posting.
 Write plain JSON to a scratch file with a file-editing tool. Do not include JSON
 comments, and do not interpolate review text into a shell command.
 
-GitHub requires a top-level `body` when `event` is `COMMENT`. Use that body for
-any point spanning several files. When every point is inline, use the quiet
-summary the user approved. Match the count: "left one note inline" for one, or
-"left a few notes inline" for several.
+Use the review body only for a useful approved point spanning several files.
+Never add filler text that only announces or counts the inline notes.
+
+For an inline-only review, omit both `body` and `event` when creating the review.
+GitHub will create one pending review containing all of the inline comments.
+Submit that review in a second request with `event: "COMMENT"` and no body. This
+keeps the comments grouped without creating a review-summary comment.
 
 Pin the review to the approved head with `commit_id`:
 
 ```json
 {
   "commit_id": "<approved-head-sha>",
-  "body": "left one note inline.",
-  "event": "COMMENT",
   "comments": [
     {
       "path": "src/components/table.tsx",
@@ -58,6 +59,9 @@ Pin the review to the approved head with `commit_id`:
   ]
 }
 ```
+
+When the user approved a real cross-file summary, include its exact text as
+`body` and include `event: "COMMENT"` in the creation payload instead.
 
 Use `side: "RIGHT"` with the new-file line number for added or changed lines.
 Use `side: "LEFT"` with the old-file line number only for removed lines. Every
@@ -74,7 +78,7 @@ Validate the payload before sending it:
 jq -e . <review-file> >/dev/null
 ```
 
-Post everything as one comment-only review:
+Create the review:
 
 ```bash
 gh api --method POST \
@@ -83,6 +87,27 @@ gh api --method POST \
   --input <review-file> \
   --jq '{id, html_url, state, commit_id, body}'
 ```
+
+When the creation response is `PENDING`, write a second scratch JSON file:
+
+```json
+{
+  "event": "COMMENT"
+}
+```
+
+Validate it, then submit the existing pending review:
+
+```bash
+jq -e . <submit-file> >/dev/null
+gh api --method POST \
+  -H "Accept: application/vnd.github+json" \
+  "repos/<owner>/<repo>/pulls/<number>/reviews/<review-id>/events" \
+  --input <submit-file> \
+  --jq '{id, html_url, state, commit_id, body}'
+```
+
+Do not create a second review during this submission step.
 
 Keep backticks and other punctuation inside the JSON file. Never pass a comment
 body through a shell argument.
@@ -97,13 +122,16 @@ gh api --paginate \
   --jq 'map({path, line, side, body, html_url})'
 ```
 
-Compare the stored review with the approval: summary, count, path, line, side,
-and body must match. Report the note count and review URL.
+Compare the stored review with the approval: review body, comment count, path,
+line, side, and comment body must match. When no summary was approved, confirm
+that the stored review body is empty. Report the note count and review URL.
 
 ## 5. Handle failures without guessing
 
-If the POST fails, do not assume that nothing landed and do not retry at once.
-Fetch the PR reviews and comments, then look for the exact approved text.
+If either POST fails, do not assume that nothing landed and do not retry at
+once. Fetch the PR reviews and comments, then look for the exact approved text.
+If an inline-only review exists in `PENDING`, submit that review instead of
+creating another one.
 
 If an anchor or body must change, show the revision and get approval again. Only
 retry notes confirmed missing. Report anything that could not be posted.

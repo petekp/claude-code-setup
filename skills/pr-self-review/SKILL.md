@@ -141,14 +141,16 @@ level of detail, after verifying every claim.
 
 ## 5. Show every public word and get approval
 
-Present the proposed review summary and every inline note. For each inline note,
-show the path, side, line, and body. If a claim needed investigation, show its
-basis outside the quoted comment so the user can verify it without making the
-public note denser.
+Present every proposed public word. Include a review summary only when it adds a
+useful cross-file point that does not belong inline. When every useful point is
+inline, say the review summary is `none`; do not invent a status or count such as
+"left three notes inline." For each inline note, show the path, side, line, and
+body. If a claim needed investigation, show its basis outside the quoted comment
+so the user can verify it without making the public note denser.
 
 ```text
 Review summary
-  "left one note inline."
+  none
 
 src/components/table.tsx:84 (RIGHT)
   "this size only applies to table selection. existing checkboxes keep their current size."
@@ -164,12 +166,14 @@ get approval again.
 
 After approval, read [references/github-posting.md](references/github-posting.md)
 and follow it exactly. Post one review, then compare what GitHub stored with the
-approved summary and comments.
+approved summary, if any, and comments.
 
 ## Edge cases
 
 - If nothing earns a note, say so and post nothing.
 - Put a cross-file point in the review summary, not a separate PR comment.
+- When every useful point is inline, leave the review body empty. Never add a
+  filler summary that only announces or counts the inline notes.
 - Check existing comments on every run, not only when the skill is re-run.
 - Edit an existing note in place rather than duplicating it, but show any new
   wording for approval first unless the user supplied the exact edit and told
