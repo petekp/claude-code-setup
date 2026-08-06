@@ -200,29 +200,57 @@
     ],
     "respectGitignore": true
   },
-  "model": "claude-fable-5[1m]",
+  "model": "opus[1m]",
   "disabledMcpjsonServers": [
     "vercel"
   ],
   "hooks": {
-    "PostToolUse": [
+    "Stop": [
       {
-        "matcher": "Skill",
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/scripts/skill-usage-tracker.sh"
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/scripts/mcp-auth-watch.sh Stop"
           }
         ]
       }
     ],
-    "SessionEnd": [
+    "PermissionRequest": [
       {
-        "matcher": "",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/scripts/session-end-cleanup.sh"
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
           }
         ]
       }
@@ -240,6 +268,112 @@
             "command": "~/.claude/scripts/fix-skill-symlinks.sh"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/scripts/mcp-auth-watch.sh SessionStart"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/skill-usage-tracker.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/session-end-cleanup.sh"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -248,6 +382,24 @@
           {
             "type": "command",
             "command": "~/.claude/scripts/skill-usage-tracker.sh"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'TOKEN=$(cat \"$HOME/.capacitor/runtime/runtime-service-7474.token\" 2>/dev/null); /usr/bin/curl -fsS --connect-timeout 1 --max-time 1 -X POST \"http://127.0.0.1:7474/hook\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer $TOKEN\" --data-binary @- >/dev/null 2>&1 || true'"
           }
         ]
       }
@@ -260,16 +412,15 @@
   "enabledPlugins": {
     "circuit@circuit": true,
     "codex@openai-codex": true,
+    "linear@claude-plugins-official": true,
     "notion@claude-plugins-official": true,
     "plugin-dev@claude-plugins-official": true,
-    "ralph-loop@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "vercel@claude-plugins-official": true,
     "slack@claude-plugins-official": true,
-    "linear@claude-plugins-official": true
+    "swift-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "circuit": {
@@ -298,7 +449,7 @@
     }
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "xhigh",
+  "effortLevel": "medium",
   "autoCompactWindow": 250000,
   "autoUpdatesChannel": "latest",
   "tui": "fullscreen",
