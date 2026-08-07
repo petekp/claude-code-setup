@@ -12,6 +12,8 @@ removed_broken=0
 created_new=0
 total_valid=0
 excluded=0
+shadowed=0
+shadowed_names=
 
 is_codex_excluded() {
     [ -f "$CODEX_EXCLUDE_FILE" ] || return 1
@@ -83,6 +85,17 @@ for skill_dir in "$REPO_SKILLS_DIR"/*; do
         continue
     fi
 
+    # A real directory sitting where a link belongs is a shadow: Codex reads
+    # that copy and every later edit to the repo skill silently fails to reach
+    # it. Two had drifted this way, one by three weeks. It is not removed
+    # automatically — the copy could hold edits made directly in ~/.codex — but
+    # it must not pass unmentioned, which is what the old blanket skip did.
+    if [ -d "$skill_link" ] && [ ! -L "$skill_link" ]; then
+        shadowed=$((shadowed + 1))
+        shadowed_names="$shadowed_names $skill_name"
+        continue
+    fi
+
     if [ -e "$skill_link" ] || [ -L "$skill_link" ]; then
         continue
     fi
@@ -102,3 +115,10 @@ printf 'Removed %s broken symlinks, created %s new symlinks, %s excluded, %s tot
     "$created_new" \
     "$excluded" \
     "$total_valid"
+
+if [ "$shadowed" -gt 0 ]; then
+    printf 'WARNING: %s repo skill(s) shadowed by a real directory in %s:%s\n' \
+        "$shadowed" "$CODEX_SKILLS_DIR" "$shadowed_names"
+    printf '  Codex reads that copy, not the repo. Compare, then replace with a link:\n'
+    printf '    diff -r %s/<name> %s/<name>\n' "$CODEX_SKILLS_DIR" "$REPO_SKILLS_DIR"
+fi
