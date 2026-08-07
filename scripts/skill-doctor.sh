@@ -100,6 +100,37 @@ else
     note "no dangling symlinks"
 fi
 
+# ------------------------------------------------------------- husk skills
+#
+# A skill directory that exists but has no readable SKILL.md. This slips past
+# everything else: the directory is present so `[ -d ]` passes, and validate.sh
+# returns early on a missing file rather than complaining. Found in the wild as
+# store entries whose SKILL.md was a symlink into a sibling repo directory that
+# had since been deleted — four empty husks, invisible and unusable.
+
+husks=""
+for entry in "$SKILLS_DIR"/*; do
+    [ -d "$entry" ] || continue
+    name=$(basename "$entry")
+    [ -f "$entry/SKILL.md" ] || husks="$husks$name"$'\n'
+done
+if [ -n "$STORE" ] && [ -d "$STORE" ]; then
+    for entry in "$STORE"/*; do
+        [ -d "$entry" ] || continue
+        name=$(basename "$entry")
+        [ -f "$entry/SKILL.md" ] || husks="$husks$name (store)"$'\n'
+    done
+fi
+
+if [ -n "$husks" ]; then
+    while IFS= read -r h; do
+        [ -n "$h" ] && warn "no readable SKILL.md: $h"
+    done <<< "$husks"
+    echo "        the directory is there but the skill cannot load"
+else
+    note "every skill directory has a readable SKILL.md"
+fi
+
 # ------------------------------------------------------- plugin shadowing
 #
 # Only *enabled* plugins load skills, so a name sitting in a marketplace or
