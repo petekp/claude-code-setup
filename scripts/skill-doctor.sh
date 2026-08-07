@@ -233,6 +233,33 @@ if [ -d "$STORE" ]; then
     fi
 fi
 
+# -------------------------------------------------------- lockfile drift
+#
+# The skills.sh lockfile is not a passive record. `skills update -g` iterates
+# its keys rather than scanning disk, and when a source's hash has moved it
+# shells out to `skills add <url> --skill <name> -g -y` — a full install. So an
+# entry left behind after its files were deleted does not sit there harmlessly;
+# the next routine `skills update` reinstalls the skill. Thirty-one had
+# accumulated before this check existed.
+#
+# `skills remove` cannot clear these: it only matches skills it can find on
+# disk. The fix is to delete the key from the lockfile directly.
+
+LOCK="$HOME/.agents/.skill-lock.json"
+if [ -f "$LOCK" ] && command -v jq >/dev/null 2>&1; then
+    drift=0
+    for n in $(jq -r '.skills | keys[]' "$LOCK" 2>/dev/null); do
+        [ -e "$STORE/$n" ] || drift=$((drift + 1))
+    done
+    if [ "$drift" -gt 0 ]; then
+        warn "$drift lockfile entry(s) reference skills that are gone from disk"
+        echo "        'skills update' would REINSTALL them. 'skills remove' cannot"
+        echo "        clear them — they must be deleted from $LOCK"
+    else
+        note "lockfile matches what is on disk"
+    fi
+fi
+
 # ------------------------------------------------------------- manifest
 #
 # SKILLS.md is generated, so regenerating it is always safe — no judgment call,
