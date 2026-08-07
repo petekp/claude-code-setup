@@ -67,9 +67,6 @@
       "Bash(wc *)",
       "Bash(xargs *)",
       "Bash(yes *)",
-      "mcp__context7__get-library-docs",
-      "mcp__context7__query-docs",
-      "mcp__context7__resolve-library-id",
       "mcp__ide__getDiagnostics",
       "Skill",
       "WebFetch(domain:alistapart.com)",
@@ -167,7 +164,6 @@
       "Bash(zsh:*)",
       "Bash(bash:*)",
       "Bash(test:*)",
-      "Skill(unix-macos-engineer)",
       "Skill(plugin-dev:skill-development)",
       "Bash(claude /doctor)",
       "Bash(claude doctor)",
@@ -201,9 +197,6 @@
     "respectGitignore": true
   },
   "model": "opus[1m]",
-  "disabledMcpjsonServers": [
-    "vercel"
-  ],
   "hooks": {
     "Stop": [
       {

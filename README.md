@@ -43,7 +43,7 @@ regenerate `SKILLS.md` and `skills/.gitignore`.
 
 ### Codex Skill Syncing
 
-Skills are symlinked individually into `~/.codex/skills/` (Codex doesn't support directory-level symlinks) by `scripts/sync-codex-skills.sh`, which runs automatically on every Claude Code session start. Skills listed in `codex-exclude` are skipped — these conflict with Codex built-ins or would show up as duplicates.
+Skills are symlinked individually into `~/.codex/skills/` (Codex doesn't support directory-level symlinks) by `scripts/sync-codex-skills.sh`, which runs automatically on every Claude Code session start. Add a name to `codex-exclude` to skip a skill that conflicts with a Codex built-in or shows up as a duplicate; the file is currently empty, so everything syncs.
 
 ### MCP Servers
 

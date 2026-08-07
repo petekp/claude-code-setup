@@ -19,6 +19,15 @@ How to make this repo your own.
 
 This symlinks the repo's `skills/` and `scripts/` directories (plus `settings.json` and `.mcp.json`) into `~/.claude/`. Codex picks up skills via `scripts/sync-codex-skills.sh`, which runs on every Claude Code session start.
 
+**You will not get every skill the original author uses.** Some of their skills
+live outside this repo — installed by [skills.sh](https://skills.sh) into
+`~/.agents/skills`, or kept in other repos — and are only symlinked into
+`skills/`. Symlinks store an absolute path on one machine, so committing them
+would hand you dead links; they are deliberately left untracked. What you clone
+is the skills authored in this repo. [SKILLS.md](SKILLS.md) lists the linked
+ones and where each came from, so you can install any you want with
+`npx skills add <source>`.
+
 ## Step 3: Detach from Upstream (Optional)
 
 Your fork tracks the original repo by default. To make it fully independent:
@@ -39,12 +48,19 @@ The root `CLAUDE.md`/`AGENTS.md` describe this repo's conventions to agents work
 
 ```bash
 # Remove a skill you don't need
-rm -rf skills/nextjs-boilerplate
+rm -rf skills/tailwind-plugin-craft
 
 # Add your own
 mkdir skills/my-skill
 # Create skills/my-skill/SKILL.md with frontmatter
+
+# Install someone else's (lands in ~/.agents/skills and is symlinked in)
+npx skills add owner/repo
 ```
+
+If you added or removed a symlinked skill, run
+`./scripts/gen-skills-manifest.sh` to refresh `SKILLS.md` and
+`skills/.gitignore`.
 
 Skill structure:
 ```markdown
@@ -60,11 +76,12 @@ Content here...
 
 ## Step 5: Handle Permissions
 
-The `templates/settings.json.reference` is **reference only**. It contains:
+The repo's `settings.json` is **reference only**. It contains:
 - Hardcoded paths (`/Users/petepetrash/...`)
 - Plugin preferences specific to the original author
+- Hooks pointing at services you probably don't run
 
-**Don't copy it directly.** Instead:
+**Don't adopt it wholesale.** Instead:
 
 ### Option A: Build Organically (Recommended)
 Just use Claude Code. Accept or deny permissions as they come up. Your settings build naturally.
@@ -72,7 +89,7 @@ Just use Claude Code. Accept or deny permissions as they come up. Your settings 
 ### Option B: Copy Specific Patterns
 ```bash
 # View the reference
-cat templates/settings.json.reference
+cat settings.json
 
 # Open your settings
 code ~/.claude/settings.json
@@ -89,12 +106,13 @@ See [templates/README.md](templates/README.md) for more details.
 | Item | Location | Action |
 |------|----------|--------|
 | Repo conventions for agents | `CLAUDE.md` / `AGENTS.md` (repo root) | Describe your repo to agents working in it |
-| Skills | `skills/` | Add/remove as needed |
+| Skills | `skills/` | Add/remove as needed; rerun `scripts/gen-skills-manifest.sh` if symlinks changed |
+| Linked skills | `SKILLS.md` | Generated — lists skills that live outside this repo |
 | Hook scripts | `scripts/` | Referenced from `settings.json` hooks |
 | Codex exclusions | `codex-exclude` | Skills to skip for Codex |
 | Statusline | `statusline-command.sh` | Customize or delete |
 | MCP servers | `.mcp.json` | Claude Code servers (Codex: manual) |
-| Permissions | `templates/settings.json.reference` | Reference only |
+| Permissions | `settings.json` | Reference only |
 
 ## Syncing Your Changes
 

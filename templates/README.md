@@ -6,12 +6,15 @@ Configuration templates and references for Claude Code setup.
 
 | File | Purpose | Usage |
 |------|---------|-------|
-| `settings.json.reference` | Example permissions and settings | **Reference only** — contains hardcoded paths. Review for patterns to copy. |
 | `.mcp.json.template` | MCP server configuration | Copy to project root as `.mcp.json` and add your servers |
+
+For settings, read the repo's real [`settings.json`](../settings.json) — it is
+committed in full. There used to be a trimmed copy here, but a second copy of a
+file that changes every session only drifts.
 
 ## Recommended Approach
 
-**Don't copy `settings.json.reference` directly.** It contains:
+**Don't copy `settings.json` directly.** It contains:
 - Hardcoded paths specific to the original author
 - Plugin preferences you may not want
 - Permissions you haven't earned yet
@@ -24,11 +27,11 @@ Instead, let your permissions build organically:
 
 ## If You Want Specific Patterns
 
-Open `settings.json.reference` and copy individual patterns you want:
+Open the repo's `settings.json` and copy individual patterns you want:
 
 ```bash
 # View the reference
-cat templates/settings.json.reference
+cat settings.json
 
 # Then add specific patterns to your settings.json, like:
 # "Bash(git add:*)"
