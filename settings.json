@@ -258,7 +258,7 @@
           },
           {
             "type": "command",
-            "command": "~/.claude/scripts/fix-skill-symlinks.sh"
+            "command": "~/.claude/scripts/skill-doctor.sh --quiet"
           }
         ]
       },
