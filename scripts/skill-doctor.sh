@@ -189,6 +189,21 @@ if [ -d "$STORE" ]; then
     else
         note "no dangling links in the skills.sh store"
     fi
+
+    # Live back-links are NOT residue, however much they look like it. When a
+    # skill that arrived via skills.sh is later adopted as a real directory in
+    # this repo, the store entry becomes a link back to that directory. That
+    # link is what keeps the skill registered: delete it and skills.sh sees the
+    # skill as missing while its lockfile entry lingers. So this only counts
+    # them — never offers to remove them.
+    live=0
+    for e in "$STORE"/*; do
+        [ -L "$e" ] && [ -e "$e" ] || continue
+        case "$(readlink "$e")" in
+            "$REPO_DIR"/*) live=$((live + 1)) ;;
+        esac
+    done
+    [ "$live" -gt 0 ] && note "$live skill(s) served from the repo via a store link"
 fi
 
 # --------------------------------------------------- installed but unlinked

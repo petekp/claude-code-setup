@@ -27,6 +27,7 @@ AGENTS_DIR="$HOME/.agents"
 SKILLS_DIR="$REPO_DIR/skills"
 USAGE_LOG="$CLAUDE_DIR/skill-usage.jsonl"
 CODEX_EXCLUDE="$REPO_DIR/codex-exclude"
+CODEX_SKILLS_DIR="$HOME/.codex/skills"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -279,30 +280,60 @@ cmd_check() {
     fi
     echo ""
 
-    # Check Agents skills directory (Codex reads from here)
-    echo -e "  ${BOLD}Agents/Codex (~/.agents/skills):${NC}"
+    # The skills.sh store. This is where `npx skills add` puts skill content;
+    # skills/ then symlinks into it. Counting symlinks *here* (as this check
+    # once did) measures the wrong direction — it sees only leftovers from an
+    # abandoned scheme that linked the store back at the repo, and reports that
+    # as the health of the store.
+    echo -e "  ${BOLD}skills.sh store (~/.agents/skills):${NC}"
     if [[ -d "$agents_skills_dir" && ! -L "$agents_skills_dir" ]]; then
-        # Per-skill symlinks (expected)
-        local linked=0
-        local broken=0
-        for link in "$agents_skills_dir"/*/; do
-            [[ -L "${link%/}" ]] || continue
-            if [[ -d "$link" ]]; then
-                linked=$((linked + 1))
-            else
-                broken=$((broken + 1))
+        local stored=0 backlinks=0 broken=0
+        for entry in "$agents_skills_dir"/*; do
+            [[ -e "$entry" || -L "$entry" ]] || continue
+            if [[ -L "$entry" ]]; then
+                if [[ ! -e "$entry" ]]; then
+                    broken=$((broken + 1))
+                elif [[ "$(readlink "$entry")" == "$REPO_DIR"/* ]]; then
+                    backlinks=$((backlinks + 1))
+                fi
+            elif [[ -d "$entry" ]]; then
+                stored=$((stored + 1))
             fi
         done
-        ok "$linked skills linked (per-skill)"
-        if [[ $broken -gt 0 ]]; then
-            warn "$broken broken symlinks"
+
+        local linked_here=0
+        for entry in "$SKILLS_DIR"/*; do
+            [[ -L "$entry" ]] && [[ "$(readlink "$entry")" == "$agents_skills_dir"/* ]] &&
+                linked_here=$((linked_here + 1))
+        done
+
+        ok "$stored skill(s) stored, $linked_here linked into skills/"
+        if [[ $stored -ne $linked_here ]]; then
+            info "$((stored - linked_here)) stored but not linked — invisible to Claude Code"
         fi
-    elif [[ -L "$agents_skills_dir" ]]; then
-        local target
-        target=$(readlink "$agents_skills_dir")
-        warn "Directory-level symlink ($target) — run ./setup.sh to migrate to per-skill"
+        if [[ $backlinks -gt 0 ]]; then
+            info "$backlinks skill(s) served from the repo via a store link"
+            dim "    adopted into this repo but still registered with skills.sh — leave them"
+        fi
+        [[ $broken -gt 0 ]] && warn "$broken broken symlink(s) — run ./scripts/skill-doctor.sh"
     else
-        fail "Not found — run ./setup.sh to link"
+        fail "Not found — install a skill with 'npx skills add <source>' to create it"
+    fi
+    echo ""
+
+    # Codex reads its own directory, populated by sync-codex-skills.sh. The old
+    # check never looked here at all, despite being labelled "Codex".
+    echo -e "  ${BOLD}Codex (~/.codex/skills):${NC}"
+    if [[ -d "$CODEX_SKILLS_DIR" ]]; then
+        local cx=0 cx_broken=0
+        for entry in "$CODEX_SKILLS_DIR"/*; do
+            [[ -L "$entry" ]] || continue
+            if [[ -e "$entry" ]]; then cx=$((cx + 1)); else cx_broken=$((cx_broken + 1)); fi
+        done
+        ok "$cx skill(s) synced"
+        [[ $cx_broken -gt 0 ]] && warn "$cx_broken broken — run ./scripts/sync-codex-skills.sh"
+    else
+        warn "Not found — run ./scripts/sync-codex-skills.sh"
     fi
     echo ""
 
