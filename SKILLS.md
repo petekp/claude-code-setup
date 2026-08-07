@@ -14,7 +14,7 @@ came from instead, so the set can be rebuilt on another machine.
 
 Regenerate with `./scripts/gen-skills-manifest.sh` after adding or removing a skill.
 
-## Installed via skills.sh (18)
+## Installed via skills.sh (22)
 
 Reinstall any of these with `npx skills add <source>`.
 
@@ -24,12 +24,16 @@ Reinstall any of these with `npx skills add <source>`.
 | `assistant-ui` | [assistant-ui/skills](https://github.com/assistant-ui/skills) | 2026-06-07 |
 | `browser-use` | [browser-use/browser-use](https://github.com/browser-use/browser-use) | 2026-07-23 |
 | `clean-architecture` | [pproenca/dot-skills](https://github.com/pproenca/dot-skills) | 2026-05-14 |
+| `defining-product-strategy` | [refoundai/lenny-skills](https://github.com/refoundai/lenny-skills) | 2026-08-07 |
 | `domain-modeling` | [mattpocock/skills](https://github.com/mattpocock/skills) | 2026-07-31 |
 | `frontend-design` | [anthropics/skills](https://github.com/anthropics/skills) | 2026-07-29 |
 | `grill-with-docs` | [mattpocock/skills](https://github.com/mattpocock/skills) | 2026-07-31 |
 | `grilling` | [mattpocock/skills](https://github.com/mattpocock/skills) | 2026-07-31 |
 | `knowledge-synthesis` | [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) | 2026-08-06 |
+| `north-star-metrics` | [refoundai/lenny-skills](https://github.com/refoundai/lenny-skills) | 2026-08-07 |
 | `process-hunter` | [petekp/agent-skills](https://github.com/petekp/agent-skills) | 2026-04-09 |
+| `product-taste` | [refoundai/lenny-skills](https://github.com/refoundai/lenny-skills) | 2026-08-07 |
+| `product-vision` | [refoundai/lenny-skills](https://github.com/refoundai/lenny-skills) | 2026-08-07 |
 | `react-doctor` | [millionco/react-doctor](https://github.com/millionco/react-doctor) | 2026-07-23 |
 | `react-useeffect` | [softaworks/agent-toolkit](https://github.com/softaworks/agent-toolkit) | 2026-04-09 |
 | `seo-audit` | [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) | 2026-05-14 |
@@ -39,7 +43,7 @@ Reinstall any of these with `npx skills add <source>`.
 | `vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | 2026-04-21 |
 | `writing-prds` | [refoundai/lenny-skills](https://github.com/refoundai/lenny-skills) | 2026-08-06 |
 
-## Linked, source not recorded (6)
+## Linked, source not recorded (2)
 
 These have no entry in the skills.sh lockfile, so there is no source URL to
 reinstall from. A link into `~/.agents/skills` here means the skill was put
@@ -48,11 +52,7 @@ another repo on this machine, which has to be cloned separately.
 
 | Skill | Link target |
 |---|---|
-| `defining-product-strategy` | `~/.agents/skills/defining-product-strategy` |
 | `design-patterns` | `~/Code/agent-skills/skills/design-patterns` |
-| `north-star-metrics` | `~/.agents/skills/north-star-metrics` |
-| `product-taste` | `~/.agents/skills/product-taste` |
-| `product-vision` | `~/.agents/skills/product-vision` |
 | `write-as-pete` | `~/Code/personality/voice/skill/write-as-pete` |
 
 ## Authored in this repo (25)
