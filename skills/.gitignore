@@ -4,25 +4,17 @@
 # are recorded in SKILLS.md rather than committed. See that file for sources.
 
 agent-browser
-assistant-ui
-browser-use
-clean-architecture
 defining-product-strategy
-design-patterns
 domain-modeling
 frontend-design
-grill-with-docs
 grilling
 knowledge-synthesis
 north-star-metrics
-process-hunter
 product-taste
 product-vision
 react-doctor
 react-useeffect
-seo-audit
 stop-slop
-tui-design
 vercel-composition-patterns
 vercel-react-best-practices
 write-as-pete
