@@ -54,14 +54,12 @@ another repo on this machine, which has to be cloned separately.
 | `show-me` | `~/.agents/skills/show-me` |
 | `write-as-pete` | `~/Code/personality/voice/skill/write-as-pete` |
 
-## Authored in this repo (21)
+## Authored in this repo (19)
 
 Real directories, tracked in git, no external source.
 
 - `calldiff`
 - `catch-up`
-- `circuit`
-- `circuit-resource-analysis`
 - `claude-code-audit`
 - `code-comments`
 - `deep-research`

@@ -285,7 +285,6 @@
     "command": "~/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
-    "circuit@circuit": true,
     "codex@openai-codex": true,
     "linear@claude-plugins-official": true,
     "notion@claude-plugins-official": true,
@@ -298,18 +297,6 @@
     "typescript-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
-    "circuit": {
-      "source": {
-        "source": "directory",
-        "path": "/Users/petepetrash/Code/circuit"
-      }
-    },
-    "circuit-next": {
-      "source": {
-        "source": "directory",
-        "path": "/Users/petepetrash/Code/circuit-next"
-      }
-    },
     "openai-codex": {
       "source": {
         "source": "github",

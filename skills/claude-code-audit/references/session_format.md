@@ -63,7 +63,7 @@ When the user interrupts an assistant turn, the next user event contains a text 
 ## Practical notes for analysis
 
 - **Tool result batches are user events.** Don't count `is_error: true` tool results as user dissatisfaction — they're tool failures. Track them separately.
-- **Slash commands arrive wrapped.** A user running `/circuit:run` produces a `<command-name>...</command-name>` plus possibly a `<command-args>...</command-args>` wrapper. If you want the free-text the user typed after the slash command, use `args`.
+- **Slash commands arrive wrapped.** A user running `/example:task` produces a `<command-name>...</command-name>` plus possibly a `<command-args>...</command-args>` wrapper. If you want the free-text the user typed after the slash command, use `args`.
 - **Session start hooks spam the first few events.** Every session has an opening flurry of `attachment` events from hooks. They're noise for behavioral audit but useful to know what hooks are wired up.
 - **Ignore `thinking` blocks.** They're not human-readable and not part of the interaction that matters for workflow audit.
 - **Timestamps can back-date.** Some `file-history-snapshot` events carry a later timestamp than surrounding events. Use `first` and `last` over the full scan, not a single heuristic.

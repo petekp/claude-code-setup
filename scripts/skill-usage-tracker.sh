@@ -33,7 +33,7 @@ cwd = data.get("cwd") or os.environ.get("SESSION_CWD") or os.getcwd()
 
 def is_known_skill(name):
     if ":" in name:
-        return True  # plugin-qualified, e.g. /circuit:run
+        return True  # plugin-qualified, e.g. /example:task
     candidates = [os.path.expanduser("~/.claude/skills")]
     if cwd:
         candidates.append(os.path.join(cwd, ".claude", "skills"))
