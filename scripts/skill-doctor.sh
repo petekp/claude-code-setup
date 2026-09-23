@@ -18,6 +18,7 @@
 #
 # Reported, never touched:
 #   - dangling symlinks (deleting someone's skill is not the script's call)
+#   - a symlink inside a skill that points at its own parent
 #   - repo skills shadowed by an enabled plugin
 #   - skills installed in the store but not linked into skills/
 #   - ~/.claude/settings.json having stopped being a symlink
@@ -98,6 +99,56 @@ if [ -n "$dangling" ]; then
     echo "        the target is gone; relink it or: rm skills/<name>"
 else
     note "no dangling symlinks"
+fi
+
+# ------------------------------------------------- links that swallow their parent
+#
+# `ln -s <dir> <path>` where <path> is already that directory does not fail. ln
+# treats the existing directory as a place to put the link *in*, so it creates
+# <dir>/<basename> pointing back at <dir>. Every check above passes it: the link
+# is absolute, and it resolves.
+#
+# What it breaks is anything that walks the tree, because the directory is now
+# endless. codesign refuses a bundle carrying one ("invalid destination for
+# symbolic link in bundle"), so a skill shipped inside an app cannot be
+# notarized, and a recursive copy does not terminate.
+#
+# Found in the wild: a linked repo skill had one committed, and it reached the
+# app bundle built from that repo. Nothing reported it for two days.
+#
+# Reported rather than removed, like the dangling links above.
+#
+# One realpath and one find for the whole set. Resolving and scanning each skill
+# separately is two processes per skill, which measured a second of every
+# SessionStart. Depth 3 is past where this can plausibly hide: ln puts the link
+# directly inside the directory it points at.
+
+loops=""
+skill_dirs=()
+while IFS= read -r d; do
+    [ -n "$d" ] && [ -d "$d" ] && skill_dirs+=("$d")
+done <<< "$(realpath "$SKILLS_DIR"/* 2>/dev/null | sort -u)"
+
+if [ "${#skill_dirs[@]}" -gt 0 ]; then
+    while IFS= read -r link; do
+        [ -n "$link" ] || continue
+        holder=$(dirname "$link")
+        # Only a link to a directory can contain its own parent; cd fails on the rest.
+        target=$(cd "$holder" 2>/dev/null && cd "$(readlink "$link")" 2>/dev/null && pwd -P) || continue
+        [ -n "$target" ] || continue
+        case "$holder/" in
+            "$target"/*) loops="$loops$link -> $target"$'\n' ;;
+        esac
+    done <<< "$(find "${skill_dirs[@]}" -maxdepth 3 -type l 2>/dev/null)"
+fi
+
+if [ -n "$loops" ]; then
+    while IFS= read -r l; do
+        [ -n "$l" ] && warn "symlink points at its own parent: $l"
+    done <<< "$loops"
+    echo "        the skill tree is endless; remove the link with: rm <path>"
+else
+    note "no symlink points at its own parent"
 fi
 
 # ------------------------------------------------------------- husk skills
