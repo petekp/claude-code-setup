@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vignette TODO run"
+  short_description: "Run queued Vignette TODO items as a multi-agent worktree run"
+  default_prompt: "Use $vignette-todo-run to run the queued items from docs/TODOS.md as a multi-agent worktree run and hand me the integration branch."

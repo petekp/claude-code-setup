@@ -1,0 +1,4 @@
+interface:
+  display_name: "Herdr Names"
+  short_description: "Rename Herdr tabs, panes, and agents to short task names"
+  default_prompt: "Use $herdr-names to read what every Herdr agent is doing and rename its tab, pane, and agent to a short, clear task name."
