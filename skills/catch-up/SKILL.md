@@ -3,15 +3,10 @@ name: catch-up
 description: >-
   Give the human a fast, plain-English catch-up on what changed in the
   project: what the agents did, why, and what decisions need their input.
-  Use this whenever the user asks to "catch me up", "what changed", "where
-  are we", "recap", "brief me", "give me the rundown", "what did you do",
-  "summarize the session", "fill me in", or otherwise signals they have been
-  away and want to get back up to speed quickly. Built for someone steering
-  several agent-driven projects at once who does not read the code closely
-  but needs to grasp the core ideas, the choices made, and the open
-  decisions well enough to steer. Trigger even if they do not use these
-  exact words: any request to get oriented on recent progress should use
-  this skill.
+  Use when the user asks to "catch me up", "what changed", "where are we",
+  "recap", "brief me", "give me the rundown", "what did you do", "summarize
+  the session", or "fill me in", or otherwise wants to get back up to speed
+  after being away.
 ---
 
 # Catch Up
@@ -69,7 +64,7 @@ search"*, *"This session so far"*, *"Since the v2 branch merged"*.
 
 ### 2. Gather what changed
 
-Lead with the **conversation** — in an agent-driven project it holds both
+Lead with the **conversation**. In an agent-driven project it holds both
 the work and the reasoning. Then ground it against the repo so you are
 reporting what actually landed, not what was merely discussed:
 
@@ -80,7 +75,7 @@ git status                   # what is still uncommitted / in flight
 ```
 
 Use git to confirm the *what* and catch anything that happened off-screen.
-Use the conversation for the *why*. Do not read every file — you are after
+Use the conversation for the *why*. Do not read every file. You are after
 the shape of the change, not a line-by-line account. A quick look at one or
 two key files is fine when you need to understand an abstraction well enough
 to name it plainly; reading ten is a sign you have lost the altitude.
@@ -98,7 +93,7 @@ something belongs, ask "could they steer on this?" If not, cut it.
 
 ### 4. Write the briefing
 
-Use the structure below. Scale it to how much actually changed — see
+Use the structure below. Scale it to how much actually changed. See
 [Scale to the change](#scale-to-the-change). Drop any section that would be
 empty; an honest short note beats a padded template.
 
@@ -120,7 +115,7 @@ Your call
 Keep each bullet tight: lead with the point in one line. Add at most one
 plain sentence after it, and only when a term genuinely needs unpacking for
 someone who has not seen the code. More than that and you have slipped from
-briefing into narration — cut it back, or split it into two bullets.
+briefing into narration. Cut it back, or split it into two bullets.
 
 The **Your call** section is the steering payload. List real forks: things
 left undecided, or decided by default and easy to flip. For each, give the
@@ -139,7 +134,7 @@ not the implementation. A few examples of the translation:
 | "Memoized the selector" | "Made a slow lookup remember its answer so it stops recomputing every time" |
 | "Introduced a discriminated union for the result" | "Made a result always be exactly one of a few clearly-labeled shapes, so we can't mix them up" |
 | "Extracted the API client into a shared module" | "Moved the code that talks to the server into one shared spot so every screen uses the same one" |
-| "Added optimistic updates" | "The screen now shows your change instantly and quietly fixes itself if the server disagrees" |
+| "Added optimistic updates" | "The screen now shows your change instantly and fixes itself if the server disagrees" |
 
 Two practical tells. First, if a name in your draft only means something to
 someone who has read the code (a class name, a file name, an internal
@@ -157,12 +152,11 @@ The structure is a guide, not a quota. Match the output to the substance:
 - **Normal session:** the full briefing, a few bullets per section.
 - **Big or sprawling session:** still lead with one TL;DR line, then group
   the body by theme so it stays skimmable. Resist the urge to be
-  comprehensive — completeness is the enemy here. Pick the handful of things
+  comprehensive: completeness is the enemy here. Pick the handful of things
   that change how they would steer, and note that smaller stuff was skipped.
 
 ## Voice
 
-Short sentences, one idea each. No em dashes. Skip the AI throat-clearing
-("It's worth noting that...", "delve", "robust", "leverage", "seamless").
-Write like a sharp colleague catching them up between meetings, not like a
-release note.
+Short sentences, one idea each. No em dashes. Skip AI throat-clearing such
+as "It's worth noting that...". Write like a sharp colleague catching them
+up between meetings, not like a release note.
