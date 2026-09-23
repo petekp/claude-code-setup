@@ -20,29 +20,29 @@ Reinstall any of these with `npx skills add <source>`.
 
 | Skill | Source | Updated |
 |---|---|---|
-| `agent-browser` | [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) | 2026-07-23 |
+| `agent-browser` | [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) | 2026-09-04 |
 | `arena` | [cursor/plugins](https://github.com/cursor/plugins) | 2026-09-01 |
-| `better-github-skill` | [AVGVSTVS96/better-github-skill](https://github.com/AVGVSTVS96/better-github-skill) | 2026-08-15 |
+| `better-github-skill` | [AVGVSTVS96/better-github-skill](https://github.com/AVGVSTVS96/better-github-skill) | 2026-09-04 |
 | `blast-radius` | [cursor/plugins](https://github.com/cursor/plugins) | 2026-09-01 |
 | `defining-product-strategy` | [refoundai/lenny-skills](https://github.com/refoundai/lenny-skills) | 2026-08-07 |
-| `domain-modeling` | [mattpocock/skills](https://github.com/mattpocock/skills) | 2026-08-15 |
-| `frontend-design` | [anthropics/skills](https://github.com/anthropics/skills) | 2026-07-29 |
-| `grilling` | [mattpocock/skills](https://github.com/mattpocock/skills) | 2026-08-15 |
+| `domain-modeling` | [mattpocock/skills](https://github.com/mattpocock/skills) | 2026-09-04 |
+| `frontend-design` | [anthropics/skills](https://github.com/anthropics/skills) | 2026-09-04 |
+| `grilling` | [mattpocock/skills](https://github.com/mattpocock/skills) | 2026-09-04 |
 | `herdr` | [herdrdev/herdr](https://github.com/herdrdev/herdr) | 2026-08-09 |
+| `improve-codebase-architecture` | [mattpocock/skills](https://github.com/mattpocock/skills) | 2026-09-04 |
 | `knowledge-synthesis` | [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) | 2026-08-06 |
 | `north-star-metrics` | [refoundai/lenny-skills](https://github.com/refoundai/lenny-skills) | 2026-08-07 |
 | `product-taste` | [refoundai/lenny-skills](https://github.com/refoundai/lenny-skills) | 2026-08-07 |
 | `product-vision` | [refoundai/lenny-skills](https://github.com/refoundai/lenny-skills) | 2026-08-07 |
-| `react-doctor` | [millionco/react-doctor](https://github.com/millionco/react-doctor) | 2026-07-23 |
+| `react-doctor` | [millionco/react-doctor](https://github.com/millionco/react-doctor) | 2026-09-04 |
 | `react-useeffect` | [softaworks/agent-toolkit](https://github.com/softaworks/agent-toolkit) | 2026-04-09 |
-| `stop-slop` | [hardikpandya/stop-slop](https://github.com/hardikpandya/stop-slop) | 2026-05-15 |
 | `vercel-composition-patterns` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | 2026-04-09 |
 | `vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | 2026-04-21 |
-| `wayfinder` | [mattpocock/skills](https://github.com/mattpocock/skills) | 2026-08-17 |
+| `wayfinder` | [mattpocock/skills](https://github.com/mattpocock/skills) | 2026-09-04 |
 | `why` | [cursor/plugins](https://github.com/cursor/plugins) | 2026-09-01 |
 | `writing-prds` | [refoundai/lenny-skills](https://github.com/refoundai/lenny-skills) | 2026-08-06 |
 
-## Linked, source not recorded (2)
+## Linked, source not recorded (11)
 
 These have no entry in the skills.sh lockfile, so there is no source URL to
 reinstall from. A link into `~/.agents/skills` here means the skill was put
@@ -51,29 +51,42 @@ another repo on this machine, which has to be cloned separately.
 
 | Skill | Link target |
 |---|---|
+| `adversarial-change-review` | `~/.agents/skills/adversarial-change-review` |
+| `gh-claude-review-fix` | `~/.agents/skills/gh-claude-review-fix` |
+| `gh-publish-release` | `~/.agents/skills/gh-publish-release` |
+| `pr-visual-evidence` | `~/.agents/skills/pr-visual-evidence` |
 | `show-me` | `~/.agents/skills/show-me` |
+| `smoke-test-plugin-api` | `~/.agents/skills/smoke-test-plugin-api` |
+| `stage-prs-on-experimental` | `~/.agents/skills/stage-prs-on-experimental` |
+| `start-paddock-dev` | `~/.agents/skills/start-paddock-dev` |
+| `terminal-browser` | `~/.local/share/terminal-browser/app/skills/default/terminal-browser` |
+| `vignette` | `~/Code/vignette/skills/vignette` |
 | `write-as-pete` | `~/Code/personality/voice/skill/write-as-pete` |
 
-## Authored in this repo (19)
+## Authored in this repo (23)
 
 Real directories, tracked in git, no external source.
 
 - `calldiff`
 - `catch-up`
 - `claude-code-audit`
+- `clean-copy`
 - `code-comments`
 - `deep-research`
 - `discernment-nudge`
 - `exhaustive-systems-analysis`
 - `frame-check`
-- `improve-codebase-architecture`
+- `herdr-names`
 - `latent-potential`
 - `literate-guide`
+- `paddock-here`
 - `plain`
 - `pr-description`
 - `pr-screenshot-comparison`
 - `pr-self-review`
 - `react-change-review`
+- `refine-prose`
 - `spike`
 - `typography`
+- `vignette-todo-run`
 - `write-goal`

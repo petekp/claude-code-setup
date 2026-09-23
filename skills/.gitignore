@@ -3,6 +3,7 @@
 # Symlinked skills. Their targets are absolute paths on one machine, so they
 # are recorded in SKILLS.md rather than committed. See that file for sources.
 
+adversarial-change-review
 agent-browser
 arena
 better-github-skill
@@ -10,18 +11,26 @@ blast-radius
 defining-product-strategy
 domain-modeling
 frontend-design
+gh-claude-review-fix
+gh-publish-release
 grilling
 herdr
+improve-codebase-architecture
 knowledge-synthesis
 north-star-metrics
+pr-visual-evidence
 product-taste
 product-vision
 react-doctor
 react-useeffect
 show-me
-stop-slop
+smoke-test-plugin-api
+stage-prs-on-experimental
+start-paddock-dev
+terminal-browser
 vercel-composition-patterns
 vercel-react-best-practices
+vignette
 wayfinder
 why
 write-as-pete
