@@ -82,9 +82,10 @@ test('a reply becomes a card and open items, and "1. yes" carries the question',
   expect(prompts.length).toBe(1)
   expect(prompts[0]).toContain('<person>\nadd a greeting cli\n</person>')
 
+  // The band counts what waits; the items themselves are in /inbox.
   const band = await $.ui.mount({ plugin: 'session-inbox', surface: 'terminal', ...BAND })
-  expect(await band.find({ text: /Use Node or Python\?/ })).toBeDefined()
-  expect(await band.find({ text: /Waiting on you/ })).toBeDefined()
+  expect(await band.find({ text: /2 waiting on you in \/inbox/ })).toBeDefined()
+  expect(await band.find({ text: /Use Node or Python\?/ })).toBeUndefined()
 
   const answered = await $.prompt.submit({ text: '1. node\n2. yes', wait: false, origin: { kind: 'composer' } })
   expect(answered.context?.join('\n')).toContain('1 → "Use Node or Python?"')
@@ -93,10 +94,11 @@ test('a reply becomes a card and open items, and "1. yes" carries the question',
   const unchanged = await $.prompt.submit({ text: 'also add a --loud flag', wait: false, origin: { kind: 'composer' } })
   expect(unchanged.context?.join('\n') ?? '').not.toContain('Waiting on the user')
 
-  // Pressing an answer sends it as the person's message and closes the item.
-  await band.press({ key: 'answer-i1-0' })
+  // Pressing an answer in the pane sends it as the person's message and closes the item.
+  const pane = await $.ui.mount(PANE)
+  await pane.press({ key: 'answer-i1-0' })
   expect(sent).toEqual(['Re "Use Node or Python?": Node'])
-  expect(await band.find({ text: /Use Node or Python\?/ })).toBeUndefined()
+  expect(await pane.find({ key: 'row-i1' })).toBeUndefined()
   // The per-turn update reads the pressed answer as the person's message.
   await $.turn.complete({ answer: 'Using Node.', durationMs: 5, isAborted: false, turnId: 't2', reason: 'answer' })
   await clock.settle()

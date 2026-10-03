@@ -407,11 +407,6 @@ export function latestBatch(ledger: Ledger): Item[] {
   return ledger.batchTurn === 0 ? [] : ledger.items.filter(i => i.turn === ledger.batchTurn)
 }
 
-/** Items from replies before the latest batch. */
-export function olderItems(ledger: Ledger): Item[] {
-  return ledger.items.filter(i => i.turn !== ledger.batchTurn)
-}
-
 function describe(item: Item): string {
   const parts = [`"${item.ask}"`]
   if (item.options.length > 0) parts.push(`options: ${item.options.join(' / ')}`)

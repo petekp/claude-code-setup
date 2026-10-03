@@ -510,3 +510,12 @@ read the same current ledger.
   sort to the top this way.
   Pete chose on 2026-10-03 to drop sorting. The line names what each
   session waits on, which is the signal he scans for.
+
+### Items only in the pane
+
+Pete asked on 2026-10-03 for waiting items to stop appearing inline in the
+session. The band no longer lists items or their buttons. It shows one line:
+the goal, where the work stands, and "N waiting on you in /inbox", with the
+note and PR hints after it. The away card and the last-session card show the
+count instead of the items. The pane is the one place to read and answer
+them. Numbered answers typed in the prompt still map to the latest batch.

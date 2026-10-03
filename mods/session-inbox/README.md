@@ -2,23 +2,22 @@
 
 A Claude Code mod that collects what is waiting on you in a session: the
 agent's questions, issues Claude noted, and your PRs' checks and reviews. It
-shows them above the prompt and in the `/inbox` pane, along with where the
-session stands.
+lists them in the `/inbox` pane. A one-line band above the prompt shows where
+the session stands and how many items wait.
 
 ## What you see
 
-- **Waiting on you.** After each reply, the band lists the questions the agent
-  put to you. They carry the agent's own numbers and its recommendations. Reply
-  "1. yes 2. no" as usual. The mod attaches the full questions to your message,
-  so the agent knows what each number meant. When the agent's options are
-  short, they appear as buttons beside the question. Pressing one sends it.
-- **One line otherwise.** With nothing waiting, the band shows the session's
-  goal and where the work stands. Any dev server or simulator the agent left
-  running is listed under it.
+- **The band.** One line above the prompt: the session's goal, where the work
+  stands, and how many items wait on you in `/inbox`. Any dev server or
+  simulator the agent left running is listed under it. The items themselves
+  appear only in the pane.
+- **Numbered answers.** Reply "1. yes 2. no" to the agent's numbered
+  questions as usual. The mod attaches the full questions to your message,
+  so the agent knows what each number meant.
 - **Where this session stands.** After 15 minutes with no activity, or when you
   resume a session, the band expands into a short card. It shows the goal,
   what's done, where things stand, what's running, the last decisions, and
-  what's waiting on you. It collapses when you send a message.
+  how many items wait on you. It collapses when you send a message.
 - **Last session in this folder.** A new session in a folder you worked in
   during the past week shows the previous session's card. "Continue from it"
   adds that card to your first message. "Hide" dismisses it.
@@ -120,9 +119,9 @@ it back. It does nothing in headless `claude -p` runs.
 
 ## Limits
 
-- If you answer within a few seconds of a reply, the band may not have the
+- If you answer within a few seconds of a reply, the inbox may not have the
   questions yet. The agent still reads your answer, without the attached
   question text.
-- Items you never answer stay open. The band shows the newest ones and counts
-  the rest. Dismiss them in /inbox.
+- An item you never answer stays open for 12 of your prompts, then drops.
+  Dismiss it sooner in /inbox.
 - A model writes the card, so it can be wrong. The transcript is the record.

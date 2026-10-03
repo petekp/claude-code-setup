@@ -29,7 +29,6 @@ import {
   closeItem,
   latestBatch,
   normalizeLedger,
-  olderItems,
   parseReply,
   catchUpPrompt,
   closedText,
@@ -88,7 +87,6 @@ const PANE = 'session-inbox'
 // Theme keys, so the colors follow the person's Claude Code theme.
 const ACCENT = 'claude'
 const WAITING = 'warning'
-const RECOMMENDED = 'suggestion'
 // The header and footer panels: a theme key a shade off the pane's background, in every theme.
 const PANEL_BG = 'userMessageBackground'
 // The selected row in the dark theme: its tab's color at about 15% over the
@@ -676,12 +674,6 @@ function recommendedIndex(all: string[], rec: string | null): number {
   return best
 }
 
-/** The band shows answer buttons only when they fit beside the question. */
-function fitsInline(item: Item): boolean {
-  const all = answers(item)
-  return item.kind === 'do' || (item.options.length > 0 && all.length <= 3 && all.join('').length <= 24)
-}
-
 function answerActions($: EngineInterface, item: Item): Action[] {
   const all = answers(item)
   const recommended = recommendedIndex(all, item.rec)
@@ -727,13 +719,8 @@ function itemKeys($: EngineInterface, item: Item, handle: string): KeyAction[] {
   return [...numbered, explainKey, end]
 }
 
-/** The band's buttons beside a question: its answers, or a task's first help and Done. */
-function bandActions($: EngineInterface, item: Item): Action[] {
-  return item.kind === 'do' ? [...helpActions($, item).slice(0, 1), doneAction($, item)] : answerActions($, item)
-}
-
 /**
- * The item's handle in the band. Items from the latest reply carry the agent's
+ * The item's handle in the pane. Items from the latest reply carry the agent's
  * own numbers, or 1, 2, 3 when it gave none, matching how answerNote maps
  * "1. yes". Older items get no number, because a number no longer maps to them.
  */
@@ -1002,7 +989,7 @@ export const register: Register = on => {
           {waiting > 0 && (
             <Text wrap="truncate-end" dimColor>
               {'  '}
-              {waiting} waiting on you: {prev.ledger.items.slice(0, 3).map(i => i.ask).join(' · ')}
+              {waiting} {waiting === 1 ? 'item was' : 'items were'} waiting on you
             </Text>
           )}
           <Box flexDirection="row" gap={1}>
@@ -1025,17 +1012,13 @@ export const register: Register = on => {
     const card = ledger.card
     if (!card && ledger.items.length === 0 && ledger.notes.length === 0) return next(e)
 
-    const batch = latestBatch(ledger)
-    const older = olderItems(ledger)
-    // Numbers only map back to items while no prompt has been sent since the
-    // reply that asked them; answerNote applies the same rule.
-    const numbered = ledger.batchTurn === ledger.turn ? batch : []
     const goal = card?.goal || 'This session'
     const waiting = ledger.items.length
     const noteCount = ledger.notes.length
     const prAlert = prAttention(Object.values(prs.views))
-    // What else in /inbox wants attention, appended to the band's first line.
+    // The items themselves live in /inbox; the band only says how many wait.
     const hints = [
+      waiting > 0 ? <Text color={WAITING}> · {waiting} waiting on you in /inbox</Text> : null,
       noteCount > 0 ? <Text color={NOTES}> · {noteCount === 1 ? '1 note' : `${noteCount} notes`} in /inbox</Text> : null,
       prAlert ? <Text color={PRS}> · {prAlert}</Text> : null,
     ]
@@ -1050,39 +1033,6 @@ export const register: Register = on => {
       )
     }
 
-    const isReturn = presence.isAway && card !== null
-    const shown = (isReturn ? [...older.slice(-2), ...batch] : batch).slice(-6)
-    const hidden = waiting - shown.length
-    const olderRows = hidden > 0 ? [<Text dimColor>  +{hidden} older in /inbox</Text>] : []
-    const fit = (rows: JSX.Element[]) => <Box flexDirection="column">{rows.slice(0, Math.max(1, e.props.maxRows))}</Box>
-    const itemRow = (item: Item) => {
-      const handle = marker(item, numbered)
-      const isInline = fitsInline(item)
-
-      return (
-        <Box flexDirection="row">
-          <Box width={4} flexShrink={0}>
-            <Text bold color={WAITING}>
-              {handle}
-            </Text>
-          </Box>
-          <Box flexShrink={1}>
-            <Text wrap="truncate-end">
-              {item.ask}
-              {!isInline && item.rec ? <Text dimColor>  recommended: </Text> : null}
-              {!isInline && item.rec ? <Text color={RECOMMENDED}>{item.rec}</Text> : null}
-            </Text>
-          </Box>
-          {isInline ? (
-            <Box flexDirection="row" flexShrink={0} gap={1} marginLeft={2}>
-              {bandActions($, item).map(a => (
-                <Button {...a} />
-              ))}
-            </Box>
-          ) : null}
-        </Box>
-      )
-    }
     const openRows = (card?.running ?? []).slice(0, 3).map(run => (
       <Text wrap="truncate-end">
         <Text color={DONE}>  ● </Text>
@@ -1090,7 +1040,7 @@ export const register: Register = on => {
       </Text>
     ))
 
-    if (isReturn && card) {
+    if (presence.isAway && card) {
       const rows = [
         <Text wrap="truncate-end">
           <Text color={ACCENT}>◆ </Text>
@@ -1122,51 +1072,24 @@ export const register: Register = on => {
               </Text>,
             ]
           : []),
-        ...(shown.length > 0
-          ? [
-              <Text bold color={WAITING}>
-                Waiting on you
-              </Text>,
-              ...shown.map(itemRow),
-            ]
-          : []),
-        ...olderRows,
       ]
 
-      return fit(rows)
+      return <Box flexDirection="column">{rows.slice(0, Math.max(1, e.props.maxRows))}</Box>
     }
 
-    if (shown.length === 0) {
-      return (
-        <Box flexDirection="column">
-          <Text wrap="truncate-end">
-            <Text color={ACCENT}>◆ </Text>
-            <Text dimColor>
-              {goal}
-              {card?.now ? ` · ${card.now}` : ''}
-            </Text>
-            {hidden > 0 ? <Text color={WAITING}> · {hidden} older waiting on you in /inbox</Text> : null}
-            {hints}
+    return (
+      <Box flexDirection="column">
+        <Text wrap="truncate-end">
+          <Text color={ACCENT}>◆ </Text>
+          <Text dimColor>
+            {goal}
+            {card?.now ? ` · ${card.now}` : ''}
           </Text>
-          {openRows}
-        </Box>
-      )
-    }
-
-    const rows = [
-      <Text wrap="truncate-end">
-        <Text bold color={WAITING}>
-          Waiting on you
+          {hints}
         </Text>
-        <Text dimColor> · {goal}</Text>
-        {hints}
-      </Text>,
-      ...shown.map(itemRow),
-      ...olderRows,
-      ...openRows,
-    ]
-
-    return fit(rows)
+        {openRows}
+      </Box>
+    )
   })
 
   on('config.set', { key: 'theme' }, async ($, e, next) => {

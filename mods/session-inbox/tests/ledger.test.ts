@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { EMPTY, answerNote, applyUpdate, carryText, latestBatch, olderItems, parseReply, readCommandRow, statusLine, tasksRunBy } from '../hooks/ledger'
+import { EMPTY, answerNote, applyUpdate, carryText, latestBatch, parseReply, readCommandRow, statusLine, tasksRunBy } from '../hooks/ledger'
 
 const REPLY = `GOAL: Move annotation queue logic into a tested reducer
 DONE: Reducer built on its own branch
@@ -81,7 +81,6 @@ describe('applyUpdate', () => {
     expect(second.items.map(i => i.id)).toEqual(['i2', 'i3', 'i4'])
     expect(second.decided).toEqual([{ id: 'i1', ask: 'Rename Send.swift to Herdr?', outcome: 'yes, renamed', at: 2000 }])
     expect(latestBatch(second).map(i => i.id)).toEqual(['i4'])
-    expect(olderItems(second).map(i => i.id)).toEqual(['i2', 'i3'])
     expect(second.card?.done).toEqual(first.card?.done)
   })
 
@@ -141,7 +140,7 @@ describe('answerNote', () => {
     expect(answerNote({ ...ledger, turn: 3 }, '1. yes', 3)).toBe(null)
   })
 
-  test('recognizes an item quoted from the band', () => {
+  test("recognizes an item quoted by the pane's Reply", () => {
     expect(answerNote({ ...ledger, turn: 5 }, 'Re "Test pinch zoom on your Mac": done, works', 5)).toContain(
       'an action for the user',
     )
