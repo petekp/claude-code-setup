@@ -1,4 +1,4 @@
-import type { Card, Help, Item, Ledger, Note } from '../types'
+import type { Card, Decided, Help, Item, Ledger, Note } from '../types'
 
 export const EMPTY: Ledger = { card: null, items: [], decided: [], notes: [], prs: [], nextId: 1, turn: 0, batchTurn: 0 }
 
@@ -30,9 +30,11 @@ Input:
 - <card>: the ledger before this exchange (may be empty)
 - <open>: items still waiting on the person, each with an id
 - <notes>: findings the agent recorded for the person to review later, outside the current task, each with an id
-- <person>: what the person just sent
+- <decided>: items the person already settled, and how. Never add one of these again as NEW, even when the reply asks it again.
+- <person>: what the person just sent, and the commands they ran themselves: "$ cmd" for a shell command, with its output, and "/name" for a slash command
 - <activity>: what the agent did this turn (files edited, commands, URLs)
 - <reply>: the agent's final reply
+- <screen>: what the person has on screen besides the conversation. They always see the items in <open> in a band above their prompt.
 
 Answer with lines only, each starting with one of these keys. No other text.
 
@@ -40,15 +42,15 @@ GOAL: what this session is for, at most 12 words. Keep the previous goal unless 
 DONE: one finished outcome, at most 8 words. Up to 4 DONE lines, oldest first, keeping the most recent. Outcomes, not activity: "PR #12 opened", not "ran gh".
 NOW: where the work stands at the end of this reply, at most 12 words. Name what it waits on, if anything.
 RUNNING: something still running that the person may open, as "name: URL or port". Dev servers, simulators, background jobs. Omit anything the agent stopped. Zero or more lines.
-CLOSED: <id> | what was decided, at most 8 words. For each item in <open> the person answered in <person> (including "all recommended", "go", "yes to all", numbered answers), or that the reply or <activity> shows is done or no longer applies. A person asking what an item means has not answered it, and a reply explaining it does not close it. When <person> asks to run an item's command and the reply says it ran, that item is done. Also one line for each note in <notes> that the reply or <activity> shows was fixed, or that the person dealt with or set aside.
+CLOSED: <id> | what was decided, at most 8 words. For each item in <open> the person answered in <person> (including "all recommended", "go", "yes to all", numbered answers), or that the reply or <activity> shows is done or no longer applies. A person asking what an item means has not answered it, and a reply explaining it does not close it. When <person> asks to run an item's command and the reply says it ran, that item is done. So is an item whose command the person ran themselves, per <person>, when its output shows it worked. Also one line for each note in <notes> that the reply or <activity> shows was fixed, or that the person dealt with or set aside.
 NEW: <kind> | <label> | <ask> | <options> | <rec>
   One line per thing in <reply> that waits on the person and is not already in <open> or <notes>. A finding the agent recorded as a note is not NEW unless the reply asks the person to decide on it now. When the reply restates, rewords or narrows an item in <open>, it is not new: add HELP lines to that item's id instead.
-  kind: "decide" (a choice, approval, or information only the person has, explicitly put to them) or "do" (an action only the person can take: sign in, run a command needing their password, test on their device, reply to a teammate).
+  kind: "decide" (a choice, approval, or information only the person has, explicitly put to them) or "do" (an action only the person can take, without which the agent cannot continue or finish: sign in, run a command needing their password, test on their device, reply to a teammate).
   label: the reply's own number or id for it ("1", "D3"), or "-".
   ask: plain words, at most 12 words, readable without the reply. Replace any term the reply coined with what it means.
   options: the choices offered, separated by " / ", at most 5 words each; "-" if open-ended or kind "do".
   rec: the agent's recommendation in at most 8 words, or "-".
-  Skip: rhetorical questions; offers to continue ("Want me to start?") when continuing is the obvious default; FYIs; generic "let me know".
+  Skip: rhetorical questions; offers to continue ("Want me to start?") when continuing is the obvious default; FYIs; generic "let me know"; invitations to look at, try or check finished work ("Open X to see it", "reload to check") unless the agent waits on the person's verdict before going on; optional suggestions; anything the person already has on screen, per <screen>.
 HELP: <item> | <kind> | <value> | <name>
   A step that does part of an item's work in one press, when the reply or activity already spells it out: the file to edit, the text to paste, the command to run, the page to visit. Not background reading. Up to 3 per item, most useful first.
   item: "new N" for the Nth NEW line in your answer, or an id from <open>.
@@ -66,11 +68,12 @@ Write plainly. No jargon, no filler, no markdown.`
  * Asks a fork of the main conversation to bring the ledger up to date at once,
  * for turns the per-turn update missed.
  */
-export function catchUpPrompt(ledger: Ledger): string {
+export function catchUpPrompt(ledger: Ledger, screen: string): string {
   return [
     'Pause the task. Do not use tools. Instead, act as the ledger keeper described below, over this whole conversation.',
     'Treat the whole conversation as the exchange. The ledger below may have missed turns. Close every item in <open> and every note in <notes> that the conversation shows answered, done, dealt with, or no longer relevant. Add as NEW only what still waits on the user and is not already in <open> or <notes>.',
     ...ledgerBlocks(ledger),
+    `<screen>${NL}${screen}${NL}</screen>`,
     'Code blocks here carry no [block N] marker, so a copy HELP must be one line of text.',
     '',
     SYSTEM,
@@ -88,6 +91,8 @@ export type Exchange = {
   turn: number
   /** The item button the person pressed to send this turn's prompt, if any. */
   press: Press | null
+  /** What the person has on screen besides the conversation, from screenText. */
+  screen: string
 }
 
 /** A prompt the mod sent for an item: an answer, an Explain, or a Run. */
@@ -196,8 +201,9 @@ function ledgerBlocks(ledger: Ledger): string[] {
     .map(i => `${i.id} | ${i.kind} | ${i.label ?? '-'} | ${i.ask}`)
     .join(NL)
   const notes = ledger.notes.map(n => `${n.id} | ${n.kind}: ${n.title}`).join(NL)
+  const decided = ledger.decided.slice(-8).map(d => `${d.ask} → ${settled(d)}`).join(NL)
 
-  return [`<card>${NL}${card}${NL}</card>`, `<open>${NL}${open}${NL}</open>`, `<notes>${NL}${notes}${NL}</notes>`]
+  return [`<card>${NL}${card}${NL}</card>`, `<open>${NL}${open}${NL}</open>`, `<notes>${NL}${notes}${NL}</notes>`, `<decided>${NL}${decided}${NL}</decided>`]
 }
 
 export function buildPrompt(ledger: Ledger, ex: Exchange): string {
@@ -208,7 +214,42 @@ export function buildPrompt(ledger: Ledger, ex: Exchange): string {
     `<person>${NL}${clip(person, 4000)}${NL}</person>`,
     `<activity>${NL}${clip(ex.activity.join(NL), 2500)}${NL}</activity>`,
     `<reply>${NL}${clip(numberBlocks(ex.reply), 12000)}${NL}</reply>`,
+    `<screen>${NL}${ex.screen}${NL}</screen>`,
   ].join(NL)
+}
+
+/** What the person sees besides the conversation, as the ledger model reads it. */
+export function screenText(isPaneOpen: boolean, tab: string): string {
+  return isPaneOpen ? `The /inbox pane is open beside the conversation, on its ${tab} tab, listing every open item.` : 'The /inbox pane is closed.'
+}
+
+/**
+ * The open tasks a shell command the person ran completes: those whose run or
+ * sign-in step is that exact command, so nothing closes on a guess.
+ */
+export function tasksRunBy(ledger: Ledger, command: string): Item[] {
+  const typed = squash(command)
+
+  return ledger.items.filter(i => i.kind === 'do' && i.helps.some(h => (h.kind === 'run' || h.kind === 'terminal') && squash(h.command) === typed))
+}
+
+/** A transcript row of the person's own command, as session.append carries it. */
+export type CommandRow = { kind: 'shell'; command: string } | { kind: 'output'; stdout: string; stderr: string } | { kind: 'slash'; name: string; args: string }
+
+/** Reads a `!` command, its output, or a slash command from a row's text; null for any other row. */
+export function readCommandRow(text: string): CommandRow | null {
+  const input = text.match(/^<bash-input>([\s\S]*)<\/bash-input>$/)
+  if (input) return { kind: 'shell', command: (input[1] ?? '').trim() }
+  const output = text.match(/<bash-stdout>([\s\S]*?)<\/bash-stdout><bash-stderr>([\s\S]*?)<\/bash-stderr>/)
+  if (output) return { kind: 'output', stdout: (output[1] ?? '').trim(), stderr: (output[2] ?? '').trim() }
+  const name = text.match(/<command-name>\/?([^<\s]+)<\/command-name>/)
+  if (name) return { kind: 'slash', name: name[1] ?? '', args: (text.match(/<command-args>([\s\S]*?)<\/command-args>/)?.[1] ?? '').trim() }
+
+  return null
+}
+
+function squash(command: string): string {
+  return command.trim().replace(/\s+/g, ' ')
 }
 
 function dash(value: string | undefined): string | null {
@@ -477,6 +518,56 @@ export function carryText(ledger: Ledger, title: string): string | null {
   }
 
   return out.join(NL)
+}
+
+/**
+ * The inbox as Claude reads it beside a prompt: what is open now and whether
+ * the pane shows it. prompt.context reaches only the first message, so this is
+ * how Claude learns what changed since.
+ */
+export function inboxText(ledger: Ledger, isPaneOpen: boolean): string {
+  const out = ['session-inbox: the inbox as of the last reply. Only the items listed here are open.']
+  if (ledger.items.length > 0) {
+    out.push('Waiting on the user:')
+    for (const item of ledger.items) out.push(`- ${item.label ? `(${item.label}) ` : ''}${describe(item)}`)
+  } else {
+    out.push('Nothing is waiting on the user.')
+  }
+  if (ledger.notes.length > 0) {
+    out.push('Notes you recorded, still open:')
+    for (const n of ledger.notes) out.push(`- ${n.kind}: ${n.title}`)
+  }
+  out.push(isPaneOpen ? 'The user has the /inbox pane open beside the conversation.' : 'The /inbox pane is closed.')
+
+  return out.join(NL)
+}
+
+/** How an item was settled, in words a model reads without the mod's vocabulary. */
+function settled(d: Decided): string {
+  return d.outcome === 'dismissed' ? 'dismissed by the user' : d.outcome
+}
+
+/**
+ * The items settled since Claude last read the inbox, so Claude can tell a
+ * dismissed question from one still waiting and does not ask it again.
+ */
+export function closedText(decided: Decided[]): string | null {
+  if (decided.length === 0) return null
+
+  return ['Settled since you last read the inbox. Do not ask these again unless the user brings them up:', ...decided.map(d => `- "${d.ask}" → ${settled(d)}`)].join(NL)
+}
+
+/**
+ * The session's line in the Herdr sidebar: how many items wait and the first
+ * of the latest reply's, else where the work stands. The count leads, because
+ * the sidebar cuts long lines at its edge. Empty when there is nothing to say.
+ */
+export function statusLine(ledger: Ledger): string {
+  const first = latestBatch(ledger)[0] ?? ledger.items[0]
+  if (first) return ledger.items.length > 1 ? `${ledger.items.length} · ${first.ask}` : first.ask
+  const notes = ledger.notes.length === 0 ? null : `${ledger.notes.length} note${ledger.notes.length === 1 ? '' : 's'}`
+
+  return [ledger.card?.now, notes].filter(Boolean).join(' · ')
 }
 
 /** "just now", "12m ago", "3h ago", "2d ago". */

@@ -34,7 +34,7 @@ session stands.
   - `e: Explain` asks Claude what an item is about and what each choice
     means, without acting on it. The item stays open.
   - `x: Dismiss` drops a question. `d: Done` closes a task that is yours to
-    do.
+    do. A task also closes on its own when you run its command with `!`.
   - Under the list, the Waiting tab shows what's running, what's done, and
     recent decisions. Press Done's or Decided's title to collapse it. The mod
     remembers that in later sessions.
@@ -63,7 +63,8 @@ session stands.
   invent one. The mod itself never runs a command.
 - **Notes.** While it works, Claude records issues and opportunities it notices
   outside the current task: a bug, a risk, missing tests, tech debt, a chance
-  to improve something. It uses a `note` tool the mod gives it, and keeps
+  to improve something. It also records a note when it works around a problem
+  instead of fixing it, and when part of its change could not be tested. It uses a `note` tool the mod gives it, and keeps
   working on the task. The band shows "2 notes in /inbox". The pane's Notes
   tab lists them, newest first. The selected note has three actions:
   - `a: Address it` asks Claude to fix it.
@@ -96,9 +97,16 @@ context the model rereads after compacting.
 
 ## How it works
 
-After each reply, one Sonnet call reads the turn: your message, a list of what
-the agent did, and its reply. It also reads the previous card. It returns an
-updated card and the questions opened and closed.
+After each reply, one Sonnet call reads the turn: your message, the `!` and
+slash commands you ran, a list of what the agent did, and its reply. It also
+reads the previous card and whether the `/inbox` pane is open. It returns an
+updated card and the questions opened and closed. It adds a task for you only
+when the agent cannot go on without it, not for an invitation to look at
+finished work.
+
+When the inbox changes, the mod attaches it to your next message. Claude then
+knows which items are still open and whether the pane is open, so it does not
+ask you to open the pane or to act on a closed item.
 
 Each update costs about 3k input and 500 output tokens. It runs after the
 reply is shown and takes 3 to 5 seconds. When an update fails, or

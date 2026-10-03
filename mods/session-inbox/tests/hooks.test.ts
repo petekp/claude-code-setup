@@ -49,6 +49,8 @@ function world(on: On, prompts: string[]) {
   mock.store(on)
   on('session.id', () => ({ value: 'session-1' }))
   on('session.root', () => ({ value: '/tmp/project' }))
+  // Outside Herdr: no pane to publish the sidebar line to.
+  on('env.get', () => ({ value: undefined }))
   on('command.register', ($, e) => ({ value: { command: e.name } }))
   on('tool.register', ($, e) => ({ value: { tool: `mcp__session-inbox__${e.name}` } }))
   on('process.run', ($, e) => ({ value: gh(e.argv) }))
@@ -86,11 +88,19 @@ test('a reply becomes a card and open items, and "1. yes" carries the question',
 
   const answered = await $.prompt.submit({ text: '1. node\n2. yes', wait: false, origin: { kind: 'composer' } })
   expect(answered.context?.join('\n')).toContain('1 → "Use Node or Python?"')
+  // Claude reads the open items beside a prompt, and again only after they change.
+  expect(answered.context?.join('\n')).toContain('Waiting on the user:\n- (1) "Use Node or Python?"')
+  const unchanged = await $.prompt.submit({ text: 'also add a --loud flag', wait: false, origin: { kind: 'composer' } })
+  expect(unchanged.context?.join('\n') ?? '').not.toContain('Waiting on the user')
 
   // Pressing an answer sends it as the person's message and closes the item.
   await band.press({ key: 'answer-i1-0' })
   expect(sent).toEqual(['Re "Use Node or Python?": Node'])
   expect(await band.find({ text: /Use Node or Python\?/ })).toBeUndefined()
+  // The per-turn update reads the pressed answer as the person's message.
+  await $.turn.complete({ answer: 'Using Node.', durationMs: 5, isAborted: false, turnId: 't2', reason: 'answer' })
+  await clock.settle()
+  expect(prompts.at(-1)).toContain('Re "Use Node or Python?": Node\n</person>')
 })
 
 test('after 15 idle minutes the band shows where the session stands', async ($, on) => {

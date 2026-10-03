@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { EMPTY, answerNote, applyUpdate, carryText, latestBatch, olderItems, parseReply } from '../hooks/ledger'
+import { EMPTY, answerNote, applyUpdate, carryText, latestBatch, olderItems, parseReply, readCommandRow, statusLine, tasksRunBy } from '../hooks/ledger'
 
 const REPLY = `GOAL: Move annotation queue logic into a tested reducer
 DONE: Reducer built on its own branch
@@ -158,5 +158,40 @@ describe('carryText', () => {
     const text = carryText(applyUpdate(EMPTY, parseReply(REPLY)!, 1, 1), 'T')
     expect(text).toContain('Goal: Move annotation queue logic')
     expect(text).toContain('(1) "Rename Send.swift to Herdr?"')
+  })
+})
+
+describe("the person's own commands", () => {
+  test('reads a ! command, its output and a slash command from their transcript rows', () => {
+    expect(readCommandRow('<bash-input>npm login</bash-input>')).toEqual({ kind: 'shell', command: 'npm login' })
+    expect(readCommandRow('<bash-stdout>Logged in</bash-stdout><bash-stderr></bash-stderr>')).toEqual({ kind: 'output', stdout: 'Logged in', stderr: '' })
+    expect(readCommandRow('<command-name>/context</command-name>\n<command-message>context</command-message>\n<command-args></command-args>')).toEqual({
+      kind: 'slash',
+      name: 'context',
+      args: '',
+    })
+    expect(readCommandRow('add a greeting cli')).toBeNull()
+  })
+
+  test('a command closes only the task whose step is that exact command', () => {
+    const reply = 'Run `npm login`, then `npm publish`.'
+    const ledger = applyUpdate(
+      EMPTY,
+      parseReply('GOAL: Publish\nNOW: Waiting on sign-in\nNEW: do | - | Sign in to npm | - | -\nHELP: new 1 | run | npm login | sign-in\nNEW: do | - | Publish the package | - | -\nHELP: new 2 | run | npm publish | publish', reply)!,
+      1,
+      1,
+    )
+    expect(tasksRunBy(ledger, '  npm   login ').map(i => i.ask)).toEqual(['Sign in to npm'])
+    expect(tasksRunBy(ledger, 'npm login --scope=@me')).toEqual([])
+  })
+})
+
+describe('statusLine', () => {
+  test('names the first waiting item after the count, and says where the work stands when nothing waits', () => {
+    const waiting = applyUpdate(EMPTY, parseReply(REPLY)!, 1, 1)
+    expect(statusLine(waiting)).toBe('3 · Rename Send.swift to Herdr?')
+    const settled = applyUpdate(waiting, parseReply('GOAL: g\nNOW: Reducer merged\nCLOSED: i1 | yes\nCLOSED: i2 | no\nCLOSED: i3 | done')!, 2, 2)
+    expect(statusLine(settled)).toBe('Reducer merged')
+    expect(statusLine(EMPTY)).toBe('')
   })
 })

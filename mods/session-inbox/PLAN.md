@@ -147,9 +147,8 @@ summary. Its README describes what Pete sees.
     view and threads are fetched in parallel, and all PRs at once. One
     refresh runs at a time. A failed fetch keeps the last data and shows the
     error.
-  - **Actions** send a request to Claude as the person's message. The mod
-    queues each text it sends, and `prompt.submit` matches the submitted text
-    against the queue, so the per-turn call knows which button sent it. Address and
+  - **Actions** send a request to Claude as the person's message. `send()`
+    records which button sent it, so the per-turn call knows. Address and
     Draft reply tell Claude not to post on GitHub or resolve threads, since
     posting is an outward action the person approves separately. Fix asks
     before changing CI configuration.
@@ -284,3 +283,221 @@ mod now handles those itself and the button is gone.
 - **Handled notes close.** The `<notes>` block now carries ids, and a
   `CLOSED` line can name a note, so a note the conversation fixed or set
   aside leaves the Notes tab without a button press.
+
+## Fewer tasks, more context
+
+Pete asked on 2026-10-03 for the inbox to ask less of him and to know more
+about what he is doing. It started when Claude's reply said "Run /inbox to
+see it" while the pane was already open, and the mod turned that line into a
+task.
+
+Three gaps caused it:
+
+- **The task rule is loose.** A "do" item is any action only the person can
+  take. "Look at the result" qualifies, though nothing waits on it.
+- **Neither model knows what the person sees.** The per-turn call reads only
+  the exchange. Claude reads the carried card, which does not say the pane is
+  open.
+- **Only a button closes a task.** When the person does the thing, they must
+  still press Done.
+
+### Changes
+
+1. **A task must block something.** The per-turn prompt makes a "do" item
+   only when the agent cannot continue or finish without it, and only the
+   person can do it. It skips invitations to look at or try finished work,
+   optional suggestions, and anything the person already has on screen.
+   Reason: each item costs the person a decision, even to dismiss it.
+2. **Tell both models what the person sees.** The mod knows whether the
+   `/inbox` pane is open and which tab shows. Reason: with it, Claude does
+   not ask the person to open the pane, and the per-turn call does not make
+   a task of it.
+   - The per-turn call reads it in a `<screen>` block.
+   - Claude reads it beside the person's prompt, with the open items and
+     notes, whenever any of them changed since Claude last read them. The
+     carried card cannot do this: `prompt.context` blocks reach only a
+     conversation's first message and are rebuilt after compaction.
+   - A system prompt section tells Claude to check that list before telling
+     the person an item is open. Without it, Claude told Pete to dismiss a
+     task the per-turn call had already closed.
+3. **Close a task when the person does it.** The mod watches the person's own
+   slash commands and `!` shell commands through `session.append`, and adds
+   them to what the person sent that turn, with a shell command's output.
+   - A `!` command that exactly matches a task's run or sign-in step closes
+     the task at once, with no model call. The row carries no exit code, so
+     this happens only when the command wrote nothing to stderr.
+   - Otherwise the per-turn call reads the command and its output, and
+     closes the task when the output shows it worked.
+   - Reason: the person already did the work, so pressing Done adds nothing.
+     The exact match means the mod never closes a task by guessing.
+
+### Verified
+
+- **Spike.** A `!` command reaches `session.append` as two rows with door
+  `command`: `<bash-input>cmd</bash-input>`, then
+  `<bash-stdout>…</bash-stdout><bash-stderr>…</bash-stderr>`. It never reaches
+  `prompt.submit`, so the mod could not see it before. A slash command is a
+  `local_command` row with `<command-name>/name</command-name>`. In the spike,
+  a `!` command also started a model turn.
+- **Replay on Sonnet.** The trigger turn, with the pane open:
+  - the old prompt made the "Run /inbox and check the footer" task in 2 of 2
+    runs
+  - the new prompt made no task in 3 of 3 runs
+  - a reply asking the person to run `npm login` still made the sign-in task
+    in 3 of 3 runs
+  - a reply waiting on the person's verdict on a color still made a question
+    in 3 of 3 runs
+- **Tests.** `readCommandRow` reads the spike's row formats, and
+  `tasksRunBy` matches only the exact command. `claude plugin test` cannot
+  raise `session.append`, so the hook itself has no end-to-end test.
+
+### Notes at concrete moments
+
+Notes stayed empty through a whole session that hit two note-worthy
+problems. Claude judged both part of the task, so "outside the current task"
+never applied. The guidance now names two moments that are easy to pass over
+while focused on a task: working around a problem instead of fixing it, and
+leaving part of a change untested.
+
+### Checked live
+
+Run in child sessions through tmux, with the repo's mod loaded by
+`--plugin-dir`, on a scratch project whose `npm test` points at a missing
+script.
+
+- **Note at a workaround.** Asked to fix a bug and run the tests, Claude
+  hit the broken `npm test`, ran `node --test` instead, and recorded a note
+  about the script without being asked. The old guidance may have caught
+  this one too, since the script is also an issue outside the task.
+- **Inbox beside the prompt.** After Pete dismissed a question in the pane,
+  Claude answered "where do things stand" with only the open question, and
+  knew the pane was open.
+- **Dismissed questions came back.** Claude saw a question leave the list
+  without knowing why, asked it again, and the per-turn call added it
+  again. Now Claude reads what was settled since its last look and how,
+  and the per-turn call reads `<decided>` and must not add one again. In a
+  second run, Claude said the question was dismissed and left it alone.
+- **A `!` command closes its task.** Running a task's exact command with
+  `!` removed it from the band before the per-turn update ran.
+- **`session.append` cost.** The hook first ran for every transcript row,
+  each a worker hop of 4 to 40 ms. A `{ door: 'command' }` matcher limits
+  it to command rows.
+
+### Prompts the mod sends skip its own hooks
+
+A plugin's own `$.prompt.submit` runs the prompt chain without that
+plugin's `prompt.submit` hook. Verified in a test and in a live transcript.
+Before the fix, every prompt a button sent (an answer, Explain, Address,
+Run) reached Claude without inbox context, and the per-turn call never saw
+it as Pete's message.
+
+- **Bookkeeping in `send()`.** `notePrompt` records a prompt in the
+  person's words: presence, the turn count, the person's text, the press,
+  and the context Claude reads beside it. The `prompt.submit` hook calls it
+  for typed prompts, and `send()` calls it for the mod's own. The hook
+  skips the mod's own prompts, so none is counted twice. This replaced the
+  press queue, which matched submitted text back to the button that sent it.
+- **Context in a hidden row.** A plugin's own prompt cannot carry
+  `context`, so `send()` appends it first with `$.session.append`, as a
+  user-role row the model reads and the transcript does not show. A refused
+  append does not stop the prompt.
+- **Settled items always go out.** Claude had never been sent an inbox when
+  its own reply asked the questions. Pressing then left the inbox empty, and
+  the rule against sending an empty inbox Claude had not seen also dropped
+  the dismissal. Anything settled since Claude's last look now goes out
+  regardless.
+- **Checked live.** Pete dismissed one question and answered the other by
+  button. The hidden row listed both outcomes, and Claude said it would not
+  ask the dismissed question again. `claude plugin test` cannot observe the
+  appended row; the hook test checks that the per-turn call reads the
+  pressed answer as Pete's message.
+
+## Product direction
+
+Set with Pete on 2026-10-03, after a session where the inbox kept drifting
+from reality: a task for a pane he already had open, Claude telling him to
+dismiss a task that had already closed, and an empty Notes tab.
+
+**The job.** Pete runs many sessions at once. The inbox answers "does this
+session need me, and for what?" at a glance, and makes answering cheap.
+
+**Trust comes first.** Once an item can be wrong, Pete has to check every
+item, and the inbox becomes one more thing to manage. Three parties hold a
+picture of the session: Pete, the per-turn model, and Claude. All three must
+read the same current ledger.
+
+**Principles.**
+- An item exists only when the session is blocked on Pete, or something
+  goes wrong without him.
+- The inbox closes what it can see done. Done and Dismiss are fallbacks.
+- Nothing worth knowing scrolls away.
+
+**Decisions.**
+- **Who creates items: inferred, agent corrects.** The per-turn model keeps
+  inferring items from the exchange. Claude can close or fix an item the
+  model got wrong. Not built yet: Claude needs a tool for it.
+- **What Notes hold: anything non-urgent Pete should know.** Claude's own
+  notes stay. The per-turn model also lifts caveats out of Claude's replies:
+  limits, workarounds, untested parts and risks. A caveat qualifies only if
+  it could change something Pete does later. Not built yet: the notes need a
+  source, so tool notes and inferred caveats can be told apart and merged.
+- **Scope: across sessions.** The inbox shows what every open session needs
+  from Pete, not only the one he is in. Not built yet. What exists: the
+  mod's store already keeps each session's ledger under `s:<session id>`.
+- **The moment that matters most: returning after time away.** When Pete
+  comes back, the inbox must tell him which sessions need him, what each
+  did while he was gone, and what each waits on. Glancing and answering
+  serve that moment.
+
+- **Where Pete looks first on return: the Herdr sidebar.**
+
+**What returning implies for the cross-session work.**
+- **Where the view lives: the Herdr sidebar.** It has to be the first thing
+  Pete sees on return, before he picks a session. Herdr builds each agent's
+  sidebar rows from tokens named in `~/.config/herdr/config.toml`
+  (`[ui.sidebar.agents] rows`). `herdr pane report-metadata <pane>
+  --source <id> --token NAME=VALUE` sets a custom token on a pane, and
+  `herdr api snapshot` showed it stored on that pane, next to the pane's
+  Claude session id. So each session's mod can publish its own one-line
+  status to its own pane (`$HERDR_PANE_ID`), and the sidebar shows every
+  session at once. No session has to read another's ledger. Not yet seen:
+  a custom token rendered in a sidebar row, which needs a config row Pete
+  adds.
+- **Live updates matter less.** A return reads the stored ledgers when Pete
+  comes back, so polling the store is enough. Whether one session's mod sees
+  another's writes as they happen is worth knowing, not a blocker.
+- **Answering from another session can wait.** Pete can switch to the
+  session that needs him.
+
+### Sidebar status line, first version
+
+- After each ledger change, at load, and at session end, the mod runs
+  `herdr pane report-metadata $HERDR_PANE_ID --source session-inbox --token
+  inbox=<line>`, only when the line changed. Outside Herdr it does nothing.
+- The line counts what waits on Pete, such as "2 questions · 1 task", with
+  notes after. With nothing waiting it shows the card's NOW line. It is cut
+  at 60 characters. Session end clears it, because the pane outlives the
+  session.
+- Pete's `~/.config/herdr/config.toml` shows it as a third, dim row of each
+  agent: `[{ token = "$inbox", dim = true }]`. Herdr requires a `$` on a
+  custom token in config, and does not allow one in the pane's token name.
+  `herdr config check` passed and the server reloaded it.
+- Only sessions that run the mod publish a line, so the sidebar shows every
+  session only once the mod loads everywhere (`CLAUDE_CODE_PLUGIN_DIRS`).
+- Seen rendered on 2026-10-03: the session's agent row showed a dim third
+  line, "3 tasks", under the workspace name.
+
+**What the first version shows.**
+- A count says how much waits, not what. On return, "3 tasks" does not
+  tell Pete whether to switch to that session.
+- Herdr sorts the agents panel by priority (`agent_panel_sort`). A session
+  that waits on Pete still sorts like any idle agent, so it can sit below
+  sessions that need nothing.
+- **Sorting by "blocked" does not work from the mod.** The mod reported the
+  agent `blocked` with `herdr pane report-agent --source session-inbox`.
+  Herdr kept the Claude integration's state: `working` during the turn and
+  `done` after it, both with the report in place. Herdr takes an agent's
+  state from the integration's source alone, so a waiting session cannot
+  sort to the top this way.
+  Pete chose on 2026-10-03 to drop sorting. The line names what each
+  session waits on, which is the signal he scans for.

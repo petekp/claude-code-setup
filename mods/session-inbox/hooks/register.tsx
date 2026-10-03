@@ -32,6 +32,12 @@ import {
   olderItems,
   parseReply,
   catchUpPrompt,
+  closedText,
+  inboxText,
+  readCommandRow,
+  screenText,
+  statusLine,
+  tasksRunBy,
 } from './ledger'
 
 const LEDGER = atom({ plugin: 'session-inbox', key: 'ledger' } as const, EMPTY)
@@ -55,11 +61,18 @@ const PR_POLL_MS = 2 * 60_000
 const MAX_PRS = 6
 
 const NOTE_TOOL = 'mcp__session-inbox__note'
-const NOTE_DESCRIPTION = `Record a note for the user about something you noticed that deserves their attention but is outside the current task: a bug, a risk, missing tests, tech debt, or an opportunity to improve something. The note waits in their session card, where they can ask you to address it or to discuss it.
+const NOTE_DESCRIPTION = `Record a note for the user about something you noticed that deserves their attention but is outside the current task: a bug, a risk, missing tests, tech debt, or an opportunity to improve something. Also record one when you work around a problem instead of fixing it, or when part of your change could not be tested or verified. The note waits in their session card, where they can ask you to address it or to discuss it.
 
 Keep working on the current task, and do not fix the noted thing unless asked. Record only what a careful senior engineer would flag to a teammate, not style nits or anything already discussed. You do not need to mention the note in your reply.`
-const NOTE_GUIDANCE = `# Notes for the user
-When you notice something outside the current task that deserves the user's attention, such as a bug, a risk, missing tests, tech debt, or a chance to improve something, record it with the mcp__session-inbox__note tool when you notice it. The user reviews notes in /inbox and can ask you to address or discuss each one. Keep to the task; you may still mention the note briefly in your reply.`
+const NOTE_GUIDANCE = `# Session inbox
+The session-inbox plugin keeps what waits on the user in a band above their prompt and in the /inbox pane.
+
+When you notice something outside the current task that deserves the user's attention, such as a bug, a risk, missing tests, tech debt, or a chance to improve something, record it with the mcp__session-inbox__note tool when you notice it. Record one too at these moments, which are easy to pass over while focused on the task:
+- You work around a problem instead of fixing it, such as copying files by hand because a tool does not reach them.
+- Part of your change could not be tested or verified.
+The user reviews notes in /inbox and can ask you to address or discuss each one. Keep to the task; you may still mention the note briefly in your reply.
+
+Before telling the user an inbox item is open or needs them, check the latest session-inbox context beside their prompt. It lists every open item; an item it does not list is closed.`
 const NOTE_SCHEMA = {
   type: 'object',
   properties: {
@@ -107,8 +120,6 @@ let person: string | null = null
 let trigger: string | null = null
 let isTurnRunning = false
 let isOn = false
-// Prompts the mod sent, oldest first, so prompt.submit can tell which item button sent one.
-let pressQueue: { text: string; press: Press | null }[] = []
 // The press behind this turn's prompt.
 let press: Press | null = null
 // Set in session.start, which a hot reload runs again.
@@ -116,6 +127,21 @@ let sessionId = ''
 let root = ''
 let isSaved = false
 let queue: Promise<void> = Promise.resolve()
+// The inbox text Claude last read beside a prompt, so it is sent again only when it changed.
+let toldInbox: string | null = null
+// The line last published to this pane's Herdr sidebar row.
+let published: string | null = null
+// The settled items Claude has been told about, by id.
+let toldDecided = new Set<string>()
+// The `!` command whose output row comes next.
+let shellCommand: string | null = null
+// Slash commands that say nothing about the work.
+const QUIET_COMMANDS = new Set(['inbox', 'clear'])
+
+/** Adds a command the person ran themselves to what they sent this turn. */
+function notePerson(line: string) {
+  person = person === null ? line : `${person}\n\n${line}`
+}
 
 function noteActivity(line: string) {
   if (activity.length < 40 && !activity.includes(line)) activity.push(line)
@@ -138,6 +164,19 @@ async function save($: EngineInterface, ledger: Ledger) {
   }
 }
 
+/**
+ * Publishes the session's status line to its Herdr pane, where a sidebar row
+ * showing the `inbox` token reads it. Outside Herdr it does nothing.
+ */
+async function publishStatus($: EngineInterface, ledger: Ledger) {
+  const pane = await $.env.get('HERDR_PANE_ID')
+  const line = statusLine(ledger)
+  if (!pane || line === published) return
+  published = line
+  const token = line ? ['--token', `inbox=${line}`] : ['--clear-token', 'inbox']
+  await $.process.run(['herdr', 'pane', 'report-metadata', pane, '--source', 'session-inbox', ...token], { timeoutMs: 5000 }).catch(() => undefined)
+}
+
 /** The ledger, with fields an earlier version of the mod did not write filled in. */
 async function readLedger($: EngineInterface): Promise<Ledger> {
   return normalizeLedger(await read($, LEDGER))
@@ -147,6 +186,7 @@ async function readLedger($: EngineInterface): Promise<Ledger> {
 async function commitLedger($: EngineInterface, change: (l: Ledger) => Ledger): Promise<Ledger> {
   const after = await update($, LEDGER, l => change(normalizeLedger(l)))
   await save($, after)
+  void publishStatus($, after)
 
   return after
 }
@@ -195,7 +235,7 @@ async function runUpdate($: EngineInterface, ex: Exchange): Promise<string | nul
  * per-turn update missed: it closes what was handled and adds what still waits.
  */
 async function catchUp($: EngineInterface): Promise<string | null> {
-  const r = await $.model.fork({ prompt: catchUpPrompt(await readLedger($)) })
+  const r = await $.model.fork({ prompt: catchUpPrompt(await readLedger($), await screen($)) })
 
   return applyLedgerReply($, r, null, (l, u, now) => applyUpdate(l, u, now, l.turn))
 }
@@ -235,23 +275,59 @@ async function sendAnswer($: EngineInterface, item: Item, answer: string) {
   await send($, `Re "${item.ask}": ${answer}`, { id: item.id, action: 'answer' })
 }
 
-/** Sends a prompt as the person's own message, remembering which item button sent it. */
+/**
+ * Sends a prompt as the person's own message. A plugin's own prompt skips that
+ * plugin's prompt.submit hook, so the bookkeeping happens here, and what
+ * Claude reads beside the prompt goes just before it, in a row only the model sees.
+ */
 async function send($: EngineInterface, text: string, sentBy: Press | null = null) {
-  pressQueue = [...pressQueue, { text, press: sentBy }].slice(-20)
+  const context = await notePrompt($, text, sentBy)
+  // Without the context row Claude still gets the prompt, so a refused append does not stop it.
+  if (context.length > 0) await $.session.append({ message: { type: 'user', content: [{ type: 'text', text: context.join('\n\n') }] } }).catch(() => undefined)
   await $.prompt.submit({ text, asUser: true })
 }
 
 /**
- * The press behind a prompt this mod sent, found by its text, or the oldest if
- * another plugin rewrote the text. Entries before it were for prompts that
- * never arrived.
+ * Records a prompt in the person's words and returns what Claude reads beside
+ * it: the previous session's card when they continue from it, the questions a
+ * numbered answer refers to, and the inbox when it changed.
  */
-function takePress(text: string): Press | null {
-  const at = Math.max(0, pressQueue.findIndex(p => p.text === text))
-  const entry = pressQueue[at]
-  pressQueue = pressQueue.slice(at + 1)
+async function notePrompt($: EngineInterface, text: string, sentBy: Press | null): Promise<string[]> {
+  const now = await $.clock.now()
+  await update($, PRESENCE, p => ({ ...p, lastActiveAt: now, isAway: false }))
+  const ledger = await update($, LEDGER, l => ({ ...normalizeLedger(l), turn: l.turn + 1 }))
+  const notes: string[] = []
 
-  return entry?.press ?? null
+  const prev = await read($, PREVIOUS)
+  if (prev) {
+    if (prev.isBroughtIn) {
+      const carried = carryText(
+        prev.ledger,
+        `session-inbox: the user chose to continue from the previous session in this folder (${ago(now - prev.savedAt)}). Where it stood:`,
+      )
+      if (carried) notes.push(carried)
+    }
+    await update($, PREVIOUS, () => null)
+  }
+  // An Explain quotes its item without answering it.
+  const answer = sentBy?.action === 'explain' ? null : answerNote(ledger, text, ledger.turn)
+  if (answer) notes.push(answer)
+  // The inbox when it changed since Claude last read it, or when something was
+  // settled since. An empty inbox with nothing settled says nothing new.
+  const inbox = inboxText(ledger, await isPaneShown($))
+  const closed = closedText(ledger.decided.filter(d => !toldDecided.has(d.id)))
+  const isEmpty = ledger.items.length === 0 && ledger.notes.length === 0
+  if (closed || (inbox !== toldInbox && !(isEmpty && toldInbox === null))) {
+    notes.push(closed ? `${inbox}\n${closed}` : inbox)
+    toldInbox = inbox
+    toldDecided = new Set(ledger.decided.map(d => d.id))
+  }
+
+  if (sentBy) press = sentBy
+  person = person === null ? text : `${person}\n\n${text}`
+  trigger = null
+
+  return notes
 }
 
 /** Asks Claude what an item is about. The item stays open, since nothing was decided. */
@@ -419,11 +495,28 @@ function selectedIndex(ids: string[], cursor: Cursor): number {
   return at >= 0 ? at : Math.min(cursor.index, ids.length - 1)
 }
 
+async function isPaneShown($: EngineInterface) {
+  return (await $.ui.panes().catch(() => [])).some(p => p.id === PANE && p.isShown)
+}
+
 /** The PRs tab is on screen, so the current branch's PR is worth looking up. */
 async function isPrsTabShown($: EngineInterface) {
-  const [panes, tab] = await Promise.all([$.ui.panes().catch(() => []), read($, TAB)])
+  return (await read($, TAB)) === 'prs' && (await isPaneShown($))
+}
 
-  return tab === 'prs' && panes.some(p => p.id === PANE && p.isShown)
+/** What the person has on screen besides the conversation, for the ledger model. */
+async function screen($: EngineInterface) {
+  const tab = await read($, TAB)
+
+  return screenText(await isPaneShown($), TABS.find(t => t.id === tab)?.label ?? tab)
+}
+
+/** Closes the open tasks whose exact command the person ran in shell mode. */
+async function closeTasksRunBy($: EngineInterface, command: string) {
+  const ran = tasksRunBy(await readLedger($), command)
+  if (ran.length === 0) return
+  const now = await $.clock.now()
+  await commitLedger($, l => ran.reduce((after, item) => closeItem(after, item.id, 'you ran it', now), l))
 }
 
 async function gh($: EngineInterface, args: string[]) {
@@ -713,6 +806,7 @@ export const register: Register = on => {
     const loaded = await readLedger($)
     const isEmpty = !loaded.card && loaded.items.length === 0
     if (presence.error !== null || (isEmpty && (await $.session.turns().catch(() => 0)) > 0)) queueUpdate($, null)
+    await publishStatus($, loaded)
     // A resumed session's linked PRs; the branch's PR waits for the PRs tab.
     if (loaded.prs.length > 0) void fetchPrs($, false)
 
@@ -720,6 +814,8 @@ export const register: Register = on => {
   })
 
   on('session.end', async ($, e, next) => {
+    // The pane outlives the session, so its sidebar line goes with it.
+    if (isOn) await publishStatus($, EMPTY)
     if (isOn && e.reason === 'clear') {
       await update($, LEDGER, () => EMPTY)
       await update($, PREVIOUS, () => null)
@@ -727,7 +823,9 @@ export const register: Register = on => {
       activity = []
       person = null
       press = null
-      pressQueue = []
+      shellCommand = null
+      toldInbox = null
+      toldDecided = new Set()
     }
 
     return next(e)
@@ -736,7 +834,9 @@ export const register: Register = on => {
   on('prompt.submit', async ($, e, next) => {
     if (!isOn) return next(e)
     const origin = e.origin
-    // The person's own words: typed, or sent as theirs by a plugin, as this mod's buttons do.
+    // send() already recorded this mod's own prompts.
+    if (origin.kind === 'plugin' && origin.name === 'session-inbox') return next(e)
+    // The person's own words: typed, or sent as theirs by another plugin.
     const isPersonsWords = origin.kind === 'composer' || origin.kind === 'bridge' || (origin.kind === 'plugin' && origin.asUser === true)
     if (!isPersonsWords) {
       if (!e.turnId) trigger = origin.kind
@@ -744,28 +844,7 @@ export const register: Register = on => {
       return next(e)
     }
 
-    const now = await $.clock.now()
-    await update($, PRESENCE, p => ({ ...p, lastActiveAt: now, isAway: false }))
-    const ledger = await update($, LEDGER, l => ({ ...normalizeLedger(l), turn: l.turn + 1 }))
-    const notes: string[] = []
-
-    const prev = await read($, PREVIOUS)
-    if (prev) {
-      if (prev.isBroughtIn) {
-        const carried = carryText(
-          prev.ledger,
-          `session-inbox: the user chose to continue from the previous session in this folder (${ago(now - prev.savedAt)}). Where it stood:`,
-        )
-        if (carried) notes.push(carried)
-      }
-      await update($, PREVIOUS, () => null)
-    }
-    const answer = answerNote(ledger, e.text, ledger.turn)
-    if (answer) notes.push(answer)
-
-    if (origin.kind === 'plugin' && origin.name === 'session-inbox') press = takePress(e.text)
-    person = person === null ? e.text : `${person}\n\n${e.text}`
-    trigger = null
+    const notes = await notePrompt($, e.text, null)
 
     return notes.length === 0 ? next(e) : next({ ...e, context: [...(e.context ?? []), ...notes] })
   })
@@ -780,7 +859,7 @@ export const register: Register = on => {
     const r = await next(e)
     if (!isOn) return r
 
-    return { ...r, sections: [...r.sections, { id: 'session-inbox:notes', text: NOTE_GUIDANCE, scope: 'session' as const }] }
+    return { ...r, sections: [...r.sections, { id: 'session-inbox:guidance', text: NOTE_GUIDANCE, scope: 'session' as const }] }
   })
 
   // The note tool is listed up front, needs no permission prompt, and is served here.
@@ -821,7 +900,7 @@ export const register: Register = on => {
     isTurnRunning = false
     if (!isOn || e.reason !== 'answer' || e.answer.trim() === '') return r
 
-    const ex: Exchange = { person, trigger, activity, reply: e.answer, turn: (await read($, LEDGER)).turn, press }
+    const ex: Exchange = { person, trigger, activity, reply: e.answer, turn: (await read($, LEDGER)).turn, press, screen: await screen($) }
     press = null
     person = null
     trigger = null
@@ -843,6 +922,29 @@ export const register: Register = on => {
     )
 
     return text ? { ...r, blocks: [...r.blocks, { name: 'session_inbox', text }] } : r
+  })
+
+  // The person's own `!` and slash commands reach no prompt.submit hook, only these rows.
+  // The matcher keeps every other row from waking the hooks module.
+  on('session.append', { door: 'command' }, async ($, e, next) => {
+    const r = await next(e)
+    if (!isOn || e.agentId) return r
+    const row = readCommandRow(e.message.content.map(b => (b.type === 'text' ? b.text : '')).join(''))
+    if (row?.kind === 'shell') {
+      shellCommand = row.command
+      notePerson(`$ ${row.command}`)
+    } else if (row?.kind === 'output') {
+      const output = [row.stdout, row.stderr].filter(Boolean).join('\n')
+      if (output) notePerson(`output: ${clipLabel(output, 600)}`)
+      // The row has no exit code, so only a run with nothing on stderr closes a
+      // task here. The ledger model judges the rest from the output.
+      if (shellCommand && !row.stderr) await closeTasksRunBy($, shellCommand)
+      shellCommand = null
+    } else if (row?.kind === 'slash' && !QUIET_COMMANDS.has(row.name)) {
+      notePerson(`/${row.name} ${row.args}`.trim())
+    }
+
+    return r
   })
 
   on('command.run', { command: 'inbox' }, async $ => {
@@ -1438,10 +1540,12 @@ export const register: Register = on => {
             ? `Updated ${ago(now - card.updatedAt)}`
             : 'Not updated yet'
 
+    // At least the body's height, so the growing content pushes the footer to
+    // the pane's bottom. Longer content scrolls, and the footer follows it.
     return (
-      <Box flexDirection="column" gap={1}>
+      <Box flexDirection="column" gap={1} minHeight={e.props.scroll.bodyRows}>
         {tabs}
-        <Box flexDirection="column" paddingX={1}>
+        <Box flexDirection="column" paddingX={1} flexGrow={1}>
           {tab === 'notes' ? notesView() : tab === 'prs' ? prsView() : waitingView()}
         </Box>
 
