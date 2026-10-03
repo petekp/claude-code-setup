@@ -1,0 +1,105 @@
+# session-inbox
+
+A Claude Code mod that collects what is waiting on you in a session: the
+agent's questions, issues Claude noted, and your PRs' checks and reviews. It
+shows them above the prompt and in the `/inbox` pane, along with where the
+session stands.
+
+## What you see
+
+- **Waiting on you.** After each reply, the band lists the questions the agent
+  put to you. They carry the agent's own numbers and its recommendations. Reply
+  "1. yes 2. no" as usual. The mod attaches the full questions to your message,
+  so the agent knows what each number meant. When the agent's options are
+  short, they appear as buttons beside the question. Pressing one sends it.
+- **One line otherwise.** With nothing waiting, the band shows the session's
+  goal and where the work stands. Any dev server or simulator the agent left
+  running is listed under it.
+- **Where this session stands.** After 15 minutes with no activity, or when you
+  resume a session, the band expands into a short card. It shows the goal,
+  what's done, where things stand, what's running, the last decisions, and
+  what's waiting on you. It collapses when you send a message.
+- **Last session in this folder.** A new session in a folder you worked in
+  during the past week shows the previous session's card. "Continue from it"
+  adds that card to your first message. "Hide" dismisses it.
+- **/inbox** opens everything in a pane. Each question's options are buttons.
+  Pressing one sends it to Claude as your message, quoting the question. If
+  Claude is working, the answer waits until the turn ends. The recommended
+  option is highlighted. A question with no options has a Reply button, which
+  starts the answer in your prompt. `[ Explain ]` asks Claude what an item is
+  about and what each choice means, without acting on it. The item stays
+  open. Dismiss drops a question, and Done closes a task that is yours
+  to do. The pane also lists what's done and recent decisions. Press a
+  section's title to collapse or expand it, and the mod remembers that in
+  later sessions. `[ Rebuild ]` rebuilds the card from the whole
+  conversation, which helps after installing the mod mid-session.
+- **Helper buttons.** When the agent's reply spells out how to do an item, the
+  item gets buttons for it:
+  - **Open a file.** `[ Open settings.json ]` opens it in the app macOS uses
+    for that type, or your default text editor. Folders and apps are shown in
+    Finder instead of launched.
+  - **Copy a snippet and open its file.** `[ Copy env line and open .env.local ]`
+    does both in one press.
+  - **Run a command.** `[ Run removal command ]` sends the command to Claude
+    as your message, and Claude runs it with the usual permission checks.
+  - **Copy a sign-in command.** A command that signs in or asks for a
+    password, like `npm login`, needs your own terminal. `[ Copy npm login ]`
+    copies it. Run it in a terminal, or type `!` in the prompt and paste.
+  - **Open a page.** `[ Open login docs ]` opens an https link.
+
+  Every path, command, snippet and link must appear in the agent's reply or
+  in what it did that turn. The mod drops anything else, so the model cannot
+  invent one. The mod itself never runs a command.
+- **Notes.** While it works, Claude records issues and opportunities it notices
+  outside the current task: a bug, a risk, missing tests, tech debt, a chance
+  to improve something. It uses a `note` tool the mod gives it, and keeps
+  working on the task. The band shows "2 notes in /inbox". The pane's
+  `[ Notes ]` tab lists them, newest first. Each note has three buttons:
+  - `[ Address it ]` asks Claude to fix it.
+  - `[ Discuss ]` asks Claude to talk it through before changing anything.
+  - `[ Dismiss ]` drops it.
+
+- **PRs.** The pane's `[ PRs ]` tab shows the pull requests this session
+  opened or linked, and the current branch's PR. It checks them with `gh`
+  every 2 minutes while you are at the session, and when you open the tab.
+  It looks up which PR the current branch has only while the tab is open.
+  Each PR shows:
+  - whether it can merge, or what blocks it: draft, conflicts, failing
+    checks, requested changes, open threads, missing approval, running checks
+  - its checks, with `[ Fix ]` on each failing one, which asks Claude to find
+    the cause in the logs and fix it
+  - each unresolved review thread whose last comment is someone else's, so
+    it waits on you. It shows the first comment and, under it, the latest
+    reply. Each has `[ Address ]`, `[ Draft reply ]` and `[ Discuss ]`, plus
+    `[ Address all ]` when there are several. Claude never posts a reply or
+    resolves a thread from these buttons.
+  - a count of open threads where you wrote the last comment. They wait on
+    someone else, so they are hidden and don't block the merge.
+
+  The band shows the first PR that needs you, like "PR #12 CI failing".
+  The tab needs the `gh` CLI, signed in.
+
+The card, the open items and the notes survive compaction. The mod adds them to the
+context the model rereads after compacting.
+
+## How it works
+
+After each reply, one Sonnet call reads the turn: your message, a list of what
+the agent did, and its reply. It also reads the previous card. It returns an
+updated card and the questions opened and closed.
+
+Each update costs about 3k input and 500 output tokens. It runs after the
+reply is shown and takes 3 to 5 seconds. It never rereads the whole
+conversation unless you press Rebuild.
+
+The mod keeps each session's card in its store, so `claude --resume` brings
+it back. It does nothing in headless `claude -p` runs.
+
+## Limits
+
+- If you answer within a few seconds of a reply, the band may not have the
+  questions yet. The agent still reads your answer, without the attached
+  question text.
+- Items you never answer stay open. The band shows the newest ones and counts
+  the rest. Dismiss them in /inbox.
+- A model writes the card, so it can be wrong. The transcript is the record.
