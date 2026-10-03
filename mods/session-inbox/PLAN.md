@@ -195,3 +195,52 @@ summary. Its README describes what Pete sees.
 - Loading it in every session needs `CLAUDE_CODE_PLUGIN_DIRS` in
   `~/.claude/settings.json`. That is Pete's call.
 - The model is fixed to Sonnet. A `userConfig` option could make it switchable.
+
+## Keyboard-first pane
+
+Built on 2026-10-02 after Pete found the pane hard to parse. Every control had
+the same bracket chrome, each item carried its own row of buttons, and every
+action needed the mouse.
+
+- **Selection.** Each tab is a list with one selected row. The `selection`
+  state keeps each tab's selected id and position. When the selected row goes
+  away, such as an answered question, the row now at that position is
+  selected, so answering moves down the list.
+- **Keys.** Buttons carry `hotkey`, which presses them while the pane has
+  focus. `j` and `k` move, `w`, `n` and `p` switch tabs. The selected row's
+  answers and helps take digits, as a survey numbers them. Letters are
+  per tab: `e` explain, `d` done or discuss, `x` dismiss, `a` address, `r`
+  draft reply, `f` fix, `o` open. Only the selected row draws its actions, so
+  no two buttons share a key.
+- **Two button styles.** `plain` buttons draw `key: Label` with the key in the
+  accent color. Click-only buttons keep the bracket chrome. A plain button
+  without a hotkey draws as bare text, which reads as static, so the pane
+  uses them only for row numbers and section toggles.
+- **The selected row** has a one-column bar in the tab's color, which spans
+  wrapped lines because it is a stretched Box with a background.
+- **Tabs** are a filled chip in the tab's color for the current tab
+  (`inverseText` on the color) and `n: Notes` buttons for the others.
+- **Layers.** The tab bar and the footer sit on raised panels
+  (`userMessageBackground`), and the list sits on the pane's own background
+  between them. In the `dark` theme, the selected row is tinted with its
+  tab's color, at about a quarter over the pane's rgb(38, 38, 38). Hex colors
+  do not follow the theme, so the other themes use the `selectionBg` theme
+  key instead. The pane reads the theme with `$.config.list()`. Done and
+  Decided are dim, so they sit behind the open items.
+- **No header.** The pane used to open with the card's goal and status. Pete
+  found it of little use: the goal drifted to the latest side task, and the
+  status repeated the Waiting tab or went stale between replies. The band
+  still shows both.
+- **Review comments** render with the `Markdown` element, so code spans and
+  emphasis survive.
+- **Focus:** `Pane.isFocused` decides the footer: the move keys while
+  focused, "ctrl+x tab for keys" otherwise.
+- **Verified in a test session:** hotkeys fire while the pane has focus, and
+  focus stays in the pane after a key sends a prompt. ctrl+x tab toggles
+  focus. Theme keys and hex work as backgrounds. `Box` accepts only
+  `borderStyle`, not per-side borders.
+- **The band keeps bracketed, click-only buttons.** A bare digit typed into
+  an empty prompt presses a band hotkey, which would capture "1. yes" as the
+  person starts typing it.
+- **Not used:** hover reveal. Hover cannot be checked in the test harness,
+  and the selection already limits each row's buttons.

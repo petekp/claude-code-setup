@@ -22,17 +22,30 @@ session stands.
 - **Last session in this folder.** A new session in a folder you worked in
   during the past week shows the previous session's card. "Continue from it"
   adds that card to your first message. "Hide" dismisses it.
-- **/inbox** opens everything in a pane. Each question's options are buttons.
-  Pressing one sends it to Claude as your message, quoting the question. If
-  Claude is working, the answer waits until the turn ends. The recommended
-  option is highlighted. A question with no options has a Reply button, which
-  starts the answer in your prompt. `[ Explain ]` asks Claude what an item is
-  about and what each choice means, without acting on it. The item stays
-  open. Dismiss drops a question, and Done closes a task that is yours
-  to do. The pane also lists what's done and recent decisions. Press a
-  section's title to collapse or expand it, and the mod remembers that in
-  later sessions. `[ Rebuild ]` rebuilds the card from the whole
-  conversation, which helps after installing the mod mid-session.
+- **/inbox** opens everything in a pane, with three tabs: Waiting, Notes and
+  PRs. Each tab is a list with one selected row. The selected row is shaded,
+  shows its full text, and lists its actions. The other rows take one line
+  each.
+  - On a question, the digits send an answer to Claude as your message,
+    quoting the question: `1: Node  2: Python`. If Claude is working, the
+    answer waits until the turn ends. The recommended answer is named above
+    the keys. A question with no options gets `Reply`, which starts the
+    answer in your prompt.
+  - `e: Explain` asks Claude what an item is about and what each choice
+    means, without acting on it. The item stays open.
+  - `x: Dismiss` drops a question. `d: Done` closes a task that is yours to
+    do.
+  - Under the list, the Waiting tab shows what's running, what's done, and
+    recent decisions. Press Done's or Decided's title to collapse it. The mod
+    remembers that in later sessions.
+  - `[ Rebuild ]` rebuilds the card from the whole conversation, which helps
+    after installing the mod mid-session.
+- **Keys.** While the pane has focus, `j` and `k` move the selection, `w`,
+  `n` and `p` switch tabs, and each action's key presses it. `/inbox` gives
+  the pane focus, and ctrl+x tab moves focus between the pane and the
+  prompt. A label written `key: Action` has a key. A label in brackets, like
+  `[ Rebuild ]`, is click only. You can also click any action, or click a
+  row's number to select it.
 - **Helper buttons.** When the agent's reply spells out how to do an item, the
   item gets buttons for it:
   - **Open a file.** `[ Open settings.json ]` opens it in the app macOS uses
@@ -53,26 +66,27 @@ session stands.
 - **Notes.** While it works, Claude records issues and opportunities it notices
   outside the current task: a bug, a risk, missing tests, tech debt, a chance
   to improve something. It uses a `note` tool the mod gives it, and keeps
-  working on the task. The band shows "2 notes in /inbox". The pane's
-  `[ Notes ]` tab lists them, newest first. Each note has three buttons:
-  - `[ Address it ]` asks Claude to fix it.
-  - `[ Discuss ]` asks Claude to talk it through before changing anything.
-  - `[ Dismiss ]` drops it.
+  working on the task. The band shows "2 notes in /inbox". The pane's Notes
+  tab lists them, newest first. The selected note has three actions:
+  - `a: Address it` asks Claude to fix it.
+  - `d: Discuss` asks Claude to talk it through before changing anything.
+  - `x: Dismiss` drops it.
 
-- **PRs.** The pane's `[ PRs ]` tab shows the pull requests this session
+- **PRs.** The pane's PRs tab shows the pull requests this session
   opened or linked, and the current branch's PR. It checks them with `gh`
   every 2 minutes while you are at the session, and when you open the tab.
   It looks up which PR the current branch has only while the tab is open.
   Each PR shows:
   - whether it can merge, or what blocks it: draft, conflicts, failing
     checks, requested changes, open threads, missing approval, running checks
-  - its checks, with `[ Fix ]` on each failing one, which asks Claude to find
-    the cause in the logs and fix it
+  - each failing check as a row. `f: Fix` asks Claude to find the cause in
+    the logs and fix it, and `o: Open log` opens the check's page.
   - each unresolved review thread whose last comment is someone else's, so
-    it waits on you. It shows the first comment and, under it, the latest
-    reply. Each has `[ Address ]`, `[ Draft reply ]` and `[ Discuss ]`, plus
-    `[ Address all ]` when there are several. Claude never posts a reply or
-    resolves a thread from these buttons.
+    it waits on you, as a row. The selected thread shows the first comment
+    and, under it, the latest reply. Its actions are `a: Address`,
+    `r: Draft reply`, `d: Discuss` and `o: Open`. A PR with several such
+    threads also has `[ Address all ]`. Claude never posts a reply or
+    resolves a thread from these actions.
   - a count of open threads where you wrote the last comment. They wait on
     someone else, so they are hidden and don't block the merge.
 

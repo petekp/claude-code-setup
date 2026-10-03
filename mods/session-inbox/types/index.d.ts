@@ -122,11 +122,14 @@ export type Tab = 'waiting' | 'notes' | 'prs'
 /** A pane section the person can collapse. */
 export type Section = 'done' | 'decided'
 
+/** A tab's selected row: its id, and its position for when that row goes away. */
+export type Cursor = { id: string | null; index: number }
+
 /** The PR tab's data: each PR's latest view, the current branch's PR, and whether a fetch runs. */
 export type PrViews = { views: Record<string, PrView>; branchRef: string | null; isFetching: boolean }
 
 declare module 'claude-code' {
   interface PluginState {
-    'session-inbox': { ledger: Ledger; presence: Presence; previous: Previous | null; tab: Tab; prViews: PrViews; collapsed: Section[] }
+    'session-inbox': { ledger: Ledger; presence: Presence; previous: Previous | null; tab: Tab; prViews: PrViews; collapsed: Section[]; selection: Record<Tab, Cursor> }
   }
 }

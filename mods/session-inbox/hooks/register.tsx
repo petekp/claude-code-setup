@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, UiPressArgument } from 'claude-code'
 
-import type { Decided, Help, Item, Ledger, Note, PrThread, PrView, PrViews, Presence, Previous, Section, Tab } from '../types'
+import type { Cursor, Decided, Help, Item, Ledger, Note, PrCheck, PrThread, PrView, PrViews, Presence, Previous, Section, Tab } from '../types'
 import type { Exchange, Press, StoredLedger, Update } from './ledger'
 import { THREADS_QUERY, VIEW_FIELDS, checkCounts, parseRef, prRefs, prompts, readThreads, readView, readiness, waitingThreads } from './prs'
 import {
@@ -34,6 +34,8 @@ const PREVIOUS = atom({ plugin: 'session-inbox', key: 'previous' } as const, nul
 const TAB = atom({ plugin: 'session-inbox', key: 'tab' } as const, 'waiting' as Tab)
 // Collapsed pane sections, a preference kept in the store across sessions.
 const COLLAPSED = atom({ plugin: 'session-inbox', key: 'collapsed' } as const, [] as Section[])
+const NO_CURSOR: Cursor = { id: null, index: 0 }
+const SELECTION = atom({ plugin: 'session-inbox', key: 'selection' } as const, { waiting: NO_CURSOR, notes: NO_CURSOR, prs: NO_CURSOR } as Record<Tab, Cursor>)
 const PR_VIEWS = atom({ plugin: 'session-inbox', key: 'prViews' } as const, { views: {}, branchRef: null, isFetching: false } as PrViews)
 const PR_POLL_MS = 2 * 60_000
 const MAX_PRS = 6
@@ -60,6 +62,12 @@ const PANE = 'session-inbox'
 const ACCENT = 'claude'
 const WAITING = 'warning'
 const RECOMMENDED = 'suggestion'
+// The header and footer panels: a theme key a shade off the pane's background, in every theme.
+const PANEL_BG = 'userMessageBackground'
+// The selected row in the dark theme: its tab's color at about a quarter over
+// the pane's rgb(38, 38, 38). Hex does not follow the theme, so other themes use SELECTION_BG.
+const DARK_TINTS: Record<Tab, string> = { waiting: '#56481f', notes: '#443b56', prs: '#304543' }
+const SELECTION_BG = 'selectionBg'
 const DONE = 'success'
 // Each pane tab has its own color, used by its marker and by what it shows.
 const NOTES = 'autoAccept'
@@ -365,6 +373,21 @@ async function toggleSection($: EngineInterface, section: Section) {
   await $.store.set('collapsed', collapsed)
 }
 
+async function select($: EngineInterface, tab: Tab, id: string, index: number) {
+  await update($, SELECTION, s => ({ ...s, [tab]: { id, index } }))
+}
+
+/**
+ * The selected row's position: the cursor's row while it exists, else the row
+ * now at its old position, so closing an item selects the one after it.
+ */
+function selectedIndex(ids: string[], cursor: Cursor): number {
+  if (ids.length === 0) return -1
+  const at = cursor.id === null ? -1 : ids.indexOf(cursor.id)
+
+  return at >= 0 ? at : Math.min(cursor.index, ids.length - 1)
+}
+
 /** The PRs tab is on screen, so the current branch's PR is worth looking up. */
 async function isPrsTabShown($: EngineInterface) {
   return isPaneOpen && (await read($, TAB)) === 'prs'
@@ -518,14 +541,6 @@ function recommendedIndex(all: string[], rec: string | null): number {
   return best
 }
 
-/** The recommendation as text, when no answer button already says all of it. */
-function recNote(item: Item): string | null {
-  if (!item.rec) return null
-  const r = item.rec.trim().toLowerCase()
-
-  return answers(item).some(a => a.trim().toLowerCase() === r) ? null : item.rec
-}
-
 /** The band shows answer buttons only when they fit beside the question. */
 function fitsInline(item: Item): boolean {
   const all = answers(item)
@@ -556,16 +571,25 @@ function doneAction($: EngineInterface, item: Item): Action {
   return { key: `done-${item.id}`, label: 'Done', onPress: () => void close($, item.id, 'done') }
 }
 
-/** The pane's buttons for an item: answers, helps, Reply and Explain, then Done or Dismiss at the row's end. */
-function paneActions($: EngineInterface, item: Item, handle: string): { main: Action[]; end: Action } {
-  const explainAction = { key: `explain-${item.id}`, label: 'Explain', onPress: () => void explain($, item) }
-  if (item.kind === 'do') return { main: [...helpActions($, item), explainAction], end: doneAction($, item) }
-  const reply = item.options.length === 0 ? [{ key: `reply-${item.id}`, label: 'Reply', onPress: () => void startReply($, item, handle) }] : []
+/** A pane action with the key that presses it while the pane has focus. */
+type KeyAction = Action & { hotkey: string }
 
-  return {
-    main: [...answerActions($, item), ...helpActions($, item), ...reply, explainAction],
-    end: { key: `dismiss-${item.id}`, label: 'Dismiss', dimColor: true, onPress: () => void close($, item.id, 'dismissed') },
-  }
+/**
+ * The selected item's actions: answers, helps and Reply on digits, as a
+ * survey numbers them, then Explain, then Done for a task or Dismiss for a question.
+ */
+function itemKeys($: EngineInterface, item: Item, handle: string): KeyAction[] {
+  const reply = item.kind !== 'do' && item.options.length === 0 ? [{ key: `reply-${item.id}`, label: 'Reply', onPress: () => void startReply($, item, handle) }] : []
+  const numbered = [...(item.kind === 'do' ? [] : answerActions($, item)), ...helpActions($, item), ...reply]
+    .slice(0, 9)
+    .map((a, n) => ({ ...a, hotkey: String(n + 1) }))
+  const explainKey = { key: `explain-${item.id}`, label: 'Explain', hotkey: 'e', onPress: () => void explain($, item) }
+  const end =
+    item.kind === 'do'
+      ? { ...doneAction($, item), hotkey: 'd' }
+      : { key: `dismiss-${item.id}`, label: 'Dismiss', hotkey: 'x', onPress: () => void close($, item.id, 'dismissed') }
+
+  return [...numbered, explainKey, end]
 }
 
 /** The band's buttons beside a question: its answers, or a task's first help and Done. */
@@ -619,6 +643,8 @@ export const register: Register = on => {
       description: 'Show where this session stands and what is waiting on you',
     })
     await $.tool.register({ name: 'note', description: NOTE_DESCRIPTION, inputSchema: NOTE_SCHEMA })
+    // A reload stops any update the previous load had running, and state outlives it.
+    await update($, PRESENCE, p => ({ ...p, isUpdating: false }))
     const collapsed = (await $.store.get('collapsed')) as Section[] | undefined
     if (collapsed) await update($, COLLAPSED, () => collapsed)
     const now = await $.clock.now()
@@ -984,252 +1010,167 @@ export const register: Register = on => {
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     isPaneOpen = true
-    const { Box, Button, Link, Text } = $.ui.resolve(e)
-    const [ledger, presence, tab, prState, collapsed, now] = await Promise.all([
+    const { Box, Button, Link, Markdown, Text } = $.ui.resolve(e)
+    const [ledger, presence, tab, prState, collapsed, selection, now, config] = await Promise.all([
       readLedger($),
       read($, PRESENCE),
       read($, TAB),
       read($, PR_VIEWS),
       read($, COLLAPSED),
+      read($, SELECTION),
       $.clock.now(),
+      // Only picks the selection's tint, so a failed read falls back to theme keys.
+      $.config.list().catch(() => []),
     ])
     const card = ledger.card
     const numbered = ledger.batchTurn === ledger.turn ? latestBatch(ledger) : []
-    const notes = ledger.notes
+    const notes = [...ledger.notes].reverse()
     const prViews = Object.values(prState.views)
-    const width = Math.max(20, e.props.bodyColumns - 2)
-    const rule = (title: string, color: string) => (
-      <Text wrap="truncate-end">
-        <Text color={color}>── </Text>
-        <Text bold color={color}>
-          {title}
-        </Text>
-        <Text color={color}> {'─'.repeat(Math.max(0, width - title.length - 4))}</Text>
-      </Text>
-    )
-    const status = [
-      card ? `Updated ${ago(now - card.updatedAt)}` : 'No card yet',
-      presence.lastUpdateMs !== null ? `took ${Math.round(presence.lastUpdateMs / 1000)}s` : null,
-    ]
-      .filter(Boolean)
-      .join(' · ')
+    const isFocused = e.props.isFocused
+    const isDark = config.find(row => row.key === 'theme')?.value === 'dark'
 
-    // A handle in a fixed column, beside text that wraps under itself.
-    const handleRow = (handle: string, color: string, content: JSX.Element) => (
-      <Box flexDirection="row">
-        <Box width={4} flexShrink={0}>
-          <Text bold color={color}>
-            {handle}
-          </Text>
-        </Box>
-        <Box flexShrink={1}>{content}</Box>
+    // Each tab's rows in order; the cursor moves through these ids.
+    const prRows = prViews.flatMap(pr => [
+      ...pr.checks.filter(c => c.bucket === 'fail').map(c => ({ id: `${pr.ref} check ${c.name}`, pr, check: c, thread: null })),
+      ...waitingThreads(pr).map(t => ({ id: `${pr.ref} thread ${t.id}`, pr, check: null, thread: t })),
+    ])
+    const rowIds: Record<Tab, string[]> = {
+      waiting: ledger.items.map(i => i.id),
+      notes: notes.map(n => n.id),
+      prs: prRows.map(r => r.id),
+    }
+    const ids = rowIds[tab]
+    const at = selectedIndex(ids, selection[tab])
+    const selectedId = ids[at] ?? null
+    const color = tab === 'notes' ? NOTES : tab === 'prs' ? PRS : WAITING
+    // Wide enough for the longest handle, such as "you" on a task.
+    const handleWidth = 3 + Math.max(1, ...(tab === 'waiting' ? ledger.items.map(i => marker(i, numbered).length) : [1]))
+
+    const keyRow = (keys: KeyAction[]) => (
+      <Box flexDirection="row" flexWrap="wrap" columnGap={2}>
+        {keys.map(k => (
+          <Button plain {...k} />
+        ))}
       </Box>
     )
-    // A collapsible section's title is its toggle: a Button, then the rule's dashes.
-    const sectionToggle = (section: Section, title: string) => {
-      const label = `${collapsed.includes(section) ? '▸' : '▾'} ${title}`
+    // One list row. The selected row gets a bar in the tab's color, a shaded
+    // background, its full text and its keys; the rest show one line each.
+    // The handle is a Button, so a click selects the row.
+    const listRow = (o: { id: string; handle: string; head: (isSelected: boolean) => JSX.Element; body?: JSX.Element | null; keys: KeyAction[] }) => {
+      const isSelected = o.id === selectedId
+      const index = ids.indexOf(o.id)
 
       return (
-        <Box flexDirection="row">
-          <Button key={`toggle-${section}`} label={label} dimColor onPress={() => void toggleSection($, section)} />
-          <Text dimColor wrap="truncate-end">
-            {' ' + '─'.repeat(Math.max(0, width - label.length - 5))}
-          </Text>
+        <Box flexDirection="row" backgroundColor={isSelected ? (isDark ? DARK_TINTS[tab] : SELECTION_BG) : undefined}>
+          <Box width={1} flexShrink={0} backgroundColor={isSelected ? color : undefined} />
+          <Box width={handleWidth} flexShrink={0} paddingLeft={1}>
+            <Button plain key={`select-${o.id}`} label={o.handle} dimColor={!isSelected} onPress={() => void select($, tab, o.id, index)} />
+          </Box>
+          <Box flexDirection="column" flexShrink={1} flexGrow={1} paddingRight={1}>
+            {o.head(isSelected)}
+            {isSelected && o.body ? o.body : null}
+            {isSelected ? keyRow(o.keys) : null}
+          </Box>
         </Box>
       )
     }
-    const tabButton = (id: Tab, label: string, color: string) => {
-      const isActive = tab === id
+    const emptyLine = (text: string) => (
+      <Box paddingLeft={1}>
+        <Text dimColor wrap="wrap">
+          {text}
+        </Text>
+      </Box>
+    )
 
-      return (
+    const tabChip = (id: Tab, label: string, count: number, chipColor: string, hotkey: string) =>
+      tab === id ? (
+        <Text backgroundColor={chipColor} color="inverseText" bold>
+          {` ${label}${count > 0 ? ` ${count}` : ''} `}
+        </Text>
+      ) : (
         <Box flexDirection="row">
-          <Text color={color} bold={isActive}>
-            {isActive ? '● ' : '○ '}
-          </Text>
-          <Button key={`tab-${id}`} label={label} dimColor={!isActive} onPress={() => void showTab($, id)} />
+          <Button plain key={`tab-${id}`} hotkey={hotkey} label={label} dimColor onPress={() => void showTab($, id)} />
+          {count > 0 ? <Text color={chipColor}> {count}</Text> : null}
         </Box>
       )
-    }
+    // The tab bar is the pane's top panel; the footer is its bottom one.
     const tabs = (
-      <Box flexDirection="row" gap={3}>
-        {tabButton('waiting', `Waiting · ${ledger.items.length}`, WAITING)}
-        {tabButton('notes', `Notes · ${notes.length}`, NOTES)}
-        {tabButton('prs', `PRs · ${prViews.length}`, PRS)}
-      </Box>
-    )
-    const threadRow = (pr: PrView, t: PrThread) => (
-      <Box flexDirection="column" marginTop={1} paddingLeft={2}>
-        <Text wrap="truncate-end">
-          <Text color={PRS}>│ </Text>
-          <Text dimColor>
-            {t.path}
-            {t.line ? `:${t.line}` : ''} · @{t.author}
-            {t.replies > 0 ? ` · ${t.replies} ${t.replies === 1 ? 'reply' : 'replies'}` : ''}
-            {t.isOutdated ? ' · outdated' : ''}
-          </Text>
-        </Text>
-        <Box paddingLeft={2} flexDirection="column">
-          {t.reply ? (
-            <>
-              <Text dimColor wrap="wrap">
-                {clipLabel(t.body, 160)}
-              </Text>
-              <Text wrap="wrap">
-                <Text color={PRS}>↳ @{t.reply.author}: </Text>
-                {clipLabel(t.reply.body, 320)}
-              </Text>
-            </>
-          ) : (
-            <Text wrap="wrap">{clipLabel(t.body, 320)}</Text>
-          )}
-        </Box>
-        <Box flexDirection="row" columnGap={1} paddingLeft={2}>
-          <Button key={`address-${t.id}`} label="Address" onPress={() => void send($, prompts.address(pr, [t]))} />
-          <Button key={`draft-${t.id}`} label="Draft reply" onPress={() => void send($, prompts.draft(pr, t))} />
-          <Button key={`discuss-${t.id}`} label="Discuss" onPress={() => void send($, prompts.discuss(pr, t))} />
+      <Box backgroundColor={PANEL_BG} paddingX={1} paddingY={1}>
+        <Box flexDirection="row" columnGap={3} flexGrow={1}>
+          {tabChip('waiting', 'Waiting', ledger.items.length, WAITING, 'w')}
+          {tabChip('notes', 'Notes', notes.length, NOTES, 'n')}
+          {tabChip('prs', 'PRs', prRows.length, PRS, 'p')}
         </Box>
       </Box>
     )
-    const prBlock = (pr: PrView) => {
-      const ready = readiness(pr)
-      const counts = checkCounts(pr)
-      const failing = pr.checks.filter(c => c.bucket === 'fail')
-      const waitingOn = waitingThreads(pr)
-      const answered = pr.threads.length - waitingOn.length
 
-      return (
-        <Box flexDirection="column" marginTop={1}>
-          <Box flexDirection="row" justifyContent="space-between" gap={2}>
-            <Box flexShrink={1}>
-              <Text wrap="wrap">
-                <Text bold color={PRS}>
-                  #{pr.number}{' '}
-                </Text>
-                <Text bold>{pr.title}</Text>
-                <Text dimColor>
-                  {pr.isDraft ? ' · draft' : ''}
-                  {pr.ref === prState.branchRef ? ' · this branch' : ''}
-                </Text>
-              </Text>
-            </Box>
-            <Box flexDirection="row" columnGap={1} flexShrink={0}>
-              <Button key={`open-${pr.ref}`} label="Open" dimColor onPress={() => void openUrl($, pr.url)} />
-              {pr.ref !== prState.branchRef ? (
-                <Button key={`unlink-${pr.ref}`} label="Remove" dimColor onPress={() => void unlinkPr($, pr.ref)} />
-              ) : null}
-            </Box>
-          </Box>
-          <Box paddingLeft={2} flexDirection="column">
-            <Text wrap="wrap" color={ready.isReady ? DONE : WAITING}>
-              {ready.isReady ? '✓ ' : '◇ '}
-              {ready.text}
-            </Text>
-            {pr.checks.length > 0 ? (
-              <Text dimColor wrap="wrap">
-                Checks: {counts.pass} pass
-                {counts.fail > 0 ? ` · ${counts.fail} failing` : ''}
-                {counts.pending > 0 ? ` · ${counts.pending} running` : ''}
-                {counts.skip > 0 ? ` · ${counts.skip} skipped` : ''}
-              </Text>
-            ) : null}
-            {failing.map(c => (
-              <Box flexDirection="row" justifyContent="space-between" gap={2}>
-                <Box flexShrink={1}>
-                  <Text wrap="truncate-end">
-                    <Text color="error">✗ </Text>
-                    {c.name}
-                  </Text>
-                </Box>
-                <Box flexDirection="row" columnGap={1} flexShrink={0}>
-                  <Button key={`fix-${pr.ref}-${c.name}`} label="Fix" onPress={() => void send($, prompts.fix(pr, c))} />
-                  {c.url ? <Button key={`log-${pr.ref}-${c.name}`} label="Open" dimColor onPress={() => void openUrl($, c.url ?? pr.url)} /> : null}
-                </Box>
-              </Box>
-            ))}
-          </Box>
-          {waitingOn.length > 1 ? (
-            <Box paddingLeft={2} marginTop={1}>
-              <Button
-                key={`address-all-${pr.ref}`}
-                label={`Address all ${waitingOn.length} threads`}
-                onPress={() => void send($, prompts.address(pr, waitingOn))}
-              />
-            </Box>
-          ) : null}
-          {waitingOn.map(t => threadRow(pr, t))}
-          {answered > 0 ? (
-            <Box paddingLeft={2} marginTop={1}>
-              <Text dimColor wrap="wrap">
-                Hidden: {answered} open {answered === 1 ? 'thread' : 'threads'} where you wrote the last comment
-              </Text>
-            </Box>
-          ) : null}
-          {pr.error ? (
-            <Box paddingLeft={2}>
-              <Text color="error" wrap="wrap">
-                Last refresh failed: {pr.error}
-              </Text>
-            </Box>
-          ) : null}
-        </Box>
-      )
-    }
-    const newest = prViews.reduce((t, v) => Math.max(t, v.fetchedAt), 0)
-    const prsView = (
-      <Box flexDirection="column">
-        {rule(`PRs · ${prViews.length}`, PRS)}
-        {prViews.length === 0 ? (
-          <Text dimColor wrap="wrap">
-            {prState.isFetching
-              ? 'Checking for PRs…'
-              : 'No PRs yet. A PR shows here when this session opens or links one, or when this branch has one.'}
-          </Text>
-        ) : (
-          <Text dimColor>
-            {prState.isFetching ? 'Refreshing…' : `Checked ${ago(now - newest)}. Buttons send a request to Claude.`}
-          </Text>
-        )}
-        {prViews.map(prBlock)}
-      </Box>
+    // A collapsible section's title is its toggle.
+    const sectionToggle = (section: Section, title: string, count: number) => (
+      <Button
+        plain
+        key={`toggle-${section}`}
+        label={`${collapsed.includes(section) ? '▸' : '▾'} ${title} ${count}`}
+        dimColor
+        onPress={() => void toggleSection($, section)}
+      />
     )
+
+    const itemRow = (item: Item) => {
+      const handle = marker(item, numbered)
+      const rec = item.rec && item.kind !== 'do' ? item.rec : null
+
+      return listRow({
+        id: item.id,
+        handle,
+        head: isSelected => (
+          <Text wrap={isSelected ? 'wrap' : 'truncate-end'} bold={isSelected}>
+            {item.ask}
+          </Text>
+        ),
+        body: rec ? (
+          <Text wrap="wrap">
+            <Text dimColor>Recommended: </Text>
+            <Text bold>{rec}</Text>
+          </Text>
+        ) : null,
+        keys: itemKeys($, item, handle),
+      })
+    }
+    // Done and Decided: the toggles sit on consecutive lines, and an open
+    // section's blank line follows its last entry.
+    const done = card?.done ?? []
+    const history = [
+      ...(done.length > 0 ? [sectionToggle('done', 'Done', done.length)] : []),
+      ...(done.length > 0 && !collapsed.includes('done')
+        ? [
+            <Box flexDirection="column" marginBottom={ledger.decided.length > 0 ? 1 : 0}>
+              {done.map(d => (
+                <Text wrap="wrap">
+                  <Text color={DONE}>✓ </Text>
+                  <Text dimColor>{d}</Text>
+                </Text>
+              ))}
+            </Box>,
+          ]
+        : []),
+      ...(ledger.decided.length > 0 ? [sectionToggle('decided', 'Decided', ledger.decided.length)] : []),
+      ...(ledger.decided.length > 0 && !collapsed.includes('decided')
+        ? [...ledger.decided]
+            .reverse()
+            .slice(0, 6)
+            .map(d => (
+              <Text wrap="wrap" dimColor>
+                {d.ask} → {d.outcome}
+              </Text>
+            ))
+        : []),
+    ]
     const waitingView = (
       <Box flexDirection="column" gap={1}>
-        <Box flexDirection="column">
-          {rule(`Waiting on you · ${ledger.items.length}`, WAITING)}
-          <Text dimColor>{ledger.items.length === 0 ? '  Nothing right now.' : 'Pressing an answer sends it to Claude.'}</Text>
-          {ledger.items.map(item => {
-            const handle = marker(item, numbered)
-            const note = recNote(item)
-            const { main, end } = paneActions($, item, handle)
-
-            return (
-              <Box flexDirection="column" marginTop={1}>
-                {handleRow(handle, WAITING, <Text wrap="wrap">{item.ask}</Text>)}
-                {note ? (
-                  <Box paddingLeft={4}>
-                    <Text wrap="wrap">
-                      <Text dimColor>recommended: </Text>
-                      <Text color={RECOMMENDED}>{note}</Text>
-                    </Text>
-                  </Box>
-                ) : null}
-                <Box flexDirection="row" justifyContent="space-between" gap={2} paddingLeft={4}>
-                  <Box flexDirection="row" flexWrap="wrap" columnGap={1} flexShrink={1}>
-                    {main.map(a => (
-                      <Button {...a} />
-                    ))}
-                  </Box>
-                  <Box flexShrink={0}>
-                    <Button {...end} />
-                  </Box>
-                </Box>
-              </Box>
-            )
-          })}
-        </Box>
-        {card && card.running.length > 0 && (
-          <Box flexDirection="column">
-            {rule('Running', DONE)}
+        <Box flexDirection="column">{ledger.items.length === 0 ? emptyLine('Nothing is waiting on you.') : ledger.items.map(itemRow)}</Box>
+        {card && card.running.length > 0 ? (
+          <Box flexDirection="column" paddingLeft={1}>
+            <Text dimColor>Running {card.running.length}</Text>
             {card.running.map(run => {
               const { name, url } = splitRunning(run)
 
@@ -1242,118 +1183,194 @@ export const register: Register = on => {
               )
             })}
           </Box>
-        )}
-
-        {card && card.done.length > 0 && (
-          <Box flexDirection="column">
-            {sectionToggle('done', `Done · ${card.done.length}`)}
-            {!collapsed.includes('done') && card.done.map(d => (
-              <Text wrap="wrap">
-                <Text color={DONE}>✓ </Text>
-                {d}
-              </Text>
-            ))}
+        ) : null}
+        {history.length > 0 ? (
+          <Box flexDirection="column" paddingLeft={1}>
+            {history}
           </Box>
-        )}
-
-        {ledger.decided.length > 0 && (
-          <Box flexDirection="column">
-            {sectionToggle('decided', `Decided · ${ledger.decided.length}`)}
-            {!collapsed.includes('decided') && [...ledger.decided].reverse().slice(0, 6).map(d => (
-              <Box flexDirection="column">
-                <Text dimColor wrap="wrap">
-                  {d.ask}
-                </Text>
-                <Box paddingLeft={2}>
-                  <Text wrap="wrap">
-                    <Text dimColor>└ </Text>
-                    {d.outcome}
-                  </Text>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        )}
+        ) : null}
       </Box>
     )
+
     const notesView = (
       <Box flexDirection="column">
-        {rule(`Notes · ${notes.length}`, NOTES)}
-        {notes.length === 0 ? (
-          <Text dimColor wrap="wrap">
-            No notes yet. Claude adds one when it notices an issue or an opportunity outside the current task.
-          </Text>
-        ) : (
-          <Text dimColor>Address and Discuss send the note to Claude.</Text>
-        )}
-        {[...notes].reverse().map(note => (
-          <Box flexDirection="column" marginTop={1}>
-            {handleRow(
-              note.kind === 'issue' ? '!' : '+',
-              NOTES,
-              <Text wrap="wrap">
-                <Text bold>{note.title}</Text>
-                <Text dimColor> · {note.kind} · {ago(now - note.at)}</Text>
-              </Text>,
+        {notes.length === 0
+          ? emptyLine('No notes. Claude adds one when it notices an issue or an opportunity outside the current task.')
+          : notes.map(note =>
+              listRow({
+                id: note.id,
+                handle: note.kind === 'issue' ? '!' : '+',
+                head: isSelected => (
+                  <Text wrap={isSelected ? 'wrap' : 'truncate-end'}>
+                    <Text bold={isSelected}>{note.title}</Text>
+                    <Text dimColor> · {note.kind} · {ago(now - note.at)}</Text>
+                  </Text>
+                ),
+                body: (
+                  <Box flexDirection="column">
+                    <Text wrap="wrap">{note.detail}</Text>
+                    {note.path ? (
+                      <Text dimColor wrap="truncate-middle">
+                        {note.path}
+                      </Text>
+                    ) : null}
+                  </Box>
+                ),
+                keys: [
+                  { key: `address-${note.id}`, label: 'Address it', hotkey: 'a', onPress: () => void actOnNote($, note, 'address') },
+                  { key: `discuss-${note.id}`, label: 'Discuss', hotkey: 'd', onPress: () => void actOnNote($, note, 'discuss') },
+                  { key: `drop-${note.id}`, label: 'Dismiss', hotkey: 'x', onPress: () => void removeNote($, note.id) },
+                ],
+              }),
             )}
-            <Box flexDirection="column" paddingLeft={4}>
-              <Text wrap="wrap">{note.detail}</Text>
-              {note.path ? <Text dimColor wrap="truncate-middle">{note.path}</Text> : null}
-            </Box>
-            <Box flexDirection="row" justifyContent="space-between" gap={2} paddingLeft={4}>
-              <Box flexDirection="row" columnGap={1}>
-                <Button key={`address-${note.id}`} label="Address it" onPress={() => void actOnNote($, note, 'address')} />
-                <Button key={`discuss-${note.id}`} label="Discuss" onPress={() => void actOnNote($, note, 'discuss')} />
-              </Box>
-              <Button key={`drop-${note.id}`} label="Dismiss" dimColor onPress={() => void removeNote($, note.id)} />
-            </Box>
-          </Box>
-        ))}
       </Box>
     )
 
-    return (
-      <Box flexDirection="column" gap={1} paddingX={1}>
-        {card ? (
-          <Box flexDirection="column">
-            <Text wrap="wrap">
-              <Text color={ACCENT}>◆ </Text>
-              <Text bold>{card.goal}</Text>
+    const checkRow = (pr: PrView, c: PrCheck) =>
+      listRow({
+        id: `${pr.ref} check ${c.name}`,
+        handle: '✗',
+        head: isSelected => (
+          <Text wrap="truncate-end">
+            <Text color="error" bold={isSelected}>
+              {c.name}
             </Text>
-            <Box paddingLeft={2}>
-              <Text dimColor wrap="wrap">
-                {card.now}
+            <Text dimColor> · failing check</Text>
+          </Text>
+        ),
+        keys: [
+          { key: `fix-${pr.ref}-${c.name}`, label: 'Fix', hotkey: 'f', onPress: () => void send($, prompts.fix(pr, c)) },
+          { key: `log-${pr.ref}-${c.name}`, label: 'Open log', hotkey: 'o', onPress: () => void openUrl($, c.url ?? pr.url) },
+        ],
+      })
+    const threadRow = (pr: PrView, t: PrThread) => {
+      const latest = t.reply ?? { author: t.author, body: t.body }
+      const where = `${t.path}${t.line ? `:${t.line}` : ''}`
+
+      return listRow({
+        id: `${pr.ref} thread ${t.id}`,
+        handle: '◦',
+        head: isSelected =>
+          isSelected ? (
+            <Text wrap="truncate-middle" bold>
+              {where}
+              {t.isOutdated ? <Text dimColor> · outdated</Text> : null}
+            </Text>
+          ) : (
+            <Text wrap="truncate-end">
+              <Text dimColor>
+                {baseName(t.path)}
+                {t.line ? `:${t.line}` : ''}{' '}
               </Text>
+              {latest.body.replace(/\s+/g, ' ')}
+            </Text>
+          ),
+        body: (
+          <Box flexDirection="column">
+            {t.reply ? <Markdown dimColor text={`@${t.author}: ${clipLabel(t.body, 200)}`} /> : null}
+            <Markdown text={`**@${latest.author}:** ${clipLabel(latest.body, 1200)}`} />
+          </Box>
+        ),
+        keys: [
+          { key: `address-${t.id}`, label: 'Address', hotkey: 'a', onPress: () => void send($, prompts.address(pr, [t])) },
+          { key: `draft-${t.id}`, label: 'Draft reply', hotkey: 'r', onPress: () => void send($, prompts.draft(pr, t)) },
+          { key: `discuss-${t.id}`, label: 'Discuss', hotkey: 'd', onPress: () => void send($, prompts.discuss(pr, t)) },
+          { key: `open-${t.id}`, label: 'Open', hotkey: 'o', onPress: () => void openUrl($, t.reply?.url || t.url || pr.url) },
+        ],
+      })
+    }
+    const prBlock = (pr: PrView) => {
+      const ready = readiness(pr)
+      const counts = checkCounts(pr)
+      const waitingOn = waitingThreads(pr)
+      const answered = pr.threads.length - waitingOn.length
+      const facts = [
+        pr.isDraft ? 'draft' : null,
+        pr.ref === prState.branchRef ? 'this branch' : null,
+        pr.checks.length > 0 ? `${counts.pass}/${pr.checks.length - counts.skip} checks pass` : null,
+        counts.pending > 0 ? `${counts.pending} running` : null,
+        answered > 0 ? `${answered} ${answered === 1 ? 'thread waits' : 'threads wait'} on others` : null,
+      ].filter(Boolean)
+
+      return (
+        <Box flexDirection="column">
+          <Box paddingLeft={1}>
+            <Text wrap="wrap">
+              <Text bold color={PRS}>
+                #{pr.number}{' '}
+              </Text>
+              <Text bold>{pr.title}</Text>
+            </Text>
+          </Box>
+          <Box flexDirection="column" paddingLeft={handleWidth}>
+            <Text wrap="wrap" color={ready.isReady ? DONE : WAITING}>
+              {ready.isReady ? '✓ ' : '◇ '}
+              {ready.text}
+            </Text>
+            {facts.length > 0 ? (
+              <Text dimColor wrap="wrap">
+                {facts.join(' · ')}
+              </Text>
+            ) : null}
+            {pr.error ? (
+              <Text color="error" wrap="wrap">
+                Last refresh failed: {pr.error}
+              </Text>
+            ) : null}
+            <Box flexDirection="row" flexWrap="wrap" columnGap={2}>
+              {waitingOn.length > 1 ? (
+                <Button key={`address-all-${pr.ref}`} label={`Address all ${waitingOn.length} threads`} onPress={() => void send($, prompts.address(pr, waitingOn))} />
+              ) : null}
+              <Button key={`open-${pr.ref}`} label="Open PR" dimColor onPress={() => void openUrl($, pr.url)} />
+              {pr.ref !== prState.branchRef ? <Button key={`unlink-${pr.ref}`} label="Remove" dimColor onPress={() => void unlinkPr($, pr.ref)} /> : null}
             </Box>
           </Box>
-        ) : (
-          <Text dimColor wrap="wrap">
-            No card yet. It fills in after the next reply, or rebuild it now from the whole conversation.
-          </Text>
-        )}
+          {pr.checks.filter(c => c.bucket === 'fail').map(c => checkRow(pr, c))}
+          {waitingOn.map(t => threadRow(pr, t))}
+        </Box>
+      )
+    }
+    const prsView = (
+      <Box flexDirection="column" gap={1}>
+        {prViews.length === 0
+          ? emptyLine(prState.isFetching ? 'Checking for PRs…' : 'No PRs. A PR shows here when this session opens or links one, or when this branch has one.')
+          : prViews.map(prBlock)}
+      </Box>
+    )
 
+    const moveKeys: KeyAction[] =
+      ids.length > 1
+        ? [
+            { key: 'next', label: 'Next', hotkey: 'j', dimColor: true, onPress: () => void select($, tab, ids[Math.min(at + 1, ids.length - 1)] ?? '', Math.min(at + 1, ids.length - 1)) },
+            { key: 'previous', label: 'Previous', hotkey: 'k', dimColor: true, onPress: () => void select($, tab, ids[Math.max(at - 1, 0)] ?? '', Math.max(at - 1, 0)) },
+          ]
+        : []
+    const newest = prViews.reduce((t, v) => Math.max(t, v.fetchedAt), 0)
+    const status =
+      tab === 'prs' && prViews.length > 0
+        ? prState.isFetching
+          ? 'Refreshing PRs'
+          : `PRs checked ${ago(now - newest)}`
+        : card
+          ? `Updated ${ago(now - card.updatedAt)}`
+          : 'No card yet'
+
+    return (
+      <Box flexDirection="column" gap={1}>
         {tabs}
-        {tab === 'notes' ? (
-          notesView
-        ) : tab === 'prs' ? (
-          prsView
-        ) : (
-          waitingView
-        )}
+        <Box flexDirection="column" paddingX={1}>
+          {tab === 'notes' ? notesView : tab === 'prs' ? prsView : waitingView}
+        </Box>
 
-        <Box flexDirection="column">
-          <Text dimColor>{'─'.repeat(width)}</Text>
-          <Box flexDirection="row" justifyContent="space-between" gap={1}>
-            <Text wrap="truncate-end">
-              <Text dimColor>{status}</Text>
-              {presence.error ? <Text color="error"> · last update failed: {presence.error}</Text> : null}
-            </Text>
-            <Box flexShrink={0}>
-              <Button
-                key="rebuild"
-                label={presence.isUpdating ? 'Updating…' : 'Rebuild'}
-                onPress={() => rebuild($).catch(() => markFailed($))}
-              />
+        <Box backgroundColor={PANEL_BG} paddingX={1}>
+          <Box flexDirection="row" justifyContent="space-between" columnGap={2} flexGrow={1}>
+            <Box flexShrink={0}>{isFocused ? keyRow(moveKeys) : <Text dimColor>ctrl+x tab for keys</Text>}</Box>
+            <Box flexDirection="row" columnGap={2} flexShrink={1}>
+              <Text dimColor wrap="truncate-start">
+                {status}
+              </Text>
+              {presence.error ? <Text color="error">update failed</Text> : null}
+              <Button key="rebuild" label={presence.isUpdating ? 'Updating…' : 'Rebuild'} dimColor onPress={() => rebuild($).catch(() => markFailed($))} />
             </Box>
           </Box>
         </Box>

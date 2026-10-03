@@ -157,11 +157,19 @@ function isCommand(help: Help): boolean {
   return help.kind === 'run' || help.kind === 'terminal'
 }
 
+/** What a help acts on, without the name the model gave it, so one command under two names counts once. */
+function helpTarget(help: Help): string {
+  if (help.kind === 'open') return `open ${help.path}`
+  if (help.kind === 'link') return `link ${help.url}`
+
+  return `command ${commandOf(help)}`
+}
+
 function withHelp(helps: Help[], help: Help): Help[] {
   const command = commandOf(help)
   const kept = isCommand(help) ? helps.filter(h => h.kind !== 'copy' || commandOf(h) !== command) : helps
   const isCovered =
-    kept.some(h => JSON.stringify(h) === JSON.stringify(help)) ||
+    kept.some(h => helpTarget(h) === helpTarget(help)) ||
     (help.kind === 'copy' && kept.some(h => isCommand(h) && commandOf(h) === command))
 
   return isCovered || kept.length >= MAX_HELPS ? kept : [...kept, help]
