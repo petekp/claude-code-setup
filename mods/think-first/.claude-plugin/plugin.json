@@ -1,0 +1,6 @@
+{
+  "name": "think-first",
+  "version": "0.1.0",
+  "description": "Asks what you expect while a long task runs, then shows how your predictions hold up",
+  "types": "./types/index.d.ts"
+}
