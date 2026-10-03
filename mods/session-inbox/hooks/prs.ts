@@ -162,8 +162,17 @@ export function readiness(pr: PrView): { isReady: boolean; text: string } {
     : { isReady: false, text: `Blocked: ${blockers.join(', ')}` }
 }
 
+/** Where a thread sits in the diff: "path:line", or the path alone. */
+export function threadWhere(t: PrThread, path = t.path): string {
+  return `${path}${t.line ? `:${t.line}` : ''}`
+}
+
+export function failingChecks(pr: PrView): PrCheck[] {
+  return pr.checks.filter(c => c.bucket === 'fail')
+}
+
 function threadText(t: PrThread): string {
-  const where = `${t.path}${t.line ? `:${t.line}` : ''}`
+  const where = threadWhere(t)
 
   const opening = [`${where}, from @${t.author}${t.isOutdated ? ' (on an outdated diff)' : ''}:`, t.body, t.url]
   const reply = t.reply ? ['', `Latest reply, from @${t.reply.author}:`, t.reply.body, t.reply.url] : []

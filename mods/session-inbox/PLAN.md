@@ -18,7 +18,7 @@ summary. Its README describes what Pete sees.
   `model.complete` on Sonnet reads only this turn's exchange plus the previous
   card. That costs about 2.7k tokens in and 250 out at low effort, and the
   replays below show the card stays accurate. **Decision:** complete per turn.
-  The fork is used only for the "Rebuild" button.
+  The fork is used only to catch up on turns the per-turn update missed.
 - **S2. Does a detached update survive?** Yes. A promise started in
   `turn.complete` and not awaited finished in an interactive session and
   updated the band. Timers die when a `claude -p` run exits, and the mod is off
@@ -169,7 +169,8 @@ summary. Its README describes what Pete sees.
   and the quote check included), applying
   updates, answer mapping, carry text, and the hooks end to end: a turn
   becoming band items, "1. yes" carrying the question, the away view after 15
-  minutes, Rebuild, and a headless run doing nothing.
+  minutes, catching up after a failed update, and a headless run doing
+  nothing.
 - `tsc` and `claude plugin validate` are clean.
 - Driven live in interactive child sessions through tmux. Every state was checked:
   - band items from a real reply
@@ -217,13 +218,23 @@ action needed the mouse.
   without a hotkey draws as bare text, which reads as static, so the pane
   uses them only for row numbers and section toggles.
 - **The selected row** has a one-column bar in the tab's color, which spans
-  wrapped lines because it is a stretched Box with a background.
+  wrapped lines because it is a stretched Box with a background. It reads
+  top to bottom: a context line naming what it is (Question, Your task,
+  Issue, Review thread, Failing check) in the tab's color, the title in
+  bold, the detail, then the keys, each set off by a blank line. Selecting a
+  row scrolls the pane the least that shows it whole (`$.ui.scroll` with
+  `block: 'nearest'`).
+- **Focus on open** is a request: the engine grants it only while the prompt
+  holds the keys over an empty composer. Otherwise the pane opens without
+  the keyboard, and its footer says ctrl+x tab, which cycles the prompt,
+  the band and the pane.
 - **Tabs** are a filled chip in the tab's color for the current tab
   (`inverseText` on the color) and `n: Notes` buttons for the others.
 - **Layers.** The tab bar and the footer sit on raised panels
   (`userMessageBackground`), and the list sits on the pane's own background
   between them. In the `dark` theme, the selected row is tinted with its
-  tab's color, at about a quarter over the pane's rgb(38, 38, 38). Hex colors
+  tab's color, at about 15% over the pane's rgb(38, 38, 38). At 25% the dim
+  text on it lost contrast. Hex colors
   do not follow the theme, so the other themes use the `selectionBg` theme
   key instead. The pane reads the theme with `$.config.list()`. Done and
   Decided are dim, so they sit behind the open items.
@@ -233,6 +244,10 @@ action needed the mouse.
   still shows both.
 - **Review comments** render with the `Markdown` element, so code spans and
   emphasis survive.
+- **Theme:** read once at load and on `config.set` for `theme`, into the
+  `isDarkTheme` state, not on every render.
+- **Pane open:** `$.ui.panes()` answers whether the pane is shown, so the
+  branch-PR lookup needs no module flag and survives a reload.
 - **Focus:** `Pane.isFocused` decides the footer: the move keys while
   focused, "ctrl+x tab for keys" otherwise.
 - **Verified in a test session:** hotkeys fire while the pane has focus, and
@@ -244,3 +259,28 @@ action needed the mouse.
   person starts typing it.
 - **Not used:** hover reveal. Hover cannot be checked in the test harness,
   and the selection already limits each row's buttons.
+
+## Catching up instead of Rebuild
+
+Pete asked on 2026-10-02 why Rebuild was needed when the mod updates after
+every turn. It existed only for turns the per-turn update never saw, so the
+mod now handles those itself and the button is gone.
+
+- **When it catches up.** After a failed update, the ledger may have missed
+  that turn, so `presence.error` doubles as the signal. A reload that cuts an
+  update off (`isUpdating` still set at load) records an error too. The mod
+  also catches up when it loads with an empty card into a conversation whose
+  `$.session.turns()` is above zero: an install mid-session, or lost state.
+  A turn counter compared against `turns()` was considered and rejected:
+  prompts queued during a turn, aborted turns and turns started by
+  notifications would make it trigger full re-reads that are not needed.
+- **Catch-up.** The next update is then a `model.fork` over the whole
+  conversation instead of the turn alone: at load right away, otherwise after
+  the next reply. It passes the current card, open items and
+  notes with their ids. It closes what the conversation handled, keeps what
+  still waits, and adds what is new, so ids and the Decided list survive.
+  Success clears the error. A catch-up that keeps failing is retried as a
+  full re-read after each reply, with no backoff.
+- **Handled notes close.** The `<notes>` block now carries ids, and a
+  `CLOSED` line can name a note, so a note the conversation fixed or set
+  aside leaves the Notes tab without a button press.

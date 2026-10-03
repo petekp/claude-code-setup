@@ -19,6 +19,9 @@ const BAND = {
   },
 }
 
+// What the per-turn ledger model answers; a test can make it fail.
+let ledgerReply = LEDGER_REPLY
+
 // Prompts the mod sent as the person's own, as the engine's chain received them.
 let sent: string[] = []
 
@@ -42,6 +45,7 @@ const PANE = {
 function world(on: On, prompts: string[]) {
   sent = []
   ghAnswers = []
+  ledgerReply = LEDGER_REPLY
   mock.store(on)
   on('session.id', () => ({ value: 'session-1' }))
   on('session.root', () => ({ value: '/tmp/project' }))
@@ -51,7 +55,7 @@ function world(on: On, prompts: string[]) {
   on('model.complete', ($, e) => {
     prompts.push(e.prompt)
 
-    return { value: { isAnswered: true, text: LEDGER_REPLY, usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } }
+    return { value: { isAnswered: true, text: ledgerReply, usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } }
   })
   on('prompt.submit', ($, e) => {
     if (e.origin.kind === 'plugin') sent.push(e.text)
@@ -110,22 +114,23 @@ test('after 15 idle minutes the band shows where the session stands', async ($, 
   expect(await band.find({ text: /last active/ })).toBeUndefined()
 })
 
-test('rebuilding from the whole conversation replaces the card and the open items', async ($, on) => {
+test('after a failed update, the next reply catches up over the whole conversation', async ($, on) => {
   const clock = mock.clock(on, { now: 1_000_000 })
   world(on, [])
   on('model.fork', () => ({
     value: {
       isAnswered: true,
-      text: 'GOAL: Ship the onboarding flow\nNOW: Waiting on copy review\nNEW: do | - | Review the welcome copy | - | -',
+      text: 'GOAL: Ship the onboarding flow\nNOW: Waiting on copy review\nCLOSED: i1 | Node\nCLOSED: n3 | fixed\nNEW: do | - | Review the welcome copy | - | -',
       usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
     },
   }))
-  on('ui.toast', () => ({ value: undefined }))
 
   await $.session.start({ cwd: '/tmp/project', surface: 'terminal', isInteractive: true })
   await $.prompt.submit({ text: 'add a greeting cli', wait: false, origin: { kind: 'composer' } })
   await $.turn.complete({ answer: 'Plan ready.', durationMs: 5, isAborted: false, turnId: 't1', reason: 'answer' })
   await clock.settle()
+  // Notes and items share one id counter, so after i1 and i2 this note is n3.
+  await $.tool.call({ tool: 'mcp__session-inbox__note', kind: 'issue', title: 'README is stale', detail: 'It names the old command.' })
 
   const pane = await $.ui.mount(PANE)
   expect(await pane.find({ text: /Use Node or Python\?/ })).toBeDefined()
@@ -144,11 +149,24 @@ test('rebuilding from the whole conversation replaces the card and the open item
   await pane.press({ key: 'explain-i1' })
   expect(sent.at(-1)).toContain('"Use Node or Python?"\nOptions: Node / Python')
   expect(await pane.find({ text: /Use Node or Python\?/ })).toBeDefined()
-  await pane.press({ key: 'rebuild' })
+
+  // This turn's update fails, so the next reply re-reads the whole conversation.
+  ledgerReply = 'not a ledger'
+  await $.turn.complete({ answer: 'Using Node.', durationMs: 5, isAborted: false, turnId: 't2', reason: 'answer' })
+  await clock.settle()
+  expect(await pane.find({ text: /update failed/ })).toBeDefined()
+  await $.turn.complete({ answer: 'Fixed the README too.', durationMs: 5, isAborted: false, turnId: 't3', reason: 'answer' })
+  await clock.settle()
   const band = await $.ui.mount({ plugin: 'session-inbox', surface: 'terminal', ...BAND })
   expect(await band.find({ text: /Ship the onboarding flow/ })).toBeDefined()
+  // It closes what the conversation handled, keeps what still waits, and adds what is new.
+  expect(await pane.find({ key: 'row-i1' })).toBeUndefined()
+  expect(await pane.find({ text: /Use Node or Python\? → Node/ })).toBeDefined()
+  expect(await pane.find({ text: /Name the command greet\?/ })).toBeDefined()
   expect(await pane.find({ text: /Review the welcome copy/ })).toBeDefined()
-  expect(await pane.find({ text: /Use Node or Python\?/ })).toBeUndefined()
+  expect(await pane.find({ text: /update failed/ })).toBeUndefined()
+  await pane.press({ key: 'tab-notes' })
+  expect(await pane.find({ text: /README is stale/ })).toBeUndefined()
 })
 
 test('a note Claude records shows in the Notes tab, and Address it sends it back', async ($, on) => {

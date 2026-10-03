@@ -29,7 +29,7 @@ export const SYSTEM = `You keep a short ledger for a person who works with a cod
 Input:
 - <card>: the ledger before this exchange (may be empty)
 - <open>: items still waiting on the person, each with an id
-- <notes>: findings the agent recorded for the person to review later, outside the current task
+- <notes>: findings the agent recorded for the person to review later, outside the current task, each with an id
 - <person>: what the person just sent
 - <activity>: what the agent did this turn (files edited, commands, URLs)
 - <reply>: the agent's final reply
@@ -40,7 +40,7 @@ GOAL: what this session is for, at most 12 words. Keep the previous goal unless 
 DONE: one finished outcome, at most 8 words. Up to 4 DONE lines, oldest first, keeping the most recent. Outcomes, not activity: "PR #12 opened", not "ran gh".
 NOW: where the work stands at the end of this reply, at most 12 words. Name what it waits on, if anything.
 RUNNING: something still running that the person may open, as "name: URL or port". Dev servers, simulators, background jobs. Omit anything the agent stopped. Zero or more lines.
-CLOSED: <id> | what was decided, at most 8 words. For each item in <open> the person answered in <person> (including "all recommended", "go", "yes to all", numbered answers), or that the reply or <activity> shows is done or no longer applies. A person asking what an item means has not answered it, and a reply explaining it does not close it. When <person> asks to run an item's command and the reply says it ran, that item is done.
+CLOSED: <id> | what was decided, at most 8 words. For each item in <open> the person answered in <person> (including "all recommended", "go", "yes to all", numbered answers), or that the reply or <activity> shows is done or no longer applies. A person asking what an item means has not answered it, and a reply explaining it does not close it. When <person> asks to run an item's command and the reply says it ran, that item is done. Also one line for each note in <notes> that the reply or <activity> shows was fixed, or that the person dealt with or set aside.
 NEW: <kind> | <label> | <ask> | <options> | <rec>
   One line per thing in <reply> that waits on the person and is not already in <open> or <notes>. A finding the agent recorded as a note is not NEW unless the reply asks the person to decide on it now. When the reply restates, rewords or narrows an item in <open>, it is not new: add HELP lines to that item's id instead.
   kind: "decide" (a choice, approval, or information only the person has, explicitly put to them) or "do" (an action only the person can take: sign in, run a command needing their password, test on their device, reply to a teammate).
@@ -62,11 +62,15 @@ HELP: <item> | <kind> | <value> | <name>
 
 Write plainly. No jargon, no filler, no markdown.`
 
-/** Asks a fork of the main conversation for the whole ledger at once. */
-export function rebuildPrompt(): string {
+/**
+ * Asks a fork of the main conversation to bring the ledger up to date at once,
+ * for turns the per-turn update missed.
+ */
+export function catchUpPrompt(ledger: Ledger): string {
   return [
     'Pause the task. Do not use tools. Instead, act as the ledger keeper described below, over this whole conversation.',
-    'Treat the conversation so far as the exchange: <card> and <open> are empty, and every question still waiting on the user is NEW. Nothing is CLOSED.',
+    'Treat the whole conversation as the exchange. The ledger below may have missed turns. Close every item in <open> and every note in <notes> that the conversation shows answered, done, dealt with, or no longer relevant. Add as NEW only what still waits on the user and is not already in <open> or <notes>.',
+    ...ledgerBlocks(ledger),
     'Code blocks here carry no [block N] marker, so a copy HELP must be one line of text.',
     '',
     SYSTEM,
@@ -113,7 +117,7 @@ function numberBlocks(reply: string): string {
 /**
  * Checks one HELP line; null when it is unusable. A path, command, URL or line
  * of text must appear in `source`, the reply and activity, so the model cannot
- * invent one. A null source (a rebuild over the whole conversation) skips that.
+ * invent one. A null source (a catch-up over the whole conversation) skips that.
  */
 function readHelp(kind: string, value: string, name: string | null, blocks: string[], source: string | null): Help | null {
   const isQuoted = (text: string) => source === null || source.includes(text)
@@ -168,9 +172,8 @@ function helpTarget(help: Help): string {
 function withHelp(helps: Help[], help: Help): Help[] {
   const command = commandOf(help)
   const kept = isCommand(help) ? helps.filter(h => h.kind !== 'copy' || commandOf(h) !== command) : helps
-  const isCovered =
-    kept.some(h => helpTarget(h) === helpTarget(help)) ||
-    (help.kind === 'copy' && kept.some(h => isCommand(h) && commandOf(h) === command))
+  // A copy and a run of one command share a target, so either covers the other.
+  const isCovered = kept.some(h => helpTarget(h) === helpTarget(help))
 
   return isCovered || kept.length >= MAX_HELPS ? kept : [...kept, help]
 }
@@ -179,7 +182,8 @@ function clip(text: string, max: number): string {
   return text.length <= max ? text : text.slice(0, max) + ' …[cut]'
 }
 
-export function buildPrompt(ledger: Ledger, ex: Exchange): string {
+/** The ledger as the model reads it: the card, the open items and the notes, with their ids. */
+function ledgerBlocks(ledger: Ledger): string[] {
   const card = ledger.card
     ? [
         `GOAL: ${ledger.card.goal}`,
@@ -191,12 +195,16 @@ export function buildPrompt(ledger: Ledger, ex: Exchange): string {
   const open = ledger.items
     .map(i => `${i.id} | ${i.kind} | ${i.label ?? '-'} | ${i.ask}`)
     .join(NL)
+  const notes = ledger.notes.map(n => `${n.id} | ${n.kind}: ${n.title}`).join(NL)
+
+  return [`<card>${NL}${card}${NL}</card>`, `<open>${NL}${open}${NL}</open>`, `<notes>${NL}${notes}${NL}</notes>`]
+}
+
+export function buildPrompt(ledger: Ledger, ex: Exchange): string {
   const person = ex.person ?? `(The person sent nothing. The turn was started by: ${ex.trigger ?? 'unknown'}.)`
 
   return [
-    `<card>${NL}${card}${NL}</inbox>`,
-    `<open>${NL}${open}${NL}</open>`,
-    `<notes>${NL}${ledger.notes.map(n => `${n.kind}: ${n.title}`).join(NL)}${NL}</notes>`,
+    ...ledgerBlocks(ledger),
     `<person>${NL}${clip(person, 4000)}${NL}</person>`,
     `<activity>${NL}${clip(ex.activity.join(NL), 2500)}${NL}</activity>`,
     `<reply>${NL}${clip(numberBlocks(ex.reply), 12000)}${NL}</reply>`,
@@ -347,6 +355,7 @@ export function applyUpdate(ledger: Ledger, u: Update, now: number, turn: number
     card,
     items: items.filter(i => turn - i.turn <= STALE_AFTER).slice(-MAX_OPEN),
     decided: decided.slice(-MAX_DECIDED),
+    notes: ledger.notes.filter(n => !closing.has(n.id)),
     nextId,
     batchTurn: added > 0 ? turn : ledger.batchTurn,
   }

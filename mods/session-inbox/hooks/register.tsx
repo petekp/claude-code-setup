@@ -3,7 +3,20 @@ import type { EngineInterface, Register, UiPressArgument } from 'claude-code'
 
 import type { Cursor, Decided, Help, Item, Ledger, Note, PrCheck, PrThread, PrView, PrViews, Presence, Previous, Section, Tab } from '../types'
 import type { Exchange, Press, StoredLedger, Update } from './ledger'
-import { THREADS_QUERY, VIEW_FIELDS, checkCounts, parseRef, prRefs, prompts, readThreads, readView, readiness, waitingThreads } from './prs'
+import {
+  THREADS_QUERY,
+  VIEW_FIELDS,
+  checkCounts,
+  failingChecks,
+  parseRef,
+  prRefs,
+  prompts,
+  readThreads,
+  readView,
+  readiness,
+  threadWhere,
+  waitingThreads,
+} from './prs'
 import {
   EMPTY,
   SYSTEM,
@@ -18,7 +31,7 @@ import {
   normalizeLedger,
   olderItems,
   parseReply,
-  rebuildPrompt,
+  catchUpPrompt,
 } from './ledger'
 
 const LEDGER = atom({ plugin: 'session-inbox', key: 'ledger' } as const, EMPTY)
@@ -28,7 +41,6 @@ const PRESENCE = atom({ plugin: 'session-inbox', key: 'presence' } as const, {
   isUpdating: false,
   error: null,
   minute: 0,
-  lastUpdateMs: null,
 } as Presence)
 const PREVIOUS = atom({ plugin: 'session-inbox', key: 'previous' } as const, null as Previous | null)
 const TAB = atom({ plugin: 'session-inbox', key: 'tab' } as const, 'waiting' as Tab)
@@ -36,6 +48,8 @@ const TAB = atom({ plugin: 'session-inbox', key: 'tab' } as const, 'waiting' as 
 const COLLAPSED = atom({ plugin: 'session-inbox', key: 'collapsed' } as const, [] as Section[])
 const NO_CURSOR: Cursor = { id: null, index: 0 }
 const SELECTION = atom({ plugin: 'session-inbox', key: 'selection' } as const, { waiting: NO_CURSOR, notes: NO_CURSOR, prs: NO_CURSOR } as Record<Tab, Cursor>)
+// Whether Claude Code uses its `dark` theme, which picks the selected row's tint.
+const IS_DARK_THEME = atom({ plugin: 'session-inbox', key: 'isDarkTheme' } as const, false)
 const PR_VIEWS = atom({ plugin: 'session-inbox', key: 'prViews' } as const, { views: {}, branchRef: null, isFetching: false } as PrViews)
 const PR_POLL_MS = 2 * 60_000
 const MAX_PRS = 6
@@ -64,14 +78,20 @@ const WAITING = 'warning'
 const RECOMMENDED = 'suggestion'
 // The header and footer panels: a theme key a shade off the pane's background, in every theme.
 const PANEL_BG = 'userMessageBackground'
-// The selected row in the dark theme: its tab's color at about a quarter over
-// the pane's rgb(38, 38, 38). Hex does not follow the theme, so other themes use SELECTION_BG.
-const DARK_TINTS: Record<Tab, string> = { waiting: '#56481f', notes: '#443b56', prs: '#304543' }
+// The selected row in the dark theme: its tab's color at about 15% over the
+// pane's rgb(38, 38, 38). Hex does not follow the theme, so other themes use SELECTION_BG.
+const DARK_TINTS: Record<Tab, string> = { waiting: '#473d21', notes: '#3b3547', prs: '#2b3735' }
 const SELECTION_BG = 'selectionBg'
 const DONE = 'success'
 // Each pane tab has its own color, used by its marker and by what it shows.
 const NOTES = 'autoAccept'
 const PRS = 'planMode'
+const TAB_COLORS: Record<Tab, string> = { waiting: WAITING, notes: NOTES, prs: PRS }
+const TABS: { id: Tab; label: string; hotkey: string }[] = [
+  { id: 'waiting', label: 'Waiting', hotkey: 'w' },
+  { id: 'notes', label: 'Notes', hotkey: 'n' },
+  { id: 'prs', label: 'PRs', hotkey: 'p' },
+]
 const MODEL = 'sonnet'
 const AWAY_MS = 15 * 60_000
 const PREVIOUS_MAX_AGE_MS = 7 * 24 * 60 * 60_000
@@ -95,8 +115,6 @@ let press: Press | null = null
 let sessionId = ''
 let root = ''
 let isSaved = false
-// The pane draws only while open, so a draw also marks it open after a reload.
-let isPaneOpen = false
 let queue: Promise<void> = Promise.resolve()
 
 function noteActivity(line: string) {
@@ -154,9 +172,8 @@ async function applyLedgerReply(
   return null
 }
 
-async function runUpdate($: EngineInterface, ex: Exchange) {
-  await update($, PRESENCE, p => ({ ...p, isUpdating: true }))
-  const startedAt = await $.clock.now()
+/** Updates the ledger from one exchange; returns what went wrong, or null. */
+async function runUpdate($: EngineInterface, ex: Exchange): Promise<string | null> {
   const r = await $.model.complete({
     model: MODEL,
     system: SYSTEM,
@@ -167,23 +184,35 @@ async function runUpdate($: EngineInterface, ex: Exchange) {
   })
   // An Explain turn talks about its item without deciding it.
   const explained = ex.press?.action === 'explain' ? ex.press.id : null
-  const error = await applyLedgerReply($, r, [ex.reply, ...ex.activity].join('\n'), (l, u, now) =>
+
+  return applyLedgerReply($, r, [ex.reply, ...ex.activity].join('\n'), (l, u, now) =>
     applyUpdate(l, { ...u, closed: u.closed.filter(c => c.id !== explained) }, now, ex.turn),
   )
-  const tookMs = (await $.clock.now()) - startedAt
-  await update($, PRESENCE, p => ({ ...p, isUpdating: false, error, lastUpdateMs: tookMs }))
 }
 
-async function markFailed($: EngineInterface) {
-  await update($, PRESENCE, p => ({ ...p, isUpdating: false, error: 'the last update failed' }))
+/**
+ * Brings the ledger up to date over the whole conversation, for turns the
+ * per-turn update missed: it closes what was handled and adds what still waits.
+ */
+async function catchUp($: EngineInterface): Promise<string | null> {
+  const r = await $.model.fork({ prompt: catchUpPrompt(await readLedger($)) })
+
+  return applyLedgerReply($, r, null, (l, u, now) => applyUpdate(l, u, now, l.turn))
 }
 
-async function rebuild($: EngineInterface) {
-  await update($, PRESENCE, p => ({ ...p, isUpdating: true }))
-  const r = await $.model.fork({ prompt: rebuildPrompt() })
-  const error = await applyLedgerReply($, r, null, (l, u, now) => applyUpdate({ ...l, items: [] }, u, now, l.turn))
-  if (!error) $.ui.toast('Rebuilt the card from the whole conversation')
-  await update($, PRESENCE, p => ({ ...p, isUpdating: false, error }))
+/**
+ * Queues the next update: a catch-up after a failed one, since the ledger may
+ * have missed that turn, else this exchange alone.
+ */
+function queueUpdate($: EngineInterface, ex: Exchange | null) {
+  queue = queue.then(async () => {
+    const isBehind = (await read($, PRESENCE)).error !== null
+    await update($, PRESENCE, p => ({ ...p, isUpdating: true }))
+    const error = await (isBehind || ex === null ? catchUp($) : runUpdate($, ex)).catch(() => 'the last update failed')
+    await update($, PRESENCE, p => ({ ...p, isUpdating: false, error }))
+  })
+  // A rejected link would skip every later update, so the chain swallows it.
+  queue = queue.catch(() => undefined)
 }
 
 async function tick($: EngineInterface) {
@@ -359,7 +388,7 @@ async function removeNote($: EngineInterface, id: string) {
 async function actOnNote($: EngineInterface, note: Note, how: 'address' | 'discuss') {
   await removeNote($, note.id)
   const opening = how === 'address' ? 'Please address this note you recorded:' : 'Let\'s talk through this note you recorded before changing anything:'
-  const body = [`${note.kind === 'issue' ? 'Issue' : 'Opportunity'}: ${note.title}`, note.detail, ...(note.path ? [`File: ${note.path}`] : [])]
+  const body = [`${noteKindLabel(note)}: ${note.title}`, note.detail, ...(note.path ? [`File: ${note.path}`] : [])]
   await send($, [opening, ...body].join('\n'))
 }
 
@@ -373,8 +402,10 @@ async function toggleSection($: EngineInterface, section: Section) {
   await $.store.set('collapsed', collapsed)
 }
 
+/** Selects a row and scrolls the pane the least that shows it whole. */
 async function select($: EngineInterface, tab: Tab, id: string, index: number) {
   await update($, SELECTION, s => ({ ...s, [tab]: { id, index } }))
+  await $.ui.scroll({ in: PANE, to: { key: `row-${id}` }, block: 'nearest' }).catch(() => undefined)
 }
 
 /**
@@ -390,7 +421,9 @@ function selectedIndex(ids: string[], cursor: Cursor): number {
 
 /** The PRs tab is on screen, so the current branch's PR is worth looking up. */
 async function isPrsTabShown($: EngineInterface) {
-  return isPaneOpen && (await read($, TAB)) === 'prs'
+  const [panes, tab] = await Promise.all([$.ui.panes().catch(() => []), read($, TAB)])
+
+  return tab === 'prs' && panes.some(p => p.id === PANE && p.isShown)
 }
 
 async function gh($: EngineInterface, args: string[]) {
@@ -626,7 +659,11 @@ function isLinkable(url: string): boolean {
 }
 
 function decisionText(d: Decided): string {
-  return /[?:]$/.test(d.ask) ? `${d.ask} ${d.outcome}` : `${d.ask}: ${d.outcome}`
+  return `${d.ask} → ${d.outcome}`
+}
+
+function noteKindLabel(note: Note): string {
+  return note.kind === 'issue' ? 'Issue' : 'Opportunity'
 }
 
 export const register: Register = on => {
@@ -643,8 +680,11 @@ export const register: Register = on => {
       description: 'Show where this session stands and what is waiting on you',
     })
     await $.tool.register({ name: 'note', description: NOTE_DESCRIPTION, inputSchema: NOTE_SCHEMA })
-    // A reload stops any update the previous load had running, and state outlives it.
-    await update($, PRESENCE, p => ({ ...p, isUpdating: false }))
+    // A reload stops any update the previous load had running, and state outlives
+    // it, so an update in flight at load was cut off: record it as failed.
+    const presence = await update($, PRESENCE, p => (p.isUpdating ? { ...p, isUpdating: false, error: 'an update was cut off' } : p))
+    const theme = (await $.config.list().catch(() => [])).find(row => row.key === 'theme')?.value
+    await update($, IS_DARK_THEME, () => theme === 'dark')
     const collapsed = (await $.store.get('collapsed')) as Section[] | undefined
     if (collapsed) await update($, COLLAPSED, () => collapsed)
     const now = await $.clock.now()
@@ -668,8 +708,13 @@ export const register: Register = on => {
     $.clock.every(PR_POLL_MS, () => {
       void pollPrs($)
     })
+    // Catch up now after a failed update, or when the ledger is empty in a
+    // conversation that already has turns: the mod loaded mid-session, or its saved state was lost.
+    const loaded = await readLedger($)
+    const isEmpty = !loaded.card && loaded.items.length === 0
+    if (presence.error !== null || (isEmpty && (await $.session.turns().catch(() => 0)) > 0)) queueUpdate($, null)
     // A resumed session's linked PRs; the branch's PR waits for the PRs tab.
-    if ((await readLedger($)).prs.length > 0) void fetchPrs($, false)
+    if (loaded.prs.length > 0) void fetchPrs($, false)
 
     return r
   })
@@ -783,7 +828,7 @@ export const register: Register = on => {
     activity = []
     const now = await $.clock.now()
     await update($, PRESENCE, p => ({ ...p, lastActiveAt: now }))
-    queue = queue.then(() => runUpdate($, ex)).catch(() => markFailed($))
+    queueUpdate($, ex)
     await linkPrs($, prRefs(e.answer))
 
     return r
@@ -802,10 +847,7 @@ export const register: Register = on => {
 
   on('command.run', { command: 'inbox' }, async $ => {
     const opened = await $.ui.open({ id: PANE, title: 'Session inbox', focus: true, closeOnEscape: true })
-    if (opened.isPlaced) {
-      isPaneOpen = true
-      if ((await read($, TAB)) === 'prs') void fetchPrs($, true)
-    }
+    if (opened.isPlaced && (await read($, TAB)) === 'prs') void fetchPrs($, true)
 
     return { text: 'Opened the session inbox.' }
   })
@@ -1003,15 +1045,17 @@ export const register: Register = on => {
     return fit(rows)
   })
 
-  on('ui.close', async ($, e, next) => {
-    if (e.id === PANE) isPaneOpen = false
-    return next(e)
+  on('config.set', { key: 'theme' }, async ($, e, next) => {
+    const r = await next(e)
+    const theme = (await $.config.list().catch(() => [])).find(row => row.key === 'theme')?.value
+    await update($, IS_DARK_THEME, () => theme === 'dark')
+
+    return r
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    isPaneOpen = true
     const { Box, Button, Link, Markdown, Text } = $.ui.resolve(e)
-    const [ledger, presence, tab, prState, collapsed, selection, now, config] = await Promise.all([
+    const [ledger, presence, tab, prState, collapsed, selection, now, isDark] = await Promise.all([
       readLedger($),
       read($, PRESENCE),
       read($, TAB),
@@ -1019,32 +1063,147 @@ export const register: Register = on => {
       read($, COLLAPSED),
       read($, SELECTION),
       $.clock.now(),
-      // Only picks the selection's tint, so a failed read falls back to theme keys.
-      $.config.list().catch(() => []),
+      read($, IS_DARK_THEME),
     ])
     const card = ledger.card
     const numbered = ledger.batchTurn === ledger.turn ? latestBatch(ledger) : []
-    const notes = [...ledger.notes].reverse()
     const prViews = Object.values(prState.views)
     const isFocused = e.props.isFocused
-    const isDark = config.find(row => row.key === 'theme')?.value === 'dark'
+    const color = TAB_COLORS[tab]
 
-    // Each tab's rows in order; the cursor moves through these ids.
-    const prRows = prViews.flatMap(pr => [
-      ...pr.checks.filter(c => c.bucket === 'fail').map(c => ({ id: `${pr.ref} check ${c.name}`, pr, check: c, thread: null })),
-      ...waitingThreads(pr).map(t => ({ id: `${pr.ref} thread ${t.id}`, pr, check: null, thread: t })),
-    ])
-    const rowIds: Record<Tab, string[]> = {
-      waiting: ledger.items.map(i => i.id),
-      notes: notes.map(n => n.id),
-      prs: prRows.map(r => r.id),
+    // One list row's content. Selected, a row shows its context line, its title
+    // in full, its body and its keys; otherwise one line: `line`, or the title.
+    type Row = {
+      id: string
+      handle: string
+      meta: JSX.Element
+      title: string
+      line?: JSX.Element
+      body?: JSX.Element | null
+      keys: () => KeyAction[]
     }
-    const ids = rowIds[tab]
+    const itemRow = (item: Item): Row => {
+      const handle = marker(item, numbered)
+      const rec = item.rec && item.kind !== 'do' ? item.rec : null
+
+      return {
+        id: item.id,
+        handle,
+        meta: (
+          <Text color={WAITING} bold>
+            {item.kind === 'do' ? 'Your task' : 'Question'}
+          </Text>
+        ),
+        title: item.ask,
+        body: rec ? (
+          <Text wrap="wrap">
+            <Text dimColor>Recommended: </Text>
+            <Text bold>{rec}</Text>
+          </Text>
+        ) : null,
+        keys: () => itemKeys($, item, handle),
+      }
+    }
+    const noteRow = (note: Note): Row => ({
+      id: note.id,
+      handle: '•',
+      meta: (
+        <Text wrap="truncate-end">
+          <Text color={NOTES} bold>
+            {noteKindLabel(note)}
+          </Text>
+          <Text dimColor>
+            {' · '}
+            {ago(now - note.at)}
+            {note.path ? ` · ${baseName(note.path)}` : ''}
+          </Text>
+        </Text>
+      ),
+      title: note.title,
+      line: (
+        <Text wrap="truncate-end">
+          {note.title}
+          <Text dimColor> · {ago(now - note.at)}</Text>
+        </Text>
+      ),
+      body: <Text wrap="wrap">{note.detail}</Text>,
+      keys: () => [
+        { key: `address-${note.id}`, label: 'Address it', hotkey: 'a', onPress: () => void actOnNote($, note, 'address') },
+        { key: `discuss-${note.id}`, label: 'Discuss', hotkey: 'd', onPress: () => void actOnNote($, note, 'discuss') },
+        { key: `drop-${note.id}`, label: 'Dismiss', hotkey: 'x', onPress: () => void removeNote($, note.id) },
+      ],
+    })
+    const checkRow = (pr: PrView, c: PrCheck): Row => ({
+      id: `${pr.ref} check ${c.name}`,
+      handle: '✗',
+      meta: (
+        <Text color="error" bold>
+          Failing check
+        </Text>
+      ),
+      title: c.name,
+      line: (
+        <Text wrap="truncate-end">
+          <Text color="error">{c.name}</Text>
+          <Text dimColor> · failing check</Text>
+        </Text>
+      ),
+      keys: () => [
+        { key: `fix-${pr.ref}-${c.name}`, label: 'Fix', hotkey: 'f', onPress: () => void send($, prompts.fix(pr, c)) },
+        { key: `log-${pr.ref}-${c.name}`, label: 'Open log', hotkey: 'o', onPress: () => void openUrl($, c.url ?? pr.url) },
+      ],
+    })
+    const threadRow = (pr: PrView, t: PrThread): Row => {
+      const latest = t.reply ?? { author: t.author, body: t.body }
+
+      return {
+        id: `${pr.ref} thread ${t.id}`,
+        handle: '◦',
+        meta: (
+          <Text wrap="truncate-end">
+            <Text color={PRS} bold>
+              Review thread
+            </Text>
+            <Text dimColor>
+              {t.replies > 0 ? ` · ${t.replies + 1} comments` : ''}
+              {t.isOutdated ? ' · outdated' : ''}
+            </Text>
+          </Text>
+        ),
+        title: threadWhere(t),
+        line: (
+          <Text wrap="truncate-end">
+            <Text dimColor>{threadWhere(t, baseName(t.path))} </Text>
+            {latest.body.replace(/\s+/g, ' ')}
+          </Text>
+        ),
+        body: (
+          <Box flexDirection="column">
+            {t.reply ? <Markdown dimColor text={`@${t.author}: ${clipLabel(t.body, 200)}`} /> : null}
+            <Markdown text={`**@${latest.author}:** ${clipLabel(latest.body, 1200)}`} />
+          </Box>
+        ),
+        keys: () => [
+          { key: `address-${t.id}`, label: 'Address', hotkey: 'a', onPress: () => void send($, prompts.address(pr, [t])) },
+          { key: `draft-${t.id}`, label: 'Draft reply', hotkey: 'r', onPress: () => void send($, prompts.draft(pr, t)) },
+          { key: `discuss-${t.id}`, label: 'Discuss', hotkey: 'd', onPress: () => void send($, prompts.discuss(pr, t)) },
+          { key: `open-${t.id}`, label: 'Open', hotkey: 'o', onPress: () => void openUrl($, t.reply?.url || t.url || pr.url) },
+        ],
+      }
+    }
+
+    // Each tab's rows in order: the cursor, the counts and the drawing all read these.
+    const prGroups = prViews.map(pr => ({ pr, rows: [...failingChecks(pr).map(c => checkRow(pr, c)), ...waitingThreads(pr).map(t => threadRow(pr, t))] }))
+    const rows: Record<Tab, Row[]> = {
+      waiting: ledger.items.map(itemRow),
+      notes: [...ledger.notes].reverse().map(noteRow),
+      prs: prGroups.flatMap(g => g.rows),
+    }
+    const ids = rows[tab].map(r => r.id)
+    const indexOf = new Map(ids.map((id, n) => [id, n]))
     const at = selectedIndex(ids, selection[tab])
-    const selectedId = ids[at] ?? null
-    const color = tab === 'notes' ? NOTES : tab === 'prs' ? PRS : WAITING
     // Wide enough for the longest handle, such as "you" on a task.
-    const handleWidth = 3 + Math.max(1, ...(tab === 'waiting' ? ledger.items.map(i => marker(i, numbered).length) : [1]))
+    const handleWidth = 3 + Math.max(1, ...rows[tab].map(r => r.handle.length))
 
     const keyRow = (keys: KeyAction[]) => (
       <Box flexDirection="row" flexWrap="wrap" columnGap={2}>
@@ -1053,24 +1212,33 @@ export const register: Register = on => {
         ))}
       </Box>
     )
-    // One list row. The selected row gets a bar in the tab's color, a shaded
-    // background, its full text and its keys; the rest show one line each.
-    // The handle is a Button, so a click selects the row.
-    const listRow = (o: { id: string; handle: string; head: (isSelected: boolean) => JSX.Element; body?: JSX.Element | null; keys: KeyAction[] }) => {
-      const isSelected = o.id === selectedId
-      const index = ids.indexOf(o.id)
+    // The selected row gets a bar in the tab's color and a tinted background,
+    // and reads top to bottom: context line, title, body, keys, each set off by
+    // a blank line. The handle is a Button, so a click selects the row.
+    const listRow = (row: Row) => {
+      const index = indexOf.get(row.id) ?? -1
+      const isSelected = index === at
 
       return (
-        <Box flexDirection="row" backgroundColor={isSelected ? (isDark ? DARK_TINTS[tab] : SELECTION_BG) : undefined}>
+        <Box key={`row-${row.id}`} flexDirection="row" backgroundColor={isSelected ? (isDark ? DARK_TINTS[tab] : SELECTION_BG) : undefined}>
           <Box width={1} flexShrink={0} backgroundColor={isSelected ? color : undefined} />
-          <Box width={handleWidth} flexShrink={0} paddingLeft={1}>
-            <Button plain key={`select-${o.id}`} label={o.handle} dimColor={!isSelected} onPress={() => void select($, tab, o.id, index)} />
+          <Box width={handleWidth} flexShrink={0} paddingLeft={1} paddingY={isSelected ? 1 : 0}>
+            <Button plain key={`select-${row.id}`} label={row.handle} dimColor={!isSelected} onPress={() => void select($, tab, row.id, index)} />
           </Box>
-          <Box flexDirection="column" flexShrink={1} flexGrow={1} paddingRight={1}>
-            {o.head(isSelected)}
-            {isSelected && o.body ? o.body : null}
-            {isSelected ? keyRow(o.keys) : null}
-          </Box>
+          {isSelected ? (
+            <Box flexDirection="column" flexShrink={1} flexGrow={1} paddingRight={1} paddingY={1}>
+              {row.meta}
+              <Text wrap="wrap" bold>
+                {row.title}
+              </Text>
+              {row.body ? <Box marginTop={1}>{row.body}</Box> : null}
+              <Box marginTop={1}>{keyRow(row.keys())}</Box>
+            </Box>
+          ) : (
+            <Box flexShrink={1} flexGrow={1} paddingRight={1}>
+              {row.line ?? <Text wrap="truncate-end">{row.title}</Text>}
+            </Box>
+          )}
         </Box>
       )
     }
@@ -1082,204 +1250,113 @@ export const register: Register = on => {
       </Box>
     )
 
-    const tabChip = (id: Tab, label: string, count: number, chipColor: string, hotkey: string) =>
-      tab === id ? (
-        <Text backgroundColor={chipColor} color="inverseText" bold>
-          {` ${label}${count > 0 ? ` ${count}` : ''} `}
-        </Text>
-      ) : (
-        <Box flexDirection="row">
-          <Button plain key={`tab-${id}`} hotkey={hotkey} label={label} dimColor onPress={() => void showTab($, id)} />
-          {count > 0 ? <Text color={chipColor}> {count}</Text> : null}
-        </Box>
-      )
     // The tab bar is the pane's top panel; the footer is its bottom one.
     const tabs = (
       <Box backgroundColor={PANEL_BG} paddingX={1} paddingY={1}>
         <Box flexDirection="row" columnGap={3} flexGrow={1}>
-          {tabChip('waiting', 'Waiting', ledger.items.length, WAITING, 'w')}
-          {tabChip('notes', 'Notes', notes.length, NOTES, 'n')}
-          {tabChip('prs', 'PRs', prRows.length, PRS, 'p')}
+          {TABS.map(({ id, label, hotkey }) => {
+            const count = rows[id].length
+
+            return tab === id ? (
+              <Text backgroundColor={TAB_COLORS[id]} color="inverseText" bold>
+                {` ${label}${count > 0 ? ` ${count}` : ''} `}
+              </Text>
+            ) : (
+              <Box flexDirection="row">
+                <Button plain key={`tab-${id}`} hotkey={hotkey} label={label} dimColor onPress={() => void showTab($, id)} />
+                {count > 0 ? <Text color={TAB_COLORS[id]}> {count}</Text> : null}
+              </Box>
+            )
+          })}
         </Box>
       </Box>
     )
 
-    // A collapsible section's title is its toggle.
-    const sectionToggle = (section: Section, title: string, count: number) => (
-      <Button
-        plain
-        key={`toggle-${section}`}
-        label={`${collapsed.includes(section) ? '▸' : '▾'} ${title} ${count}`}
-        dimColor
-        onPress={() => void toggleSection($, section)}
-      />
-    )
-
-    const itemRow = (item: Item) => {
-      const handle = marker(item, numbered)
-      const rec = item.rec && item.kind !== 'do' ? item.rec : null
-
-      return listRow({
-        id: item.id,
-        handle,
-        head: isSelected => (
-          <Text wrap={isSelected ? 'wrap' : 'truncate-end'} bold={isSelected}>
-            {item.ask}
-          </Text>
-        ),
-        body: rec ? (
-          <Text wrap="wrap">
-            <Text dimColor>Recommended: </Text>
-            <Text bold>{rec}</Text>
-          </Text>
-        ) : null,
-        keys: itemKeys($, item, handle),
-      })
-    }
-    // Done and Decided: the toggles sit on consecutive lines, and an open
-    // section's blank line follows its last entry.
-    const done = card?.done ?? []
-    const history = [
-      ...(done.length > 0 ? [sectionToggle('done', 'Done', done.length)] : []),
-      ...(done.length > 0 && !collapsed.includes('done')
-        ? [
-            <Box flexDirection="column" marginBottom={ledger.decided.length > 0 ? 1 : 0}>
-              {done.map(d => (
-                <Text wrap="wrap">
-                  <Text color={DONE}>✓ </Text>
-                  <Text dimColor>{d}</Text>
-                </Text>
-              ))}
-            </Box>,
+    // A collapsible section: its title is its toggle. An open section's blank
+    // line follows its last entry, so collapsed toggles sit on consecutive lines.
+    const collapsible = (section: Section, title: string, entries: JSX.Element[], isLast: boolean) =>
+      entries.length === 0
+        ? []
+        : [
+            <Button
+              plain
+              key={`toggle-${section}`}
+              label={`${collapsed.includes(section) ? '▸' : '▾'} ${title} ${entries.length}`}
+              dimColor
+              onPress={() => void toggleSection($, section)}
+            />,
+            ...(collapsed.includes(section)
+              ? []
+              : [
+                  <Box flexDirection="column" marginBottom={isLast ? 0 : 1}>
+                    {entries}
+                  </Box>,
+                ]),
           ]
-        : []),
-      ...(ledger.decided.length > 0 ? [sectionToggle('decided', 'Decided', ledger.decided.length)] : []),
-      ...(ledger.decided.length > 0 && !collapsed.includes('decided')
-        ? [...ledger.decided]
-            .reverse()
-            .slice(0, 6)
-            .map(d => (
-              <Text wrap="wrap" dimColor>
-                {d.ask} → {d.outcome}
-              </Text>
-            ))
-        : []),
-    ]
-    const waitingView = (
-      <Box flexDirection="column" gap={1}>
-        <Box flexDirection="column">{ledger.items.length === 0 ? emptyLine('Nothing is waiting on you.') : ledger.items.map(itemRow)}</Box>
-        {card && card.running.length > 0 ? (
-          <Box flexDirection="column" paddingLeft={1}>
-            <Text dimColor>Running {card.running.length}</Text>
-            {card.running.map(run => {
-              const { name, url } = splitRunning(run)
 
-              return (
-                <Text wrap="wrap">
-                  <Text color={DONE}>● </Text>
-                  {name ? <Text>{name}  </Text> : null}
-                  {url && isLinkable(url) ? <Link href={url} /> : <Text dimColor>{url}</Text>}
-                </Text>
-              )
-            })}
-          </Box>
-        ) : null}
-        {history.length > 0 ? (
-          <Box flexDirection="column" paddingLeft={1}>
-            {history}
-          </Box>
-        ) : null}
-      </Box>
-    )
+    const waitingView = () => {
+      const decided = [...ledger.decided].reverse().slice(0, 6)
+      const history = [
+        ...collapsible(
+          'done',
+          'Done',
+          (card?.done ?? []).map(d => (
+            <Text wrap="wrap">
+              <Text color={DONE}>✓ </Text>
+              <Text dimColor>{d}</Text>
+            </Text>
+          )),
+          decided.length === 0,
+        ),
+        ...collapsible(
+          'decided',
+          'Decided',
+          decided.map(d => (
+            <Text wrap="wrap" dimColor>
+              {decisionText(d)}
+            </Text>
+          )),
+          true,
+        ),
+      ]
 
-    const notesView = (
-      <Box flexDirection="column">
-        {notes.length === 0
-          ? emptyLine('No notes. Claude adds one when it notices an issue or an opportunity outside the current task.')
-          : notes.map(note =>
-              listRow({
-                id: note.id,
-                handle: note.kind === 'issue' ? '!' : '+',
-                head: isSelected => (
-                  <Text wrap={isSelected ? 'wrap' : 'truncate-end'}>
-                    <Text bold={isSelected}>{note.title}</Text>
-                    <Text dimColor> · {note.kind} · {ago(now - note.at)}</Text>
+      return (
+        <Box flexDirection="column" gap={1}>
+          <Box flexDirection="column">{rows.waiting.length === 0 ? emptyLine('Nothing is waiting on you.') : rows.waiting.map(listRow)}</Box>
+          {card && card.running.length > 0 ? (
+            <Box flexDirection="column" paddingLeft={1}>
+              <Text dimColor>Running {card.running.length}</Text>
+              {card.running.map(run => {
+                const { name, url } = splitRunning(run)
+
+                return (
+                  <Text wrap="wrap">
+                    <Text color={DONE}>● </Text>
+                    {name ? <Text>{name}  </Text> : null}
+                    {url && isLinkable(url) ? <Link href={url} /> : <Text dimColor>{url}</Text>}
                   </Text>
-                ),
-                body: (
-                  <Box flexDirection="column">
-                    <Text wrap="wrap">{note.detail}</Text>
-                    {note.path ? (
-                      <Text dimColor wrap="truncate-middle">
-                        {note.path}
-                      </Text>
-                    ) : null}
-                  </Box>
-                ),
-                keys: [
-                  { key: `address-${note.id}`, label: 'Address it', hotkey: 'a', onPress: () => void actOnNote($, note, 'address') },
-                  { key: `discuss-${note.id}`, label: 'Discuss', hotkey: 'd', onPress: () => void actOnNote($, note, 'discuss') },
-                  { key: `drop-${note.id}`, label: 'Dismiss', hotkey: 'x', onPress: () => void removeNote($, note.id) },
-                ],
-              }),
-            )}
+                )
+              })}
+            </Box>
+          ) : null}
+          {history.length > 0 ? (
+            <Box flexDirection="column" paddingLeft={1}>
+              {history}
+            </Box>
+          ) : null}
+        </Box>
+      )
+    }
+
+    const notesView = () => (
+      <Box flexDirection="column">
+        {rows.notes.length === 0
+          ? emptyLine('No notes. Claude adds one when it notices an issue or an opportunity outside the current task.')
+          : rows.notes.map(listRow)}
       </Box>
     )
 
-    const checkRow = (pr: PrView, c: PrCheck) =>
-      listRow({
-        id: `${pr.ref} check ${c.name}`,
-        handle: '✗',
-        head: isSelected => (
-          <Text wrap="truncate-end">
-            <Text color="error" bold={isSelected}>
-              {c.name}
-            </Text>
-            <Text dimColor> · failing check</Text>
-          </Text>
-        ),
-        keys: [
-          { key: `fix-${pr.ref}-${c.name}`, label: 'Fix', hotkey: 'f', onPress: () => void send($, prompts.fix(pr, c)) },
-          { key: `log-${pr.ref}-${c.name}`, label: 'Open log', hotkey: 'o', onPress: () => void openUrl($, c.url ?? pr.url) },
-        ],
-      })
-    const threadRow = (pr: PrView, t: PrThread) => {
-      const latest = t.reply ?? { author: t.author, body: t.body }
-      const where = `${t.path}${t.line ? `:${t.line}` : ''}`
-
-      return listRow({
-        id: `${pr.ref} thread ${t.id}`,
-        handle: '◦',
-        head: isSelected =>
-          isSelected ? (
-            <Text wrap="truncate-middle" bold>
-              {where}
-              {t.isOutdated ? <Text dimColor> · outdated</Text> : null}
-            </Text>
-          ) : (
-            <Text wrap="truncate-end">
-              <Text dimColor>
-                {baseName(t.path)}
-                {t.line ? `:${t.line}` : ''}{' '}
-              </Text>
-              {latest.body.replace(/\s+/g, ' ')}
-            </Text>
-          ),
-        body: (
-          <Box flexDirection="column">
-            {t.reply ? <Markdown dimColor text={`@${t.author}: ${clipLabel(t.body, 200)}`} /> : null}
-            <Markdown text={`**@${latest.author}:** ${clipLabel(latest.body, 1200)}`} />
-          </Box>
-        ),
-        keys: [
-          { key: `address-${t.id}`, label: 'Address', hotkey: 'a', onPress: () => void send($, prompts.address(pr, [t])) },
-          { key: `draft-${t.id}`, label: 'Draft reply', hotkey: 'r', onPress: () => void send($, prompts.draft(pr, t)) },
-          { key: `discuss-${t.id}`, label: 'Discuss', hotkey: 'd', onPress: () => void send($, prompts.discuss(pr, t)) },
-          { key: `open-${t.id}`, label: 'Open', hotkey: 'o', onPress: () => void openUrl($, t.reply?.url || t.url || pr.url) },
-        ],
-      })
-    }
-    const prBlock = (pr: PrView) => {
+    const prBlock = ({ pr, rows: prRows }: { pr: PrView; rows: Row[] }) => {
       const ready = readiness(pr)
       const counts = checkCounts(pr)
       const waitingOn = waitingThreads(pr)
@@ -1325,41 +1402,47 @@ export const register: Register = on => {
               {pr.ref !== prState.branchRef ? <Button key={`unlink-${pr.ref}`} label="Remove" dimColor onPress={() => void unlinkPr($, pr.ref)} /> : null}
             </Box>
           </Box>
-          {pr.checks.filter(c => c.bucket === 'fail').map(c => checkRow(pr, c))}
-          {waitingOn.map(t => threadRow(pr, t))}
+          {prRows.map(listRow)}
         </Box>
       )
     }
-    const prsView = (
+    const prsView = () => (
       <Box flexDirection="column" gap={1}>
-        {prViews.length === 0
+        {prGroups.length === 0
           ? emptyLine(prState.isFetching ? 'Checking for PRs…' : 'No PRs. A PR shows here when this session opens or links one, or when this branch has one.')
-          : prViews.map(prBlock)}
+          : prGroups.map(prBlock)}
       </Box>
     )
 
+    const move = (step: number) => {
+      const to = Math.min(Math.max(at + step, 0), ids.length - 1)
+      void select($, tab, ids[to] ?? '', to)
+    }
     const moveKeys: KeyAction[] =
       ids.length > 1
         ? [
-            { key: 'next', label: 'Next', hotkey: 'j', dimColor: true, onPress: () => void select($, tab, ids[Math.min(at + 1, ids.length - 1)] ?? '', Math.min(at + 1, ids.length - 1)) },
-            { key: 'previous', label: 'Previous', hotkey: 'k', dimColor: true, onPress: () => void select($, tab, ids[Math.max(at - 1, 0)] ?? '', Math.max(at - 1, 0)) },
+            { key: 'next', label: 'Next', hotkey: 'j', dimColor: true, onPress: () => move(1) },
+            { key: 'previous', label: 'Previous', hotkey: 'k', dimColor: true, onPress: () => move(-1) },
           ]
         : []
+
     const newest = prViews.reduce((t, v) => Math.max(t, v.fetchedAt), 0)
     const status =
       tab === 'prs' && prViews.length > 0
         ? prState.isFetching
           ? 'Refreshing PRs'
           : `PRs checked ${ago(now - newest)}`
-        : card
-          ? `Updated ${ago(now - card.updatedAt)}`
-          : 'No card yet'
+        : presence.isUpdating
+          ? 'Updating…'
+          : card
+            ? `Updated ${ago(now - card.updatedAt)}`
+            : 'Not updated yet'
 
     return (
       <Box flexDirection="column" gap={1}>
         {tabs}
         <Box flexDirection="column" paddingX={1}>
-          {tab === 'notes' ? notesView : tab === 'prs' ? prsView : waitingView}
+          {tab === 'notes' ? notesView() : tab === 'prs' ? prsView() : waitingView()}
         </Box>
 
         <Box backgroundColor={PANEL_BG} paddingX={1}>
@@ -1369,8 +1452,7 @@ export const register: Register = on => {
               <Text dimColor wrap="truncate-start">
                 {status}
               </Text>
-              {presence.error ? <Text color="error">update failed</Text> : null}
-              <Button key="rebuild" label={presence.isUpdating ? 'Updating…' : 'Rebuild'} dimColor onPress={() => rebuild($).catch(() => markFailed($))} />
+              {presence.error && !presence.isUpdating ? <Text color="error">update failed, retries after the next reply</Text> : null}
             </Box>
           </Box>
         </Box>

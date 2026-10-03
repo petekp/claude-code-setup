@@ -38,13 +38,11 @@ session stands.
   - Under the list, the Waiting tab shows what's running, what's done, and
     recent decisions. Press Done's or Decided's title to collapse it. The mod
     remembers that in later sessions.
-  - `[ Rebuild ]` rebuilds the card from the whole conversation, which helps
-    after installing the mod mid-session.
 - **Keys.** While the pane has focus, `j` and `k` move the selection, `w`,
   `n` and `p` switch tabs, and each action's key presses it. `/inbox` gives
   the pane focus, and ctrl+x tab moves focus between the pane and the
   prompt. A label written `key: Action` has a key. A label in brackets, like
-  `[ Rebuild ]`, is click only. You can also click any action, or click a
+  `[ Open PR ]`, is click only. You can also click any action, or click a
   row's number to select it.
 - **Helper buttons.** When the agent's reply spells out how to do an item, the
   item gets buttons for it:
@@ -103,8 +101,11 @@ the agent did, and its reply. It also reads the previous card. It returns an
 updated card and the questions opened and closed.
 
 Each update costs about 3k input and 500 output tokens. It runs after the
-reply is shown and takes 3 to 5 seconds. It never rereads the whole
-conversation unless you press Rebuild.
+reply is shown and takes 3 to 5 seconds. When an update fails, or
+when the mod loads into a conversation it has not read, such as after an
+install mid-session, it catches up instead. One call over the whole
+conversation closes the questions and notes that were handled and adds what
+still waits on you.
 
 The mod keeps each session's card in its store, so `claude --resume` brings
 it back. It does nothing in headless `claude -p` runs.

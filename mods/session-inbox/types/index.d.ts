@@ -102,11 +102,10 @@ export type Presence = {
   lastActiveAt: number
   isAway: boolean
   isUpdating: boolean
+  /** Why the last update failed. While set, the ledger may have missed a turn, so the next update re-reads the whole conversation. */
   error: string | null
   /** The minute of the last clock tick, so the "last active" text redraws. */
   minute: number
-  /** How long the last ledger update took, shown in the pane. */
-  lastUpdateMs: number | null
 }
 
 /** The most recent other session in this project, offered on a fresh start. */
@@ -130,6 +129,6 @@ export type PrViews = { views: Record<string, PrView>; branchRef: string | null;
 
 declare module 'claude-code' {
   interface PluginState {
-    'session-inbox': { ledger: Ledger; presence: Presence; previous: Previous | null; tab: Tab; prViews: PrViews; collapsed: Section[]; selection: Record<Tab, Cursor> }
+    'session-inbox': { isDarkTheme: boolean; ledger: Ledger; presence: Presence; previous: Previous | null; tab: Tab; prViews: PrViews; collapsed: Section[]; selection: Record<Tab, Cursor> }
   }
 }
