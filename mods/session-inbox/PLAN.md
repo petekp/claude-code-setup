@@ -398,9 +398,17 @@ it as Pete's message.
   skips the mod's own prompts, so none is counted twice. This replaced the
   press queue, which matched submitted text back to the button that sent it.
 - **Context in a hidden row.** A plugin's own prompt cannot carry
-  `context`, so `send()` appends it first with `$.session.append`, as a
-  user-role row the model reads and the transcript does not show. A refused
-  append does not stop the prompt.
+  `context`, so the mod appends it with `$.session.append`, as a user-role
+  row the model reads and the transcript does not show. The engine may run a
+  button's prompt at once, after the running turn, or inside it. So
+  `send()` keeps the context by the prompt's text, and the mod's
+  `session.append` hook on `prompt` and `delivery` rows appends it just
+  before the prompt's own row is stored. Appending it at press time put it
+  in the running turn, one message ahead of its prompt. A refused append
+  does not stop the prompt.
+- **No answer check on presses.** A button's prompt already says what it
+  does. The answer check read the item an Explain or Run prompt quotes as
+  answered.
 - **Settled items always go out.** Claude had never been sent an inbox when
   its own reply asked the questions. Pressing then left the inbox empty, and
   the rule against sending an empty inbox Claude had not seen also dropped
@@ -408,7 +416,8 @@ it as Pete's message.
   regardless.
 - **Checked live.** Pete dismissed one question and answered the other by
   button. The hidden row listed both outcomes, and Claude said it would not
-  ask the dismissed question again. `claude plugin test` cannot observe the
+  ask the dismissed question again. A press while Claude worked was queued,
+  and when it ran after the turn, its hidden row sat directly before it. `claude plugin test` cannot observe the
   appended row; the hook test checks that the per-turn call reads the
   pressed answer as Pete's message.
 

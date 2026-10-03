@@ -131,6 +131,8 @@ let queue: Promise<void> = Promise.resolve()
 let toldInbox: string | null = null
 // The line last published to this pane's Herdr sidebar row.
 let published: string | null = null
+// Context for prompts this mod sent, by text, appended just before each prompt's row.
+const contextFor = new Map<string, string[]>()
 // The settled items Claude has been told about, by id.
 let toldDecided = new Set<string>()
 // The `!` command whose output row comes next.
@@ -282,9 +284,16 @@ async function sendAnswer($: EngineInterface, item: Item, answer: string) {
  */
 async function send($: EngineInterface, text: string, sentBy: Press | null = null) {
   const context = await notePrompt($, text, sentBy)
-  // Without the context row Claude still gets the prompt, so a refused append does not stop it.
-  if (context.length > 0) await $.session.append({ message: { type: 'user', content: [{ type: 'text', text: context.join('\n\n') }] } }).catch(() => undefined)
+  // The engine may run the prompt now, after the running turn, or inside it, so
+  // the context goes in when the prompt's own row is stored (session.append).
+  if (context.length > 0) contextFor.set(text, context)
   await $.prompt.submit({ text, asUser: true })
+}
+
+/** Appends context as a row only the model reads. Without it Claude still gets the prompt, so a refused append is ignored. */
+async function appendContext($: EngineInterface, context: string[]) {
+  if (context.length === 0) return
+  await $.session.append({ message: { type: 'user', content: [{ type: 'text', text: context.join('\n\n') }] } }).catch(() => undefined)
 }
 
 /**
@@ -309,8 +318,8 @@ async function notePrompt($: EngineInterface, text: string, sentBy: Press | null
     }
     await update($, PREVIOUS, () => null)
   }
-  // An Explain quotes its item without answering it.
-  const answer = sentBy?.action === 'explain' ? null : answerNote(ledger, text, ledger.turn)
+  // A button's prompt already says what it does; an Explain, for one, quotes its item without answering it.
+  const answer = sentBy ? null : answerNote(ledger, text, ledger.turn)
   if (answer) notes.push(answer)
   // The inbox when it changed since Claude last read it, or when something was
   // settled since. An empty inbox with nothing settled says nothing new.
@@ -826,6 +835,7 @@ export const register: Register = on => {
       shellCommand = null
       toldInbox = null
       toldDecided = new Set()
+      contextFor.clear()
     }
 
     return next(e)
@@ -922,6 +932,18 @@ export const register: Register = on => {
     )
 
     return text ? { ...r, blocks: [...r.blocks, { name: 'session_inbox', text }] } : r
+  })
+
+  // A prompt this mod sent: its context goes in just before it, wherever the engine runs it.
+  on('session.append', { door: ['prompt', 'delivery'] }, async ($, e, next) => {
+    const isMine = e.origin.kind === 'plugin' && 'name' in e.origin && e.origin.name === 'session-inbox'
+    if (!isOn || e.agentId || !isMine) return next(e)
+    const text = e.message.content.map(b => (b.type === 'text' ? b.text : '')).join('')
+    const context = contextFor.get(text)
+    contextFor.delete(text)
+    if (context) await appendContext($, context)
+
+    return next(e)
   })
 
   // The person's own `!` and slash commands reach no prompt.submit hook, only these rows.
