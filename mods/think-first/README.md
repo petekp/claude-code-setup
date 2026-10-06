@@ -83,7 +83,7 @@ Each take and prediction is one JSON file in `~/.claude/think-first/records/`.
   and the mod leaves them alone. An `expect:` line in one reaches Claude.
 - **Shared band.** The band above the prompt shows one plugin's row at a
   time. In a live test, this mod's prediction row showed in place of
-  session-inbox's.
+  the inbox mod's.
 - **Claude Code only.** Codex sessions don't run mods.
 
 ## Checks

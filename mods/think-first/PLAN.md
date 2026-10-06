@@ -126,7 +126,7 @@ Last 6 weeks, all projects:
   through. A wrong catch costs one Enter.
 - **Prompts typed during a turn.** A prompt sent while a turn runs reaches
   that turn directly. The mod leaves it alone, `expect:` line included.
-- **One plugin owns the band.** If session-inbox also loads, the plugin order
+- **One plugin owns the band.** If the inbox mod also loads, the plugin order
   decides which band shows while a prediction is open.
 
 ## Status

@@ -1,6 +1,0 @@
-{
-  "name": "session-inbox",
-  "version": "0.1.0",
-  "description": "Collects what is waiting on you in a session: questions, Claude's notes and PR reviews",
-  "types": "./types/index.d.ts"
-}
