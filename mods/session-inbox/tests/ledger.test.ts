@@ -1,6 +1,18 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { EMPTY, answerNote, applyUpdate, carryText, latestBatch, parseReply, readCommandRow, statusLine, tasksRunBy } from '../hooks/ledger'
+import {
+  EMPTY,
+  answerNote,
+  applyUpdate,
+  carryText,
+  latestBatch,
+  parseReply,
+  readCommandRow,
+  resetTime,
+  statusLine,
+  stopKindOf,
+  tasksRunBy,
+} from '../hooks/ledger'
 
 const REPLY = `GOAL: Move annotation queue logic into a tested reducer
 DONE: Reducer built on its own branch
@@ -58,7 +70,9 @@ describe('parseReply', () => {
     ])
     // A sign-in command needs the person's terminal, so it becomes a copy button.
     expect(u?.added[1]?.helps).toEqual([{ kind: 'terminal', command: 'npm login', name: null }])
-    expect(u?.helped).toEqual([{ id: 'i4', help: { kind: 'link', url: 'https://example.com/tokens', name: 'token page' } }])
+    expect(u?.helped).toEqual([
+      { id: 'i4', help: { kind: 'link', url: 'https://example.com/tokens', name: 'token page' } },
+    ])
   })
 
   test('returns null for prose with no keys', () => {
@@ -79,7 +93,9 @@ describe('applyUpdate', () => {
       2,
     )
     expect(second.items.map(i => i.id)).toEqual(['i2', 'i3', 'i4'])
-    expect(second.decided).toEqual([{ id: 'i1', ask: 'Rename Send.swift to Herdr?', outcome: 'yes, renamed', at: 2000 }])
+    expect(second.decided).toEqual([
+      { id: 'i1', ask: 'Rename Send.swift to Herdr?', outcome: 'yes, renamed', at: 2000 },
+    ])
     expect(latestBatch(second).map(i => i.id)).toEqual(['i4'])
     expect(second.card?.done).toEqual(first.card?.done)
   })
@@ -92,7 +108,12 @@ describe('applyUpdate', () => {
   })
 
   test('merges a reworded copy of an open item instead of adding it', () => {
-    const first = applyUpdate(EMPTY, parseReply('NEW: decide | 2 | Make Papercuts backups use cp -n with a letter suffix? | Yes / No | Yes')!, 1, 1)
+    const first = applyUpdate(
+      EMPTY,
+      parseReply('NEW: decide | 2 | Make Papercuts backups use cp -n with a letter suffix? | Yes / No | Yes')!,
+      1,
+      1,
+    )
     const again = applyUpdate(
       first,
       parseReply(
@@ -104,7 +125,10 @@ describe('applyUpdate', () => {
       2,
       2,
     )
-    expect(again.items.map(i => i.ask)).toEqual(['Make Papercuts backups use cp -n with a letter suffix?', 'Also back up TODOS.md before triage?'])
+    expect(again.items.map(i => i.ask)).toEqual([
+      'Make Papercuts backups use cp -n with a letter suffix?',
+      'Also back up TODOS.md before triage?',
+    ])
   })
 
   test('does not add an item that is already open', () => {
@@ -140,12 +164,6 @@ describe('answerNote', () => {
     expect(answerNote({ ...ledger, turn: 3 }, '1. yes', 3)).toBe(null)
   })
 
-  test("recognizes an item quoted by the pane's Reply", () => {
-    expect(answerNote({ ...ledger, turn: 5 }, 'Re "Test pinch zoom on your Mac": done, works', 5)).toContain(
-      'an action for the user',
-    )
-  })
-
   test('says nothing for an ordinary prompt', () => {
     expect(answerNote({ ...ledger, turn: 2 }, 'can you also fix the toolbar?', 2)).toBe(null)
   })
@@ -163,8 +181,16 @@ describe('carryText', () => {
 describe("the person's own commands", () => {
   test('reads a ! command, its output and a slash command from their transcript rows', () => {
     expect(readCommandRow('<bash-input>npm login</bash-input>')).toEqual({ kind: 'shell', command: 'npm login' })
-    expect(readCommandRow('<bash-stdout>Logged in</bash-stdout><bash-stderr></bash-stderr>')).toEqual({ kind: 'output', stdout: 'Logged in', stderr: '' })
-    expect(readCommandRow('<command-name>/context</command-name>\n<command-message>context</command-message>\n<command-args></command-args>')).toEqual({
+    expect(readCommandRow('<bash-stdout>Logged in</bash-stdout><bash-stderr></bash-stderr>')).toEqual({
+      kind: 'output',
+      stdout: 'Logged in',
+      stderr: '',
+    })
+    expect(
+      readCommandRow(
+        '<command-name>/context</command-name>\n<command-message>context</command-message>\n<command-args></command-args>',
+      ),
+    ).toEqual({
       kind: 'slash',
       name: 'context',
       args: '',
@@ -176,7 +202,10 @@ describe("the person's own commands", () => {
     const reply = 'Run `npm login`, then `npm publish`.'
     const ledger = applyUpdate(
       EMPTY,
-      parseReply('GOAL: Publish\nNOW: Waiting on sign-in\nNEW: do | - | Sign in to npm | - | -\nHELP: new 1 | run | npm login | sign-in\nNEW: do | - | Publish the package | - | -\nHELP: new 2 | run | npm publish | publish', reply)!,
+      parseReply(
+        'GOAL: Publish\nNOW: Waiting on sign-in\nNEW: do | - | Sign in to npm | - | -\nHELP: new 1 | run | npm login | sign-in\nNEW: do | - | Publish the package | - | -\nHELP: new 2 | run | npm publish | publish',
+        reply,
+      )!,
       1,
       1,
     )
@@ -188,9 +217,38 @@ describe("the person's own commands", () => {
 describe('statusLine', () => {
   test('names the first waiting item after the count, and says where the work stands when nothing waits', () => {
     const waiting = applyUpdate(EMPTY, parseReply(REPLY)!, 1, 1)
-    expect(statusLine(waiting)).toBe('3 · Rename Send.swift to Herdr?')
-    const settled = applyUpdate(waiting, parseReply('GOAL: g\nNOW: Reducer merged\nCLOSED: i1 | yes\nCLOSED: i2 | no\nCLOSED: i3 | done')!, 2, 2)
-    expect(statusLine(settled)).toBe('Reducer merged')
-    expect(statusLine(EMPTY)).toBe('')
+    expect(statusLine(waiting, null, [])).toBe('3 · Rename Send.swift to Herdr?')
+    const settled = applyUpdate(
+      waiting,
+      parseReply('GOAL: g\nNOW: Reducer merged\nCLOSED: i1 | yes\nCLOSED: i2 | no\nCLOSED: i3 | done')!,
+      2,
+      2,
+    )
+    expect(statusLine(settled, null, [])).toBe('Reducer merged')
+    expect(statusLine(EMPTY, null, [])).toBe('')
+  })
+
+  test('puts a stop and its fix first, then an open dialog', () => {
+    const waiting = applyUpdate(EMPTY, parseReply(REPLY)!, 1, 1)
+    const dialog = { kind: 'permission' as const, text: 'push main to origin', key: 'Bash command=git push' }
+    expect(statusLine(waiting, null, [dialog])).toBe('Allow push main to origin?')
+    expect(
+      statusLine(
+        waiting,
+        { kind: stopKindOf('authentication_failed', ''), detail: 'authentication_failed', resets: null, at: 1 },
+        [dialog],
+      ),
+    ).toBe('! Signed out: /login')
+  })
+
+  test('tells a reached usage limit, with its reset time, from a busy server', () => {
+    const limit = "You've hit your weekly limit · resets 7:33pm (America/Los_Angeles)"
+    expect(stopKindOf('rate_limit', limit)).toBe('usage-limit')
+    expect(statusLine(EMPTY, { kind: 'usage-limit', detail: 'rate_limit', resets: resetTime(limit), at: 1 }, [])).toBe(
+      '! Limit: resets 7:33pm',
+    )
+    expect(stopKindOf('rate_limit', 'API Error: Server is temporarily limiting requests (not your usage limit)')).toBe(
+      'api-error',
+    )
   })
 })

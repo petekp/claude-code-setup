@@ -77,7 +77,11 @@ export function readView(ref: string, json: string): Omit<PrView, 'threads' | 'f
       base: String(v.baseRefName ?? ''),
       mergeable: String(v.mergeable ?? 'UNKNOWN'),
       reviewDecision: String(v.reviewDecision ?? ''),
-      checks: rollup.map(e => ({ name: e.name ?? e.context ?? 'check', bucket: bucket(e), url: e.detailsUrl ?? e.targetUrl ?? null })),
+      checks: rollup.map(e => ({
+        name: e.name ?? e.context ?? 'check',
+        bucket: bucket(e),
+        url: e.detailsUrl ?? e.targetUrl ?? null,
+      })),
     }
   } catch {
     return null
@@ -158,7 +162,10 @@ export function readiness(pr: PrView): { isReady: boolean; text: string } {
   ].filter((b): b is string => b !== null)
 
   return blockers.length === 0
-    ? { isReady: true, text: `Ready to merge${pr.reviewDecision === 'APPROVED' ? ': approved' : ''}, checks pass, no threads waiting on you` }
+    ? {
+        isReady: true,
+        text: `Ready to merge${pr.reviewDecision === 'APPROVED' ? ': approved' : ''}, checks pass, no threads waiting on you`,
+      }
     : { isReady: false, text: `Blocked: ${blockers.join(', ')}` }
 }
 
@@ -197,7 +204,15 @@ export const prompts = {
       ...threads.map(t => NL + threadText(t)),
     ].join(NL),
   draft: (pr: PrView, t: PrThread) =>
-    [`Draft a reply to this review comment on PR #${pr.number} (${pr.url}) for me to review. Don't post it.`, '', threadText(t)].join(NL),
+    [
+      `Draft a reply to this review comment on PR #${pr.number} (${pr.url}) for me to review. Don't post it.`,
+      '',
+      threadText(t),
+    ].join(NL),
   discuss: (pr: PrView, t: PrThread) =>
-    [`Let's talk through this review comment on PR #${pr.number} (${pr.url}) before changing anything.`, '', threadText(t)].join(NL),
+    [
+      `Let's talk through this review comment on PR #${pr.number} (${pr.url}) before changing anything.`,
+      '',
+      threadText(t),
+    ].join(NL),
 }

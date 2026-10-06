@@ -1,10 +1,23 @@
-import type { Card, Decided, Help, Item, Ledger, Note } from '../types'
+import type { Card, Decided, Dialog, Help, Item, Ledger, Note, Stop } from '../types'
 
-export const EMPTY: Ledger = { card: null, items: [], decided: [], notes: [], prs: [], nextId: 1, turn: 0, batchTurn: 0 }
+export const EMPTY: Ledger = {
+  card: null,
+  items: [],
+  decided: [],
+  notes: [],
+  prs: [],
+  nextId: 1,
+  turn: 0,
+  batchTurn: 0,
+}
 
 type StoredItem = Omit<Item, 'helps'> & { helps?: Help[] }
 /** A ledger as stored: one saved before notes, PRs or helps existed lacks them. */
-export type StoredLedger = Omit<Ledger, 'items' | 'notes' | 'prs'> & { items: StoredItem[]; notes?: Ledger['notes']; prs?: Ledger['prs'] }
+export type StoredLedger = Omit<Ledger, 'items' | 'notes' | 'prs'> & {
+  items: StoredItem[]
+  notes?: Ledger['notes']
+  prs?: Ledger['prs']
+}
 
 /** Fills the fields a ledger saved by an earlier version lacks. */
 export function normalizeLedger(l: StoredLedger): Ledger {
@@ -22,7 +35,8 @@ const MAX_NOTES = 30
  * Commands that sign in or ask for a password. They need the person's own
  * terminal, so their button copies them instead of asking Claude to run them.
  */
-const NEEDS_PERSON = /\b(login|logout|auth|signin|sign-in|sudo|passwd|ssh-add|ssh-keygen|configure|init --interactive)\b/i
+const NEEDS_PERSON =
+  /\b(login|logout|auth|signin|sign-in|sudo|passwd|ssh-add|ssh-keygen|configure|init --interactive)\b/i
 
 export const SYSTEM = `You keep a short ledger for a person who works with a coding agent across many parallel sessions. They glance at your ledger between tasks, or after time away, to see where this session stands. You read one exchange and update the ledger.
 
@@ -35,6 +49,7 @@ Input:
 - <activity>: what the agent did this turn (files edited, commands, URLs)
 - <reply>: the agent's final reply
 - <screen>: what the person has on screen besides the conversation. They always see the items in <open> in a band above their prompt.
+- <checks>: the latest result of each test, type check, lint or build the agent ran, read from the commands themselves. "before the last edit" means files changed after it ran. These results override the reply: never write in DONE or NOW that a check passes unless <checks> shows it passing and not before the last edit.
 
 Answer with lines only, each starting with one of these keys. No other text.
 
@@ -45,12 +60,12 @@ RUNNING: something still running that the person may open, as "name: URL or port
 CLOSED: <id> | what was decided, at most 8 words. For each item in <open> the person answered in <person> (including "all recommended", "go", "yes to all", numbered answers), or that the reply or <activity> shows is done or no longer applies. A person asking what an item means has not answered it, and a reply explaining it does not close it. When <person> asks to run an item's command and the reply says it ran, that item is done. So is an item whose command the person ran themselves, per <person>, when its output shows it worked. Also one line for each note in <notes> that the reply or <activity> shows was fixed, or that the person dealt with or set aside.
 NEW: <kind> | <label> | <ask> | <options> | <rec>
   One line per thing in <reply> that waits on the person and is not already in <open> or <notes>. A finding the agent recorded as a note is not NEW unless the reply asks the person to decide on it now. When the reply restates, rewords or narrows an item in <open>, it is not new: add HELP lines to that item's id instead.
-  kind: "decide" (a choice, approval, or information only the person has, explicitly put to them) or "do" (an action only the person can take, without which the agent cannot continue or finish: sign in, run a command needing their password, test on their device, reply to a teammate).
+  kind: "decide" (a choice, approval, or information only the person has, explicitly put to them, without which the agent cannot go on with its task) or "do" (an action only the person can take, without which the agent cannot continue or finish: sign in, run a command needing their password, test on their device, reply to a teammate).
   label: the reply's own number or id for it ("1", "D3"), or "-".
-  ask: plain words, at most 12 words, readable without the reply. Replace any term the reply coined with what it means.
+  ask: plain words, readable without the reply, at most 12 words, or up to 16 when 12 would lose meaning. Keep the question's meaning and every alternative it names. Replace any term the reply coined with what it means.
   options: the choices offered, separated by " / ", at most 5 words each; "-" if open-ended or kind "do".
   rec: the agent's recommendation in at most 8 words, or "-".
-  Skip: rhetorical questions; offers to continue ("Want me to start?") when continuing is the obvious default; FYIs; generic "let me know"; invitations to look at, try or check finished work ("Open X to see it", "reload to check") unless the agent waits on the person's verdict before going on; optional suggestions; anything the person already has on screen, per <screen>.
+  Skip: rhetorical questions; offers to continue ("Want me to start?") when continuing is the obvious default; FYIs; generic "let me know"; invitations to look at, try or check finished work ("Open X to see it", "reload to check") unless the agent waits on the person's verdict before going on; optional suggestions; anything the person already has on screen, per <screen>; questions asking the person to describe what they saw, did or meant, even when the answer would help diagnose a problem ("What happens when you click it?", "Which file did you mean?"). The person answers those by replying.
 HELP: <item> | <kind> | <value> | <name>
   A step that does part of an item's work in one press, when the reply or activity already spells it out: the file to edit, the text to paste, the command to run, the page to visit. Not background reading. Up to 3 per item, most useful first.
   item: "new N" for the Nth NEW line in your answer, or an id from <open>.
@@ -93,6 +108,8 @@ export type Exchange = {
   press: Press | null
   /** What the person has on screen besides the conversation, from screenText. */
   screen: string
+  /** The latest result of each check the agent ran, from checkLine. */
+  checks: string[]
 }
 
 /** A prompt the mod sent for an item: an answer, an Explain, or a Run. */
@@ -124,11 +141,17 @@ function numberBlocks(reply: string): string {
  * of text must appear in `source`, the reply and activity, so the model cannot
  * invent one. A null source (a catch-up over the whole conversation) skips that.
  */
-function readHelp(kind: string, value: string, name: string | null, blocks: string[], source: string | null): Help | null {
+function readHelp(
+  kind: string,
+  value: string,
+  name: string | null,
+  blocks: string[],
+  source: string | null,
+): Help | null {
   const isQuoted = (text: string) => source === null || source.includes(text)
   // "block N" names a code block of the reply, already quoted; anything else is the value as written.
   const block = value.match(/^block\s+(\d+)$/i)
-  const quoted = block ? blocks[Number(block[1]) - 1] ?? '' : value.replace(/^`|`$/g, '')
+  const quoted = block ? (blocks[Number(block[1]) - 1] ?? '') : value.replace(/^`|`$/g, '')
   const isFromReply = (text: string) => block !== null || isQuoted(text)
   if (kind === 'open') {
     const path = value.replace(/^`|`$/g, '')
@@ -197,13 +220,19 @@ function ledgerBlocks(ledger: Ledger): string[] {
         ...ledger.card.running.map(r => `RUNNING: ${r}`),
       ].join(NL)
     : ''
-  const open = ledger.items
-    .map(i => `${i.id} | ${i.kind} | ${i.label ?? '-'} | ${i.ask}`)
-    .join(NL)
+  const open = ledger.items.map(i => `${i.id} | ${i.kind} | ${i.label ?? '-'} | ${i.ask}`).join(NL)
   const notes = ledger.notes.map(n => `${n.id} | ${n.kind}: ${n.title}`).join(NL)
-  const decided = ledger.decided.slice(-8).map(d => `${d.ask} → ${settled(d)}`).join(NL)
+  const decided = ledger.decided
+    .slice(-8)
+    .map(d => `${d.ask} → ${settled(d)}`)
+    .join(NL)
 
-  return [`<card>${NL}${card}${NL}</card>`, `<open>${NL}${open}${NL}</open>`, `<notes>${NL}${notes}${NL}</notes>`, `<decided>${NL}${decided}${NL}</decided>`]
+  return [
+    `<card>${NL}${card}${NL}</card>`,
+    `<open>${NL}${open}${NL}</open>`,
+    `<notes>${NL}${notes}${NL}</notes>`,
+    `<decided>${NL}${decided}${NL}</decided>`,
+  ]
 }
 
 export function buildPrompt(ledger: Ledger, ex: Exchange): string {
@@ -215,12 +244,15 @@ export function buildPrompt(ledger: Ledger, ex: Exchange): string {
     `<activity>${NL}${clip(ex.activity.join(NL), 2500)}${NL}</activity>`,
     `<reply>${NL}${clip(numberBlocks(ex.reply), 12000)}${NL}</reply>`,
     `<screen>${NL}${ex.screen}${NL}</screen>`,
+    `<checks>${NL}${ex.checks.length > 0 ? ex.checks.join(NL) : '(none ran)'}${NL}</checks>`,
   ].join(NL)
 }
 
 /** What the person sees besides the conversation, as the ledger model reads it. */
 export function screenText(isPaneOpen: boolean, tab: string): string {
-  return isPaneOpen ? `The /inbox pane is open beside the conversation, on its ${tab} tab, listing every open item.` : 'The /inbox pane is closed.'
+  return isPaneOpen
+    ? `The /inbox pane is open beside the conversation, on its ${tab} tab, listing every open item.`
+    : 'The /inbox pane is closed.'
 }
 
 /**
@@ -230,11 +262,17 @@ export function screenText(isPaneOpen: boolean, tab: string): string {
 export function tasksRunBy(ledger: Ledger, command: string): Item[] {
   const typed = squash(command)
 
-  return ledger.items.filter(i => i.kind === 'do' && i.helps.some(h => (h.kind === 'run' || h.kind === 'terminal') && squash(h.command) === typed))
+  return ledger.items.filter(
+    i =>
+      i.kind === 'do' && i.helps.some(h => (h.kind === 'run' || h.kind === 'terminal') && squash(h.command) === typed),
+  )
 }
 
 /** A transcript row of the person's own command, as session.append carries it. */
-export type CommandRow = { kind: 'shell'; command: string } | { kind: 'output'; stdout: string; stderr: string } | { kind: 'slash'; name: string; args: string }
+export type CommandRow =
+  | { kind: 'shell'; command: string }
+  | { kind: 'output'; stdout: string; stderr: string }
+  | { kind: 'slash'; name: string; args: string }
 
 /** Reads a `!` command, its output, or a slash command from a row's text; null for any other row. */
 export function readCommandRow(text: string): CommandRow | null {
@@ -243,7 +281,12 @@ export function readCommandRow(text: string): CommandRow | null {
   const output = text.match(/<bash-stdout>([\s\S]*?)<\/bash-stdout><bash-stderr>([\s\S]*?)<\/bash-stderr>/)
   if (output) return { kind: 'output', stdout: (output[1] ?? '').trim(), stderr: (output[2] ?? '').trim() }
   const name = text.match(/<command-name>\/?([^<\s]+)<\/command-name>/)
-  if (name) return { kind: 'slash', name: name[1] ?? '', args: (text.match(/<command-args>([\s\S]*?)<\/command-args>/)?.[1] ?? '').trim() }
+  if (name)
+    return {
+      kind: 'slash',
+      name: name[1] ?? '',
+      args: (text.match(/<command-args>([\s\S]*?)<\/command-args>/)?.[1] ?? '').trim(),
+    }
 
   return null
 }
@@ -292,7 +335,10 @@ export function parseReply(text: string, source: string | null = null): Update |
         kind: kind === 'do' ? 'do' : 'decide',
         label: dash(label),
         ask,
-        options: dash(options)?.split(/\s+\/\s+/).filter(Boolean) ?? [],
+        options:
+          dash(options)
+            ?.split(/\s+\/\s+/)
+            .filter(Boolean) ?? [],
         rec: dash(rec),
         helps: [],
       })
@@ -315,7 +361,23 @@ export function parseReply(text: string, source: string | null = null): Update |
   return seen === 0 ? null : { card: { ...card, done: card.done.slice(-4) }, closed, added, helped }
 }
 
-const FILLER = new Set(['the', 'and', 'for', 'with', 'use', 'into', 'from', 'that', 'this', 'your', 'you', 'should', 'make', 'add', 'all'])
+const FILLER = new Set([
+  'the',
+  'and',
+  'for',
+  'with',
+  'use',
+  'into',
+  'from',
+  'that',
+  'this',
+  'your',
+  'you',
+  'should',
+  'make',
+  'add',
+  'all',
+])
 
 function keyWords(text: string): Set<string> {
   return new Set((text.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter(w => w.length > 2 && !FILLER.has(w)))
@@ -336,7 +398,11 @@ function restates(a: string, b: string): boolean {
 }
 
 function sameAsk(a: string, b: string): boolean {
-  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
 
   return norm(a) === norm(b)
 }
@@ -346,7 +412,32 @@ function sameAsk(a: string, b: string): boolean {
  * an open item, labelled with its id or reworded, instead of leaving it alone.
  */
 function matchOpen(items: Item[], a: Update['added'][number]): number {
-  return items.findIndex(i => i.id === a.label || sameAsk(i.ask, a.ask) || (i.kind === a.kind && restates(i.ask, a.ask)))
+  return items.findIndex(
+    i => i.id === a.label || sameAsk(i.ask, a.ask) || (i.kind === a.kind && restates(i.ask, a.ask)),
+  )
+}
+
+/** The outcome of an item Claude closed, so the pane and Claude can tell it from the user's own decision. */
+export const CLOSED_BY_CLAUDE = 'closed by Claude'
+
+/**
+ * Closes an open item or note for Claude: one the user answered in their own
+ * message, with that answer as its outcome, or one that is done or no longer
+ * applies, with Claude's reason. A note, which Claude recorded itself, is
+ * removed. `closed` is null when no open one has the id.
+ */
+export function closeByClaude(
+  ledger: Ledger,
+  id: string,
+  how: { answer: string } | { reason: string },
+  now: number,
+): { ledger: Ledger; closed: 'item' | 'note' | null } {
+  const outcome = 'answer' in how ? how.answer : `${CLOSED_BY_CLAUDE}: ${how.reason}`
+  if (ledger.items.some(i => i.id === id)) return { ledger: closeItem(ledger, id, outcome, now), closed: 'item' }
+  if (ledger.notes.some(n => n.id === id))
+    return { ledger: { ...ledger, notes: ledger.notes.filter(n => n.id !== id) }, closed: 'note' }
+
+  return { ledger, closed: null }
 }
 
 /** Closes one item, recording what was decided. */
@@ -354,7 +445,10 @@ export function closeItem(ledger: Ledger, id: string, outcome: string, now: numb
   return {
     ...ledger,
     items: ledger.items.filter(i => i.id !== id),
-    decided: [...ledger.decided, ...ledger.items.filter(i => i.id === id).map(i => ({ id, ask: i.ask, outcome, at: now }))].slice(-MAX_DECIDED),
+    decided: [
+      ...ledger.decided,
+      ...ledger.items.filter(i => i.id === id).map(i => ({ id, ask: i.ask, outcome, at: now })),
+    ].slice(-MAX_DECIDED),
   }
 }
 
@@ -362,7 +456,7 @@ export function applyUpdate(ledger: Ledger, u: Update, now: number, turn: number
   const prev = ledger.card
   const card: Card = {
     goal: u.card.goal || prev?.goal || '',
-    done: u.card.done.length > 0 ? u.card.done : prev?.done ?? [],
+    done: u.card.done.length > 0 ? u.card.done : (prev?.done ?? []),
     now: u.card.now || prev?.now || '',
     running: u.card.running,
     updatedAt: now,
@@ -424,7 +518,8 @@ function numberOf(label: string | null): number | null {
 
 const LINE_ANSWER = /(?:^|\n)\s*(?:[QqDd#]\s?)?(\d{1,2})\s*[.):\-–]\s*\S/g
 const INLINE_ANSWER = /\s(?:[QqDd#]\s?)?(\d{1,2})\s*[.)]\s+\S/g
-const ACCEPT_ALL = /^\s*(go|go ahead|yes|yep|yeah|sure|ok|okay|sgtm|lgtm|sounds good|do it|proceed|all good|ship it)\s*[.!]*\s*$/i
+const ACCEPT_ALL =
+  /^\s*(go|go ahead|yes|yep|yeah|sure|ok|okay|sgtm|lgtm|sounds good|do it|proceed|all good|ship it)\s*[.!]*\s*$/i
 const ACCEPT_RECS = /\b(all|both|everything|your)\b[^.\n]{0,40}\b(recommend\w*|recs?|suggest\w*|picks?|calls?)\b/i
 
 /**
@@ -463,15 +558,9 @@ export function answerNote(ledger: Ledger, text: string, turn: number): string |
     }
   }
 
-  for (const item of ledger.items) {
-    if (text.includes(item.ask) && !lines.some(l => l.includes(item.ask))) {
-      lines.push(`- ${describe(item)}`)
-    }
-  }
-
   return lines.length === 0
     ? null
-    : ['session-inbox: the user\'s message answers these open items from your earlier replies:', ...lines].join(NL)
+    : ["session-inbox: the user's message answers these open items from your earlier replies:", ...lines].join(NL)
 }
 
 /**
@@ -483,13 +572,30 @@ export function addNote(ledger: Ledger, note: Omit<Note, 'id'>): { ledger: Ledge
   if (notes.some(n => sameAsk(n.title, note.title))) return { ledger, isAdded: false }
 
   return {
-    ledger: { ...ledger, notes: [...notes, { ...note, id: `n${ledger.nextId}` }].slice(-MAX_NOTES), nextId: ledger.nextId + 1 },
+    ledger: {
+      ...ledger,
+      notes: [...notes, { ...note, id: `n${ledger.nextId}` }].slice(-MAX_NOTES),
+      nextId: ledger.nextId + 1,
+    },
     isAdded: true,
   }
 }
 
-/** What the model reads after a compaction, so open items and the goal survive it. */
-export function carryText(ledger: Ledger, title: string): string | null {
+/** An open item as Claude reads it, with its id when Claude may close it. */
+function itemLine(item: Item, withId: boolean): string {
+  return `- ${withId ? `[${item.id}] ` : ''}${item.label ? `(${item.label}) ` : ''}${describe(item)}`
+}
+
+function noteLine(note: Note, withId: boolean): string {
+  return `- ${withId ? `[${note.id}] ` : ''}${note.kind}: ${note.title}`
+}
+
+/**
+ * What the model reads after a compaction, so open items and the goal
+ * survive it. Ids go in only for this session's own ledger, since Claude
+ * closes items by id; the previous session's items are not this one's.
+ */
+export function carryText(ledger: Ledger, title: string, withIds = false): string | null {
   const notes = ledger.notes
   if (!ledger.card && ledger.items.length === 0 && notes.length === 0) return null
   const out = [title]
@@ -501,11 +607,11 @@ export function carryText(ledger: Ledger, title: string): string | null {
   }
   if (ledger.items.length > 0) {
     out.push('Waiting on the user:')
-    for (const item of ledger.items) out.push(`- ${item.label ? `(${item.label}) ` : ''}${describe(item)}`)
+    for (const item of ledger.items) out.push(itemLine(item, withIds))
   }
   if (notes.length > 0) {
     out.push('Notes you recorded for the user, still open:')
-    for (const n of notes) out.push(`- ${n.kind}: ${n.title}`)
+    for (const n of notes) out.push(noteLine(n, withIds))
   }
   if (ledger.decided.length > 0) {
     out.push('Recently decided:')
@@ -524,13 +630,13 @@ export function inboxText(ledger: Ledger, isPaneOpen: boolean): string {
   const out = ['session-inbox: the inbox as of the last reply. Only the items listed here are open.']
   if (ledger.items.length > 0) {
     out.push('Waiting on the user:')
-    for (const item of ledger.items) out.push(`- ${item.label ? `(${item.label}) ` : ''}${describe(item)}`)
+    for (const item of ledger.items) out.push(itemLine(item, true))
   } else {
     out.push('Nothing is waiting on the user.')
   }
   if (ledger.notes.length > 0) {
     out.push('Notes you recorded, still open:')
-    for (const n of ledger.notes) out.push(`- ${n.kind}: ${n.title}`)
+    for (const n of ledger.notes) out.push(noteLine(n, true))
   }
   out.push(isPaneOpen ? 'The user has the /inbox pane open beside the conversation.' : 'The /inbox pane is closed.')
 
@@ -549,15 +655,99 @@ function settled(d: Decided): string {
 export function closedText(decided: Decided[]): string | null {
   if (decided.length === 0) return null
 
-  return ['Settled since you last read the inbox. Do not ask these again unless the user brings them up:', ...decided.map(d => `- "${d.ask}" → ${settled(d)}`)].join(NL)
+  return [
+    'Settled since you last read the inbox. Do not ask these again unless the user brings them up:',
+    ...decided.map(d => `- "${d.ask}" → ${settled(d)}`),
+  ].join(NL)
 }
 
 /**
- * The session's line in the Herdr sidebar: how many items wait and the first
- * of the latest reply's, else where the work stands. The count leads, because
- * the sidebar cuts long lines at its edge. Empty when there is nothing to say.
+ * The stop's kind, from the error word and the message Claude Code showed.
+ * A reached usage limit and a busy server are both `rate_limit`; only the
+ * message, "You've hit your weekly limit · resets 7:33pm", tells them apart.
  */
-export function statusLine(ledger: Ledger): string {
+export function stopKindOf(error: string, message: string): Stop['kind'] {
+  if (error === 'rate_limit') return /\bhit your\b.*\blimit\b/i.test(message) ? 'usage-limit' : 'api-error'
+  switch (error) {
+    case 'authentication_failed':
+    case 'oauth_org_not_allowed':
+    case 'verification_required':
+    case 'cloud_credential_error':
+      return 'sign-in'
+    case 'billing_error':
+    case 'account_on_hold':
+      return 'billing'
+    default:
+      return 'api-error'
+  }
+}
+
+/** When a usage limit resets, as Claude Code's message says it: "7:33pm". */
+export function resetTime(message: string): string | null {
+  return message.match(/\bresets\s+(?:at\s+)?([^·(\n]+?)\s*(?:\(|·|$)/i)?.[1]?.trim() ?? null
+}
+
+/** "sign-in expired" */
+export function stopText(stop: Stop): string {
+  switch (stop.kind) {
+    case 'sign-in':
+      return 'sign-in expired'
+    case 'billing':
+      return 'billing problem'
+    case 'usage-limit':
+      return 'usage limit reached'
+    default:
+      return stop.detail === 'rate_limit'
+        ? 'the API is limiting requests'
+        : stop.detail === 'overloaded'
+          ? 'the API is overloaded'
+          : `API error (${stop.detail})`
+  }
+}
+
+/** What the person does to clear a stop. */
+export function stopFix(stop: Stop): string {
+  switch (stop.kind) {
+    case 'sign-in':
+      return 'Run /login, then send a message to resume.'
+    case 'billing':
+      return 'Check billing in the Claude console, then resume.'
+    case 'usage-limit':
+      return stop.resets ? `Resume after ${stop.resets}.` : 'Resume when the limit resets.'
+    default:
+      return 'Send a message to resume.'
+  }
+}
+
+/** The stop and its fix in a few words, for the sidebar. */
+function stopShort(stop: Stop): string {
+  switch (stop.kind) {
+    case 'sign-in':
+      return 'Signed out: /login'
+    case 'billing':
+      return 'Billing problem'
+    case 'usage-limit':
+      return stop.resets ? `Limit: resets ${stop.resets}` : 'Usage limit reached'
+    default:
+      return 'API error: resume'
+  }
+}
+
+/** "Allow push main to origin?", or a question dialog's question. */
+export function dialogText(dialog: Dialog): string {
+  return dialog.kind === 'permission' ? `Allow ${dialog.text}?` : dialog.text
+}
+
+/**
+ * The session's line in the Herdr sidebar: a stop and its fix, else an open
+ * dialog, else how many items wait and the first of the latest reply's, else
+ * where the work stands. The count leads, because the sidebar cuts long lines
+ * at its edge. Empty when there is nothing to say.
+ */
+export function statusLine(ledger: Ledger, stop: Stop | null, dialogs: Dialog[]): string {
+  if (stop) return `! ${stopShort(stop)}`
+  const dialog = dialogs[0]
+  if (dialog) return dialogText(dialog)
   const first = latestBatch(ledger)[0] ?? ledger.items[0]
   if (first) return ledger.items.length > 1 ? `${ledger.items.length} · ${first.ask}` : first.ask
   const notes = ledger.notes.length === 0 ? null : `${ledger.notes.length} note${ledger.notes.length === 1 ? '' : 's'}`

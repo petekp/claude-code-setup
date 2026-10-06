@@ -36,6 +36,9 @@ export type Help =
 
 export type Decided = { id: string; ask: string; outcome: string; at: number }
 
+/** An item that just closed, and where its row stood among the open items of its kind. */
+export type Settled = Decided & { kind: Item['kind']; index: number }
+
 /** Something Claude noticed outside the current task and recorded for the person. */
 export type Note = {
   id: string
@@ -98,6 +101,52 @@ export type Ledger = {
   batchTurn: number
 }
 
+/** Why the session halted outside the conversation, from the error Claude Code classified it with. */
+export type Stop = {
+  kind: 'sign-in' | 'billing' | 'usage-limit' | 'api-error'
+  /** Claude Code's word for the error, such as `authentication_failed`. */
+  detail: string
+  /** When a usage limit resets, as Claude Code said it: "7:33pm". */
+  resets: string | null
+  at: number
+}
+
+/** A permission prompt or question dialog in the session that waits on the person. */
+export type Dialog = {
+  kind: 'permission' | 'question'
+  text: string
+  /** The tool call it is for, so it closes when that call ends. */
+  key: string
+}
+
+export type CheckKind = 'tests' | 'types' | 'lint' | 'build' | 'validate'
+
+/** The latest result of one check command Claude ran, such as `npm test`. */
+export type Check = {
+  name: string
+  kind: CheckKind
+  result: 'pass' | 'fail' | 'unknown'
+  /** The output's summary line, such as "24 pass, 1 fail". */
+  summary: string
+  ranAt: number
+}
+
+/**
+ * The working tree's content, read without writing to the repo: HEAD, and the
+ * blob id of each path that differs from it ('' for a deleted path).
+ */
+export type Snapshot = { head: string | null; dirty: Record<string, string> }
+
+/** The checks Claude ran, and when the files they check last changed. */
+export type Checks = {
+  results: Check[]
+  snapshot: Snapshot | null
+  /** When any file's content last changed. */
+  changedAt: number
+  /** When a file other than Markdown last changed. Tests, types and builds go stale only then. */
+  codeChangedAt: number
+}
+
 export type Presence = {
   lastActiveAt: number
   isAway: boolean
@@ -119,7 +168,10 @@ export type Previous = {
 export type Tab = 'waiting' | 'notes' | 'prs'
 
 /** A pane section the person can collapse. */
-export type Section = 'done' | 'decided'
+export type Section = 'questions' | 'tasks' | 'running' | 'checks' | 'done' | 'decided'
+
+/** The sections the person folded (true) or opened (false); one never toggled keeps its default. */
+export type Collapsed = Partial<Record<Section, boolean>>
 
 /** A tab's selected row: its id, and its position for when that row goes away. */
 export type Cursor = { id: string | null; index: number }
@@ -129,6 +181,24 @@ export type PrViews = { views: Record<string, PrView>; branchRef: string | null;
 
 declare module 'claude-code' {
   interface PluginState {
-    'session-inbox': { isDarkTheme: boolean; ledger: Ledger; presence: Presence; previous: Previous | null; tab: Tab; prViews: PrViews; collapsed: Section[]; selection: Record<Tab, Cursor> }
+    'session-inbox': {
+      isDarkTheme: boolean
+      ledger: Ledger
+      presence: Presence
+      previous: Previous | null
+      tab: Tab
+      prViews: PrViews
+      collapsed: Collapsed
+      selection: Record<Tab, Cursor>
+      stop: Stop | null
+      dialogs: Dialog[]
+      checks: Checks
+      /** The row whose free-text field is open, if any. */
+      typing: string | null
+      /** Items that just closed, shown in place with their outcome for a few seconds. */
+      settled: Settled[]
+      /** The band and pane show sample entries instead of the session's own, for `/inbox demo`. */
+      isDemo: boolean
+    }
   }
 }
