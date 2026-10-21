@@ -1,6 +1,0 @@
-{
-  "name": "briefing",
-  "version": "0.1.0",
-  "description": "One shared record of the work for you and Claude: where it is going, what it needs from you, what it chose for you, and what is proven",
-  "types": "./types/index.d.ts"
-}
