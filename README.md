@@ -97,6 +97,9 @@ The hooks and status line these scripts are written for:
 | `skill-doctor.sh` | Runs `link-skills.sh`, then reports anything that needs a decision: broken links, skills with no `SKILL.md`, settings that differ from the snapshot. Prints nothing when healthy. |
 | `validate.sh` | Checks each skill's frontmatter and the formatting of `mods/` and `skills/`, then validates, type checks and tests each mod. Needs PyYAML. |
 | `skill-usage.sh` | Counts how often each skill was used, from Claude Code and Codex session logs. |
+| `skill-usage-tracker.sh` | A hook that logs each skill use to `~/.claude/skill-usage.jsonl`. |
+| `mcp-auth-watch.sh` | A SessionStart and Stop hook that logs when an MCP server starts or stops needing sign-in. |
+| `session-end-cleanup.sh` | A SessionEnd hook that removes stale agent-browser files and stops session helper processes. |
 | `settings-snapshot.sh` | Copies live settings to the snapshot, or diffs against it. |
 | `statusline.sh` | Shows the model, folder, branch, and context use. |
 | `gh-skill-nudge.sh` | Points at `better-github-skill` scripts for some `gh` commands. Does nothing unless that skill is installed. |

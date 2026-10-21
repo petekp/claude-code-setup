@@ -6,8 +6,9 @@ what the tools proved. You see the record in Herdr's sidebar, in a band above
 the prompt, and in the `/briefing` pane. Claude reads the same record, so you
 both refer to items by the same ids.
 
-It replaces the inbox mod. Load one or the other: both write Herdr's `inbox`
-sidebar token.
+Briefing is an experiment from early October 2026, written before the
+[inbox](https://github.com/petekp/inbox) mod, and is no longer maintained.
+Don't load it with the inbox: both write Herdr's `inbox` sidebar token.
 
 ## Try it
 
