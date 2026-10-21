@@ -69,13 +69,13 @@ case $CMD in
         ;;
 esac
 
-# SIGPIPE: gh piped into head can die mid-write or truncate silently.
-case $CMD in
-    *gh\ *\|*head*)
-        append "$(nudge_once sigpipe \
-            "Piping gh into head can kill gh mid-write or truncate output silently. Redirect to a file and read that, or trim with --jq '.[0:20]'.")"
-        ;;
-esac
+# SIGPIPE: gh piped into head can die mid-write or truncate silently. The
+# pattern requires gh's own segment to feed head, so `gh x; y | head` is quiet.
+GH_INTO_HEAD='(^|[;&|(])[[:space:]]*gh[[:space:]][^|;&]*\|[[:space:]]*head([[:space:]]|$)'
+if [[ $CMD =~ $GH_INTO_HEAD ]]; then
+    append "$(nudge_once sigpipe \
+        "Piping gh into head can kill gh mid-write or truncate output silently. Redirect to a file and read that, or trim with --jq '.[0:20]'.")"
+fi
 
 [ -n "$CONTEXT" ] || exit 0
 

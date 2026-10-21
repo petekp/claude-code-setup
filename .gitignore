@@ -5,8 +5,9 @@
 .local*/
 
 .claude/*
-skills/paddock*
-.relay/
 .circuit/
-skills/my-voice/
 __pycache__
+target/
+
+# Types the engine writes beside a loaded mod
+mods/*/.claude-plugin/types/

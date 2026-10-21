@@ -1,120 +1,119 @@
-#!/bin/bash
+#!/bin/sh
 #
-# Validates YAML frontmatter in skills, commands, agents, and hooks.
-# Exits with non-zero status if any errors are found.
+# Checks the frontmatter of every skill in skills/, the formatting of mods/
+# and skills/, then each mod in mods/ with `claude plugin validate`, a type
+# check and its tests. Exits 1 on any error.
 #
-# Usage:
-#   ./scripts/validate.sh
+# Needs python3 with PyYAML (pip install pyyaml). PyYAML rejects frontmatter
+# that looser loaders accept, such as an unquoted description containing ": ".
+# The other checks need npx, and the mod checks the claude CLI.
 #
+# Usage: ./scripts/validate.sh
 
-set -e
+set -eu
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(dirname "$SCRIPT_DIR")"
+REPO_DIR=$(CDPATH='' cd "$(dirname "$0")/.." && pwd -P)
+# Prettier changes its output between minor versions, so a pinned version
+# keeps the check from failing on files nobody changed.
+PRETTIER=prettier@3.9.9
+status=0
 
-errors=0
-warnings=0
+python3 - "$REPO_DIR/skills" <<'PY' || status=1
+import pathlib, sys
 
-check_frontmatter() {
-    local file=$1
-    local -a required_fields=("${@:2}")
+try:
+    import yaml
+except ImportError:
+    sys.exit("validate.sh needs PyYAML: pip install pyyaml")
 
-    if [[ ! -f "$file" ]]; then
-        return
+# Claude Code truncates description plus when_to_use at this length in the
+# skill listing.
+LISTING_LIMIT = 1536
+
+errors = 0
+skills = sorted(p for p in pathlib.Path(sys.argv[1]).iterdir() if p.is_dir() and not p.name.startswith("."))
+
+def error(skill, message):
+    global errors
+    errors += 1
+    print(f"  x {skill.name}: {message}")
+
+for skill in skills:
+    path = skill / "SKILL.md"
+    if not path.is_file():
+        error(skill, "no SKILL.md")
+        continue
+    text = path.read_text()
+    if not text.startswith("---\n"):
+        error(skill, "no frontmatter")
+        continue
+    end = text.find("\n---", 4)
+    if end == -1:
+        error(skill, "frontmatter is not closed")
+        continue
+    try:
+        meta = yaml.safe_load(text[4:end])
+    except yaml.YAMLError as e:
+        error(skill, f"frontmatter is not valid YAML: {str(e).splitlines()[0]}")
+        continue
+    if not isinstance(meta, dict):
+        error(skill, "frontmatter is not a mapping")
+        continue
+    if meta.get("name") != skill.name:
+        error(skill, f"name is {meta.get('name')!r}, but the folder is {skill.name!r}")
+    description = meta.get("description")
+    if not isinstance(description, str) or not description.strip():
+        error(skill, "description is missing")
+        continue
+    listing = len(description) + len(str(meta.get("when_to_use", "")))
+    if listing > LISTING_LIMIT:
+        error(skill, f"description and when_to_use are {listing} characters; the limit is {LISTING_LIMIT}")
+
+print(f"Checked {len(skills)} skills, {errors} error(s).")
+sys.exit(1 if errors else 0)
+PY
+
+log=$(mktemp)
+trap 'rm -f "$log"' EXIT
+
+# Runs one check and prints the check's output only when it fails.
+check() {
+    label=$1
+    shift
+    if "$@" >"$log" 2>&1; then
+        echo "  ok $label"
+    else
+        echo "  x $label"
+        sed 's/^/      /' "$log"
+        status=1
     fi
-
-    # Check for frontmatter delimiters
-    local first_line=$(head -1 "$file")
-    if [[ "$first_line" != "---" ]]; then
-        echo "  ✗ Missing frontmatter: $file"
-        ((errors++))
-        return
-    fi
-
-    # Check for closing delimiter
-    if ! sed -n '2,/^---$/p' "$file" | grep -q "^---$"; then
-        echo "  ✗ Unclosed frontmatter: $file"
-        ((errors++))
-        return
-    fi
-
-    # Check required fields
-    for field in "${required_fields[@]}"; do
-        if ! sed -n '2,/^---$/p' "$file" | grep -q "^${field}:"; then
-            echo "  ✗ Missing '$field': $file"
-            ((errors++))
-        fi
-    done
 }
 
-echo "Validating frontmatter..."
-echo ""
+# Prettier reads .prettierignore and .gitignore from the folder it runs in.
+cd "$REPO_DIR"
+echo "Formatting:"
+before=$status
+check "prettier" npx -y "$PRETTIER" --check mods skills
+[ "$status" = "$before" ] || echo "      Fix: npx -y $PRETTIER --write mods skills"
 
-# Skills: require name and description
-echo "Skills:"
-skill_count=0
-for file in "$REPO_DIR"/skills/*/SKILL.md; do
-    [[ -f "$file" ]] || continue
-    check_frontmatter "$file" "name" "description"
-    ((skill_count++))
+if ! command -v claude >/dev/null 2>&1; then
+    echo "Skipped the mods: no claude CLI."
+    exit "$status"
+fi
+
+for dir in "$REPO_DIR"/mods/*/; do
+    dir=${dir%/}
+    [ -f "$dir/.claude-plugin/plugin.json" ] || continue
+    name=$(basename "$dir")
+    echo "Mod $name:"
+    check "plugin validate" claude plugin validate "$dir"
+    # Claude Code writes these types when it loads the mod from a folder you own.
+    if [ -f "$dir/.claude-plugin/types/tsconfig.json" ]; then
+        check "types" npx -y -p typescript tsc --noEmit -p "$dir"
+    else
+        echo "  - types: not checked. Load the mod once to write them: mods/scripts/live.sh start mods/$name"
+    fi
+    check "tests" claude plugin test "$dir"
 done
-if [[ $skill_count -eq 0 ]]; then
-    echo "  (no skills found)"
-else
-    echo "  Checked $skill_count skill(s)"
-fi
-echo ""
 
-# Commands: require description
-echo "Commands:"
-cmd_count=0
-for file in "$REPO_DIR"/commands/*.md; do
-    [[ -f "$file" ]] || continue
-    check_frontmatter "$file" "description"
-    ((cmd_count++))
-done
-if [[ $cmd_count -eq 0 ]]; then
-    echo "  (no commands found)"
-else
-    echo "  Checked $cmd_count command(s)"
-fi
-echo ""
-
-# Agents: require name and description
-echo "Agents:"
-agent_count=0
-for file in "$REPO_DIR"/agents/*.md; do
-    [[ -f "$file" ]] || continue
-    check_frontmatter "$file" "name" "description"
-    ((agent_count++))
-done
-if [[ $agent_count -eq 0 ]]; then
-    echo "  (no agents found)"
-else
-    echo "  Checked $agent_count agent(s)"
-fi
-echo ""
-
-# Hooks: require event
-echo "Hooks:"
-hook_count=0
-for file in "$REPO_DIR"/hooks/*.md; do
-    [[ -f "$file" ]] || continue
-    check_frontmatter "$file" "event"
-    ((hook_count++))
-done
-if [[ $hook_count -eq 0 ]]; then
-    echo "  (no hooks found)"
-else
-    echo "  Checked $hook_count hook(s)"
-fi
-echo ""
-
-# Summary
-if [[ $errors -gt 0 ]]; then
-    echo "Found $errors error(s). Fix them before committing."
-    exit 1
-else
-    echo "All frontmatter valid."
-    exit 0
-fi
+exit "$status"

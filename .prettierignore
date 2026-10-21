@@ -1,0 +1,3 @@
+# Prettier only pads the tables in these docs, and it can break a code span
+# that wraps across lines.
+*.md

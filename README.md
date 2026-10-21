@@ -1,106 +1,118 @@
-# Claude Code + Codex Setup
+# Claude Code and Codex setup
 
-Portable, version-controlled configuration for **Claude Code** and **OpenAI Codex**. Fork it, customize it, sync it across machines.
+My configuration for Claude Code and OpenAI Codex: skills, hook scripts, Claude
+Code mods, and a setup script that links them into both tools. It is shell
+scripts, Markdown, and the mods' TypeScript, with no build step.
 
-## Quick Start
+## Setup
 
-```bash
+```sh
 git clone https://github.com/petekp/claude-code-setup.git
-cd claude-code-setup && ./setup.sh
+cd claude-code-setup
+./setup.sh
 ```
 
-That's it. Both tools now use this repo's skills and scripts.
+`setup.sh` creates these links:
 
-## How It Works
+| Link | Points to |
+|---|---|
+| `~/.claude/scripts` | `scripts/` |
+| `~/.claude/skills/<name>` | each skill in `skills/` and in `~/.agents/skills` |
+| `~/.codex/skills/<name>` | each skill in `skills/` |
 
-The setup script symlinks this repo into `~/.claude/`:
+Codex reads `~/.agents/skills` itself, so those skills are linked only for
+Claude Code. `./setup.sh --undo` removes the links.
+`./scripts/skill-doctor.sh` checks them.
 
-```
-~/.claude/
-├── skills/    → <repo>/skills/
-├── scripts/   → <repo>/scripts/
-├── settings.json → <repo>/settings.json
-├── statusline-command.sh ← <repo> (copied)
-│
-~/.mcp.json    → <repo>/.mcp.json
-```
+## Skills
 
-Edit files in either location — they're the same files. Commit and push to sync across machines.
+`skills/` holds the skills written in this repo. Skills from elsewhere, such
+as ones installed with `npx skills add -g`, live in `~/.agents/skills`.
 
-### Which Skills Are In This Repo
+Both agents' skill folders stay real folders, so other tools can install into
+them as well. `link-skills.sh` only touches links that point into this repo or
+into `~/.agents/skills`.
 
-`skills/` mixes directories authored here with symlinks to skills installed
-elsewhere, mostly by [skills.sh](https://skills.sh) into `~/.agents/skills`.
+After adding or removing a skill, run `./scripts/link-skills.sh`, or start a
+Claude Code session, whose SessionStart hook runs it. Check frontmatter with
+`./scripts/validate.sh`.
 
-Only the real directories are committed. A symlink stores just its target, and
-those targets are absolute paths under one machine's home directory — committing
-them would give anyone cloning this repo a dangling link to a directory they
-don't have. The linked skills and their sources are recorded in
-[SKILLS.md](SKILLS.md) instead, so the set can be rebuilt elsewhere.
+## Mods
 
-Run `./scripts/gen-skills-manifest.sh` after adding or removing a skill to
-regenerate `SKILLS.md` and `skills/.gitignore`.
+`mods/` holds Claude Code mods: plugins whose TypeScript hooks run inside
+Claude Code. Each mod's README says what it does.
 
-### Codex Skill Syncing
+The inbox mod has its own repo,
+[petekp/inbox](https://github.com/petekp/inbox). It collects what is waiting
+on you in a session: the agent's questions, issues Claude noted, and your
+PRs' checks and reviews.
 
-Skills are symlinked individually into `~/.codex/skills/` (Codex doesn't support directory-level symlinks) by `scripts/sync-codex-skills.sh`, which runs automatically on every Claude Code session start. Add a name to `codex-exclude` to skip a skill that conflicts with a Codex built-in or shows up as a duplicate; the file is currently empty, so everything syncs.
+Nothing links them yet. To try one, start Claude Code with
+`claude --plugin-dir mods/<name>`. `./scripts/validate.sh` checks every mod.
+`mods/DEVELOPING.md` explains how to test a mod's UI live.
 
-### MCP Servers
+## Settings
 
-Claude Code reads MCP servers from `~/.mcp.json` (symlinked). Codex reads them from `~/.codex/config.toml` (manually managed).
+`~/.claude/settings.json` belongs to Claude Code. Claude Code rewrites the
+file itself, for example after `/model` or a plugin install. A link into this
+repo would be replaced by a regular file on the next write, so settings are
+not linked.
 
-## Fork and Customize
+`./scripts/settings-snapshot.sh` copies the live file to
+`~/.agents/claude/settings.json`, or to `$CLAUDE_SETTINGS_SNAPSHOT`, for a
+private repo of your own. `--diff` shows what changed since. On a new machine,
+`setup.sh` copies the snapshot into place when no settings file exists.
 
-1. Fork this repo on GitHub
-2. Clone your fork and run `./setup.sh`
-3. See [FORKING.md](FORKING.md) for customization guidance
+The hooks and status line these scripts are written for:
 
-## Syncing
-
-```bash
-# Push changes
-git add -A && git commit -m "Update config" && git push
-
-# Pull on another machine
-git pull && ./setup.sh
-```
-
-## Undo
-
-```bash
-./setup.sh --undo
-```
-
-Removes symlinks and restores backed-up directories.
-
-## Reference Files
-
-Some files aren't symlinked — they're templates or references for manual setup. See [templates/README.md](templates/README.md) for details.
-
-## Troubleshooting
-
-**Skills/commands not appearing in Claude Code?**
-1. Check symlinks: `ls -la ~/.claude/skills`
-2. Validate frontmatter: `./scripts/validate.sh`
-3. Restart Claude Code
-
-**Skills not appearing in Codex?**
-1. Check symlinks: `ls -la ~/.codex/skills`
-2. Verify the skill isn't in `codex-exclude`
-3. Start a Claude Code session (the sync hook runs on SessionStart), or run `./scripts/sync-codex-skills.sh` directly
-
-**Permission denied?**
-```bash
-chmod +x setup.sh && ./setup.sh
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "~/.claude/scripts/skill-doctor.sh --quiet" }] }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/scripts/gh-skill-nudge.sh\" 2>/dev/null || true",
+            "if": "Bash(gh *)",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": { "type": "command", "command": "~/.claude/scripts/statusline.sh" }
+}
 ```
 
-**Preview before running?**
-```bash
-./setup.sh --dry-run
-```
+## Scripts
 
-**Windows?**
-Use WSL or set up symlinks manually.
+| Script | What it does |
+|---|---|
+| `link-skills.sh` | Links skills into `~/.claude/skills` and `~/.codex/skills`. |
+| `skill-doctor.sh` | Runs `link-skills.sh`, then reports anything that needs a decision: broken links, skills with no `SKILL.md`, settings that differ from the snapshot. Prints nothing when healthy. |
+| `validate.sh` | Checks each skill's frontmatter and the formatting of `mods/` and `skills/`, then validates, type checks and tests each mod. Needs PyYAML. |
+| `skill-usage.sh` | Counts how often each skill was used, from Claude Code and Codex session logs. |
+| `settings-snapshot.sh` | Copies live settings to the snapshot, or diffs against it. |
+| `statusline.sh` | Shows the model, folder, branch, and context use. |
+| `gh-skill-nudge.sh` | Points at `better-github-skill` scripts for some `gh` commands. Does nothing unless that skill is installed. |
+
+## Forking
+
+Fork the repo, clone your fork, and run `./setup.sh`. Then:
+
+- Remove the skills you don't want from `skills/` and add your own. A skill
+  is a folder with a `SKILL.md` whose frontmatter has `name` and
+  `description`.
+- Rewrite `AGENTS.md`, which tells agents how to work in this repo.
+- Put your personal instructions in `~/.claude/CLAUDE.md` and
+  `~/.codex/AGENTS.md`, outside this repo.
+- Build your own settings rather than copying mine. Start from the hooks
+  above.
 
 ## License
 

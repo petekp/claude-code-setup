@@ -94,7 +94,7 @@ reasoning into the reply. Four skills conflict with the guides in small ways.
 - `pr-description`: its word target matches the Opus 5 verbosity advice. Its
   re-read of the saved PR body checks what GitHub stored, not Claude's own
   reasoning, so the over-verification advice does not apply.
-- `start-paddock-dev`: its "do not" rules protect the shared backend. The 5.5
+- A private dev-server skill: its "do not" rules protect a shared backend. The 5.5
   guide says to keep confirmation steps for risky actions.
 - `adversarial-change-review`: the Opus 5 guide warns that "only report
   high-severity issues" makes a reviewer report less. This skill filters by

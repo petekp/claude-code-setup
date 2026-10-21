@@ -11,11 +11,12 @@ parsed=$(printf '%s' "$input" | jq -r '[
    + (.context_window.current_usage.cache_creation_input_tokens // 0)
    + (.context_window.current_usage.cache_read_input_tokens // 0) | tostring),
   (.context_window.context_window_size // ""),
+  (.context_window.used_percentage // 0 | floor | tostring),
   (.transcript_path // "")
 ] | @tsv')
 
 tab=$(printf '\t')
-IFS="$tab" read -r cwd context_tokens window_size transcript_path <<EOF
+IFS="$tab" read -r cwd context_tokens window_size used_pct transcript_path <<EOF
 $parsed
 EOF
 
@@ -33,9 +34,37 @@ case "$window_size" in
   ''|*[!0-9]*) window_size="" ;;
 esac
 
+case "$used_pct" in
+  ''|*[!0-9]*) used_pct=0 ;;
+esac
+
 # Abbreviate home directory with ~
 home="$HOME"
-display_cwd="${cwd/#$home/~}"
+case "$cwd" in
+  "$home"*) display_cwd="~${cwd#"$home"}" ;;
+  *) display_cwd="$cwd" ;;
+esac
+
+# Label the signed-in account from "<email> <label>" lines in a private file,
+# since this repo is public. Unlisted accounts show initials (a.b@c.com -> abc).
+account_map="$HOME/.agents/statusline-accounts"
+account_email=$(jq -r '.oauthAccount.emailAddress // empty' "$HOME/.claude.json" 2>/dev/null)
+account_tag=""
+if [ -n "$account_email" ]; then
+  if [ -f "$account_map" ]; then
+    account_tag=$(awk -v email="$account_email" '$1 == email { print $2; exit }' "$account_map")
+  fi
+
+  if [ -z "$account_tag" ]; then
+    account_local="${account_email%%@*}"
+    account_domain="${account_email#*@}"
+    IFS='.' read -ra account_segments <<< "$account_local"
+    for segment in "${account_segments[@]}"; do
+      account_tag="${account_tag}${segment:0:1}"
+    done
+    account_tag="${account_tag}${account_domain:0:1}"
+  fi
+fi
 
 # Build the status line
 status=""
@@ -74,7 +103,7 @@ if [ "$cache_hit" -eq 0 ]; then
     cache_changed=$(git -C "$cwd" status --porcelain | wc -l | tr -d ' ')
   fi
 
-  cache_proc_count=$(pgrep -f 'context7-mcp|playwright-mcp|mcp-remote.*deepwiki|figma-console-mcp|agentation-mcp|agent-browser.*daemon|app-server-broker|chrome-headless-shell' | wc -l | tr -d ' ')
+  cache_proc_count=$(pgrep -f 'agent-browser.*daemon' | wc -l | tr -d ' ')
 
   case "$cache_changed" in
     ''|*[!0-9]*) cache_changed=0 ;;
@@ -141,9 +170,10 @@ if [ -n "$window_size" ] && [ -n "$raw_context_tokens" ]; then
     }
   }')
 
-  if [ "$context_tokens" -ge 250000 ]; then
+  # Auto-compaction starts at 50% of a 1M window (autoCompactWindow 500000).
+  if [ "$used_pct" -ge 45 ]; then
     token_color="\033[31m"
-  elif [ "$context_tokens" -ge 200000 ]; then
+  elif [ "$used_pct" -ge 35 ]; then
     token_color="\033[33m"
   else
     token_color="\033[32m"
@@ -152,12 +182,12 @@ if [ -n "$window_size" ] && [ -n "$raw_context_tokens" ]; then
   status="${status} $(printf "\033[2m·\033[0m ${token_color}%s\033[2m/%s\033[0m" "$used_k" "$window_label")"
 fi
 
-# Append Claude-spawned process count
+# Append the count of agent-browser daemons still running, from any session
 if [ "$cache_proc_count" -gt 0 ]; then
   if [ "$cache_proc_count" -gt 15 ]; then
-    status="${status} $(printf "\033[2m·\033[0m \033[31m%s\033[2m procs\033[0m" "$cache_proc_count")"
+    status="${status} $(printf "\033[2m·\033[0m \033[31m%s\033[2m browsers\033[0m" "$cache_proc_count")"
   else
-    status="${status} $(printf "\033[2m· %s procs\033[0m" "$cache_proc_count")"
+    status="${status} $(printf "\033[2m· %s browsers\033[0m" "$cache_proc_count")"
   fi
 fi
 
@@ -167,6 +197,10 @@ if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
   if [ -n "$timestamp" ]; then
     status="${status} $(printf "\033[2m· %s\033[0m" "$timestamp")"
   fi
+fi
+
+if [ -n "$account_tag" ]; then
+  status="${status} $(printf "\033[2m· %s\033[0m" "$account_tag")"
 fi
 
 printf "%s" "$status"
