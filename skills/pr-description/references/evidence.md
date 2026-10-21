@@ -12,6 +12,6 @@ Choose evidence that shows the behavior or risk the reviewer needs to assess. Do
 | Structural refactor | Relevant checks and consumer coverage; a diagram only if it explains a relationship |
 | Bug fix | Observed failure and corrected behavior, or a clear reproduction limitation |
 
-Use `pr-screenshot-comparison` for matched before/after images and `pr-visual-evidence` for interaction or motion proof. Load only the route needed. Capture the real product, inspect every image, and keep media outside Git. Screenshots require Pete's attachment choice even when a capture skill includes uploading.
+Use `pr-screenshot-comparison` for matched before/after images. For interaction or motion, record the real product and inspect the recording before attaching it. Keep media outside Git. Upload screenshots and recordings only with the author's authorization. Standing authorization counts.
 
 Caption evidence with the behavior it demonstrates. State meaningful limits, including cases not reproduced or exercised. Do not call a refactor behavior-preserving solely because a test command passed. Avoid fixed visual templates, decorative diagrams, and unrelated theme labels.

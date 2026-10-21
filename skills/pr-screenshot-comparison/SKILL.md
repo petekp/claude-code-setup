@@ -36,7 +36,7 @@ Still exclude credentials, access tokens, passwords, API keys, and unrelated sen
 5. Crop from the saved originals, using the same CSS rectangle mapped to image pixels. Include the complete control, its open menu, and enough surrounding context to identify the change. Preserve edge padding; do not cut through labels, headings, menus, or callouts. If the union of these states is too wide to read in a PR, narrow the proof area or make a separate detail comparison instead of shrinking the whole screen.
 6. Use [scripts/compose.py](scripts/compose.py) for the standard stacked comparison. It preserves screenshot pixels, validates dimensions and crop bounds, and renders consistent labels and captions. It produces the upload PNG and a review-size preview. Do not substitute an improvised stitching script for the standard layout. A different layout is appropriate when this one cannot show the change; retain the annotation rules below and explain the exception.
 7. Inspect the preview, not just the full-resolution image. Inside Herdr, open the composed PNG in the terminal-browser split so Pete sees it before it is attached. Required labels and IDs must be readable without zooming. Check that all relevant states are complete, crops align, and annotations do not conceal evidence. If it fails, recapture or reframe before upload. Upscaling a small capture, sharpening it, or adding a caption does not recover lost evidence.
-8. Attach only the inspected PNG, with the required upload authorization, using the attachment procedure below. Reload the PR and inspect the rendered image at its actual embedded size; a successful upload or nonzero image dimensions is not a visual check.
+8. Attach only the inspected PNG, with the author's upload authorization (standing authorization counts), using the attachment procedure below. Check the rendered PR with `gh` as that procedure describes, and read the downloaded image back; a successful upload alone is not a visual check.
 
 ## Annotation standard
 
@@ -59,14 +59,16 @@ Requires Python 3 and Pillow in the available artifact environment. Do not insta
   "crop": [64, 6, 640, 172],
   "frame": "dark",
   "panels": [
-    {"label": "Before", "caption": "List ancestor", "image": "before.png", "commit": "BASE_SHA", "route": "/appraisals/record-id"},
-    {"label": "After at rest", "caption": "Customer ancestor; eyebrow retained", "image": "after.png", "commit": "HEAD_SHA", "route": "/appraisals/record-id"},
-    {"label": "After activated", "caption": "Related records with IDs aligned right", "image": "open.png", "commit": "HEAD_SHA", "route": "/appraisals/record-id"}
+    {"label": "Before", "caption": "List ancestor", "image": "before.png", "commit": "BASE_SHA", "route": "/orders/order-id"},
+    {"label": "After at rest", "caption": "Customer ancestor; eyebrow retained", "image": "after.png", "commit": "HEAD_SHA", "route": "/orders/order-id"},
+    {"label": "After activated", "caption": "Related records with IDs aligned right", "image": "open.png", "commit": "HEAD_SHA", "route": "/orders/order-id"}
   ]
 }
 ```
 
 `crop` is `[x, y, width, height]` in CSS pixels. Replace all example dimensions, identities, and captions with the measured capture facts. Use a relative route so separate local origins remain comparable.
+
+To show states of one commit instead of a before-and-after, such as a component's offline and stalled states, add `"mode": "states"`. Each panel then takes its own label, and all panels must name the same commit.
 
 ```bash
 python3 <skill-directory>/scripts/compose.py /tmp/comparison.json /tmp/comparison.png
@@ -86,6 +88,10 @@ The compositor rejects mismatched image sizes, nonuniform scale, downscaled capt
 
 ## Suggested PR copy
 
+Make the comparison a prominent part of the description. Show each image inline, where a reader scrolling the description sees it without clicking. Never put an image inside a collapsed `<details>` block, even when there are several images or the description gets long.
+
+Put the section where the repository's PR template asks for screenshots. When the template names no place, put it at the top of the description, above the first heading.
+
 Use a short heading, then the image referenced by its local path, then one sentence:
 
 ```md
@@ -96,6 +102,8 @@ Use a short heading, then the image referenced by its local path, then one sente
 Before: [old behavior]. After: [new behavior].
 ```
 
+For several images, keep one heading and put a bold one-line summary of each image's visible difference directly above it.
+
 Describe the meaningful visual difference in one sentence. Do not claim full visual coverage when the image covers only one state or theme.
 
 ## Attaching with gh
@@ -105,15 +113,13 @@ Before uploading, reusing, or repairing an image link, follow
 Keep the original upload URL from the editor or raw PR body, never a rendered
 image's `src`, `currentSrc`, or a URL obtained after following redirects.
 
-`gh pr create`, `gh pr edit`, and `gh pr comment` take `--attach '<file>#<alt text>'` (gh 2.99.0 or newer; check `gh --version`). gh uploads the file and rewrites a matching local path in the body to the hosted asset URL, keeping the alt text. With no body flag it appends the image to the end of the existing body instead.
+`gh pr create`, `gh pr edit`, and `gh pr comment` take `--attach '<file>#<alt text>'` (gh 2.99.0 or newer; check `gh --version`). gh uploads the file and rewrites a matching local path in Markdown image syntax to the hosted asset URL, keeping the alt text. It does not rewrite a path inside an HTML `<img>` tag; it appends a new Markdown image at the end instead. With no body flag it appends the image to the end of the existing body instead.
 
-To place the image under its heading, append the copy above to the current body and attach in the same command:
+To place the image under its heading, add the copy above to the current body at the section's place, then attach in the same command:
 
 ```bash
 gh pr view <number> --json body --jq .body > "$TMPDIR/pr-body.md" || exit 1
-cat >> "$TMPDIR/pr-body.md" <<'EOF'
-<the PR copy above>
-EOF
+# Add the PR copy above to "$TMPDIR/pr-body.md" at the section's place.
 python3 "$HOME/.codex/skills/pr-description/scripts/check_attachment_urls.py" "$TMPDIR/pr-body.md" || exit 1
 gh pr edit <number> --body-file "$TMPDIR/pr-body.md" --attach './compare.png#Before and after: ...' || exit 1
 gh pr view <number> --json body --jq .body > "$TMPDIR/pr-body-saved.md" || exit 1

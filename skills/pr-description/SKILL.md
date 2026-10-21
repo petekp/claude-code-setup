@@ -1,67 +1,65 @@
 ---
 name: pr-description
-description: "Write or update a GitHub PR description as a short, skimmable list of key points grounded in the diff and real verification. Use when opening a PR or editing its description."
+description: "Write or update a GitHub PR description a teammate understands in one quick read: a picture when one fits, then a few plain sentences grounded in the diff and real verification. Use when opening a PR or editing its description."
 ---
 
 # PR description
 
-Write for a teammate who knows the product, hasn't followed the work, and is reading between other tasks. They should get the point from the bold text alone and stop once they have enough. A dense description goes unread even when it's accurate.
+Write for a teammate who knows the product, hasn't followed the work, and is reading between other tasks. After one quick read they should know what changed and what to check. A dense description goes unread even when it's accurate.
 
 Read the actual diff and enough context to establish the problem, the resulting behavior, and the review risks. Don't invent motivation or claim verification you haven't done.
 
-## Shape
+## Picture first
 
-- Use the repository's PR template headings when it has them. Under each heading, write bullets, not paragraphs.
-- Start each bullet with a bold lead-in that states the point as a full claim. Add one or two short sentences only when the reader needs the reason or the consequence.
-- One point per bullet, most important first. A bold label can group related bullets, as in the example.
-- Keep the body to one screen, about 300 words including tests. A small change needs one to three bullets. Over budget, cut reasons before points, then the least important points.
-- When revising, rewrite the whole body within that budget. Replace a wrong line instead of appending a section for each new finding.
+Put the evidence that shows the change faster than words at the top, above the first heading:
 
-## Content
+- **A visible change** gets an actual-product before-and-after image from `pr-screenshot-comparison`. Capture it with seeded or test data, and crop out customer names and contact details. When you can't capture one, say so under the tests.
+- **A change to a flow, a sequence, or how parts connect** gets a Mermaid diagram, which GitHub renders. Draw one only when it shows a relationship that two sentences can't.
+- **Any other change** starts with the text. [Evidence selection](references/evidence.md) covers recordings, command output, and data shapes.
 
-Cover these in order, skipping any that don't apply:
+## Plain text
 
-1. What was wrong or missing, with its impact as a number when one exists.
-2. What the change does.
-3. What behaves differently after merge, including effects outside the changed code.
-4. Decisions, risks, or known flaws the reviewer should check.
-5. What's not in this PR, only where a reader would assume otherwise.
-6. Tests: what was verified, and what wasn't.
+- **Size the text to the change.** A change with one or two points gets two to four sentences. Use bullets once there are three or more separate points. Use the repository's PR template headings when it has them. Keep your own text, tests included, under about 200 words. The template's checklist and other required sections don't count. Over budget, cut reasons before points, then the least important points.
+- **Describe what the user sees, in the words the team uses about the product:** screens, features, and customer situations. Write "the Team Chat message box", not the component's name, and "a rep turned Eve off", not the field value that records it. Name code only where the reviewer has to act on it. Explain how the code works in inline author notes instead.
+- **Make every sentence state an effect, a risk, or a check.** Cover these in order, as far as they apply: what was wrong, what the change does, what else behaves differently after merge, what the reviewer should check, and what's not in this PR when a reader would assume it is.
+- **Bold one line, the takeaway, or none.**
+- **Tests list what a person checked by hand and what wasn't checked.** CI results already show on the PR.
+- **When revising, rewrite the whole body.** Replace a wrong line instead of appending a section for each new finding.
 
-Leave out file-by-file narration, how the problem was found, mechanism the diff already shows, boilerplate, and mannered prose.
+Link evidence from the sentence it supports, such as docs, a dashboard query, or source lines. Reuse verification already done for the current change, and put a material gap beside the claim it limits.
 
-## Evidence
+## Cold read
 
-Link evidence from the bullet it supports, such as docs, a dashboard query, or source lines, instead of collecting it in its own section. Reasoning about a specific line belongs in an inline author note from `pr-self-review`, not the body. Use [evidence selection](references/evidence.md) for screenshots, recordings, and other proof. Reuse verification already done for the current change, and put a material gap beside the claim it limits.
+Before publishing, give only the description text to a reader with no other context. Ask them what changed, what to check, and which terms they would have to ask the author about. Rewrite when an answer is wrong or takes more than two sentences. Also rewrite each flagged term that comes from the code rather than the product. Then ask again. Terms the team uses every day, such as the names of its tools and people, can stay. When you have no way to hand the text to a separate reader, skip this step and say so in your handoff.
 
-## Example shape
+## Example
 
-Not text to copy:
+An 8-line fix to a chat editor. Not text to copy:
 
 ```markdown
+[before and after image]
+
 ## What and why
 
-- **Password resets fail for any email address containing `+`.** The reset link puts the address in the query string, which decodes `+` as a space, per the framework's [docs](…).
-- **412 resets failed in August,** per the [error dashboard](…).
-- **The endpoint now reads the address from the request body.** The body keeps the `+`.
+Fixes PAD-2336.
 
-**After merge, a reset for a `+` address works like any other:**
+**Starting a list in the Team Chat message box left the placeholder showing behind the bullet.** The placeholder now hides once a list or quote starts, and comes back when it's removed.
 
-- It sends the reset email.
-- It counts toward the hourly reset limit.
+The post edit form and the recon notes box use the same editor, so they get the fix too.
 
 ## Tests
 
-- **A new test requests a reset for a `+` address.** On main, it finds no account.
-- **Not tested with the live email provider.**
+- Checked by hand in Team Chat: typing `- `, `1. ` and `> `, the list button, and backspacing out of a list.
+- Not checked by hand in the post edit form or the recon notes box.
+- No automated test added.
 ```
 
 ## Publishing
 
-Read [Pete's PR workflow](/Users/petepetrash/.agents/private-guidance/pr-workflow.md) during PR preparation. It covers screenshot and author-note choices, approval, and neutral teammate replies. Prepare and inspect available screenshots before offering attachment, and continue authorized PR work while optional choices are pending.
+Inspect screenshots before attaching them, and continue authorized PR work while optional choices are pending.
 
 Publish with `gh pr create --body-file` or `gh pr edit --body-file` using actual multiline text in a file. Re-read the raw saved body afterward to verify the intended text.
 
-For any existing or new image or video attachment, read [attachment links](references/attachment-links.md). Preserve original permanent upload URLs, run the checker before publishing and on the fetched raw body afterward, and inspect the rendered PR. A successful preview alone does not establish URL permanence. Never commit PR screenshots or upload them without approval.
+For any existing or new image or video attachment, read [attachment links](references/attachment-links.md). Preserve original permanent upload URLs, run the checker before publishing and on the fetched raw body afterward, and inspect the rendered PR. A successful preview alone does not establish URL permanence. Keep PR screenshots out of Git, and upload them only with the author's authorization. Standing authorization counts.
 
 Author self-review notes are a separate optional workflow using `pr-self-review`. Publishing the description does not authorize review comments or replies to teammates.
