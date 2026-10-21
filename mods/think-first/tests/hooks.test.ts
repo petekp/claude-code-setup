@@ -17,7 +17,14 @@ const BAND = {
 const PANE = {
   component: 'Pane' as const,
   requestId: 'think-first',
-  props: { title: 'Your thinking', isFocused: true, bodyColumns: 80, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 40 }, view: {} },
+  props: {
+    title: 'Your thinking',
+    isFocused: true,
+    bodyColumns: 80,
+    placement: 'dock' as const,
+    scroll: { offset: 0, bodyRows: 40 },
+    view: {},
+  },
 }
 
 const QUESTION = 'Why do small teams cancel in their second month?'
@@ -31,7 +38,8 @@ let filled: string[] = []
 // How many times the classifier ran, and what it and the check answer.
 let classified = 0
 let sortAs = 'THINK'
-let checkReply = 'RATING: miss\nGAP: You expected churn from pricing, but the cancellations followed failed onboarding calls.'
+let checkReply =
+  'RATING: miss\nGAP: You expected churn from pricing, but the cancellations followed failed onboarding calls.'
 
 function world(on: On) {
   files = new Map()
@@ -56,7 +64,13 @@ function world(on: On) {
     if (isClassify) classified += 1
     const text = isClassify ? sortAs : checkReply
 
-    return { value: { isAnswered: true, text, usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } }
+    return {
+      value: {
+        isAnswered: true,
+        text,
+        usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+      },
+    }
   })
   on('fs.write', ($, e) => {
     files.set(e.path, e.text)
@@ -66,7 +80,13 @@ function world(on: On) {
   on('fs.list', ($, e) => ({
     value: [...files.keys()]
       .filter(path => path.startsWith(`${e.path}/`))
-      .map(path => ({ name: path.slice(e.path.length + 1), kind: 'file' as const, size: 1, mtimeMs: 0, isLink: false })),
+      .map(path => ({
+        name: path.slice(e.path.length + 1),
+        kind: 'file' as const,
+        size: 1,
+        mtimeMs: 0,
+        isLink: false,
+      })),
   }))
   on('fs.read', ($, e) => ({ value: files.get(e.path) ?? '' }))
   // The engine draws nothing of its own in the band; an empty Box stands for that.
@@ -176,7 +196,12 @@ test('the pane shows takes given and where predictions were off', async ($, on) 
   await submit($, 'Find out why cancellations rose\nexpect: the price change drove it')
   await finish($, 'Onboarding calls failed.')
 
-  await $.command.run({ command: 'think', args: '', origin: { kind: 'composer' }, presentation: { isFullscreen: true, columns: 200 } })
+  await $.command.run({
+    command: 'think',
+    args: '',
+    origin: { kind: 'composer' },
+    presentation: { isFullscreen: true, columns: 200 },
+  })
   const pane = await $.ui.mount({ plugin: 'think-first', surface: 'terminal', ...PANE })
   expect(await pane.find({ text: /Your take first on 1 of 1 thinking questions/ })).toBeDefined()
   expect(await pane.find({ text: /1 predictions: 0 hit · 0 partly · 1 miss/ })).toBeDefined()

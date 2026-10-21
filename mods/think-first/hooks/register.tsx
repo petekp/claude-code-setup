@@ -13,7 +13,12 @@ const HISTORY_WEEKS = 6
 const OFF_LIST = 10
 const DAY_MS = 86_400_000
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const RATING_LABELS: Record<Rating, string> = { hit: 'Hit', partly: 'Partly right', miss: 'Miss', vague: 'Too vague to check' }
+const RATING_LABELS: Record<Rating, string> = {
+  hit: 'Hit',
+  partly: 'Partly right',
+  miss: 'Miss',
+  vague: 'Too vague to check',
+}
 
 const CLASSIFY = `You sort a message a person sent to their coding agent. The message is inside <message> tags. Do not answer or act on it. Reply with one word, THINK or BUILD.
 
@@ -60,7 +65,13 @@ function splitExpect(text: string): { text: string; expect: string | null } {
   const found = [...text.matchAll(EXPECT_LINE)].map(m => (m[1] ?? '').trim()).filter(Boolean)
   if (found.length === 0) return { text, expect: null }
 
-  return { text: text.replace(EXPECT_LINE, '').replace(/\n{3,}/g, '\n\n').trim(), expect: found.join(' ') }
+  return {
+    text: text
+      .replace(EXPECT_LINE, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim(),
+    expect: found.join(' '),
+  }
 }
 
 /** Splits a prompt at its last `My take:` line, or returns null when it has none. */
@@ -93,7 +104,14 @@ async function saveTake($: EngineInterface, question: string, take: string | nul
 
 async function isThinkingQuestion($: EngineInterface, text: string): Promise<boolean> {
   $.ui.status('Checking whether this asks for your take…')
-  const r = await $.model.complete({ model: 'haiku', system: CLASSIFY, prompt: `<message>\n${text.slice(0, 4000)}\n</message>`, maxTokens: 5, effort: 'low', timeoutMs: 3000 })
+  const r = await $.model.complete({
+    model: 'haiku',
+    system: CLASSIFY,
+    prompt: `<message>\n${text.slice(0, 4000)}\n</message>`,
+    maxTokens: 5,
+    effort: 'low',
+    timeoutMs: 3000,
+  })
   $.ui.status(undefined)
 
   return r.isAnswered && /THINK/i.test(r.text)
@@ -134,7 +152,10 @@ async function discuss($: EngineInterface) {
   await update($, OPEN, () => null)
   const p = o.prediction
   const verdict = p.rating ? ` A check rated it "${RATING_LABELS[p.rating]}": ${p.gap}` : ''
-  await $.prompt.fill({ text: `Before that turn I predicted: "${p.expect}".${verdict} Where was my thinking off, and what should I have looked at?`, mode: 'replace' })
+  await $.prompt.fill({
+    text: `Before that turn I predicted: "${p.expect}".${verdict} Where was my thinking off, and what should I have looked at?`,
+    mode: 'replace',
+  })
 }
 
 function parseEntry(text: string): Entry | null {
@@ -241,7 +262,12 @@ export const register: Register = on => {
       // A take the person wrote without being asked.
       await saveTake($, take.question, take.take)
       context = [...(context ?? []), TAKE_NOTE]
-    } else if (!take && text.length >= MIN_QUESTION_CHARS && (await $.clock.now()) >= quietUntil && (await isThinkingQuestion($, text))) {
+    } else if (
+      !take &&
+      text.length >= MIN_QUESTION_CHARS &&
+      (await $.clock.now()) >= quietUntil &&
+      (await isThinkingQuestion($, text))
+    ) {
       const at = await $.clock.now()
       await update($, GATE, () => ({ question: text, at }))
       refill($, e.text)
@@ -251,7 +277,16 @@ export const register: Register = on => {
 
     if (expect && sent) {
       const { id, at } = await newId($, 'prediction')
-      const prediction: Prediction = { kind: 'prediction', id, at, folder, prompt: sent.slice(0, 300), expect, rating: null, gap: null }
+      const prediction: Prediction = {
+        kind: 'prediction',
+        id,
+        at,
+        folder,
+        prompt: sent.slice(0, 300),
+        expect,
+        rating: null,
+        gap: null,
+      }
       predictedPrompt = sent
       await update($, OPEN, () => ({ prediction, phase: 'running' as const }))
     }
@@ -343,7 +378,10 @@ export const register: Register = on => {
       weeks.set(w, [...(weeks.get(w) ?? []), entry])
     }
     const off = list
-      .filter((p): p is Prediction => p.kind === 'prediction' && (p.rating === 'miss' || p.rating === 'partly' || p.rating === 'vague'))
+      .filter(
+        (p): p is Prediction =>
+          p.kind === 'prediction' && (p.rating === 'miss' || p.rating === 'partly' || p.rating === 'vague'),
+      )
       .slice(0, OFF_LIST)
 
     return (
@@ -356,7 +394,10 @@ export const register: Register = on => {
           {all.predictions} predictions: {all.hit} hit · {all.partly} partly · {all.miss} miss · {all.vague} too vague
         </Text>
         <Text> </Text>
-        <Text bold>{'Week of'.padEnd(10)}{'Takes'.padEnd(10)}Predictions</Text>
+        <Text bold>
+          {'Week of'.padEnd(10)}
+          {'Takes'.padEnd(10)}Predictions
+        </Text>
         {[...weeks.entries()].map(([w, entries]) => {
           const c = counts(entries)
 
