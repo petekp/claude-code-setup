@@ -2,14 +2,16 @@
 
 Worktree `{{HOME}}/Code/vignette-todo/zoom`, branch `{{RUN}}/zoom`, scratch
 `{{HOME}}/Code/vignette-todo/zoom-scratch`. Read `BRIEF.md` first, then in your
-worktree: the zoom bullets of `AGENTS.md`, `docs/zoom-2026-09-17.md` (the design and how it was
-measured, including the 60 fps method), and the zoom parts of `docs/run-{{PREVIOUS_RUN}}.md`
-(what was verified last time and what stayed open).
+worktree: the zoom bullet and the measuring paragraphs of `AGENTS.md` (the 60 fps method), the
+comments in `Sources/Zoom.swift` (the design), and `docs/zoom-input-2026-09-19.md` (the
+measurements behind the anchor). Then the zoom parts of the last run's report,
+`{{HOME}}/Code/vignette-todo/{{PREVIOUS_RUN}}-archive/reports/integration.md` (what was verified
+last time and what stayed open).
 
-Your files: `Sources/Zoom.swift`, `Sources/AnnotationController.swift`, `Sources/StandIn.swift`
-if the stand-in is involved, `Sources/Settings.swift` and `Sources/DebugPanel.swift` for the new
-tweaks, `Tests/ZoomTests.swift`, `docs/zoom-2026-09-17.md` (a dated section), and the zoom
-bullets in AGENTS.md and README.md. Another agent (`strip`) is editing the stack's strip and
+Your files: `Sources/Zoom.swift`, `Sources/AnnotationController.swift`, `Sources/EditorView.swift`
+if the editor's layers are involved, `Sources/Settings.swift` and `Sources/DebugPanel.swift` for the
+new tweaks, `Tests/ZoomTests.swift`, `docs/zoom-input-2026-09-19.md` (a dated section), and the
+zoom bullet in AGENTS.md. Another agent (`strip`) is editing the stack's strip and
 the user-facing strings at the same time; do not touch `StackLayout.swift`, `StackView.swift`,
 `ThumbnailController.swift`, `Config.swift`, `SettingsWindow.swift`, or `AppDelegate.swift`.
 
@@ -25,10 +27,10 @@ which is one of 22's suspects, so 19 first would confound the measurement.
 > address." The flight arc (`FlightCurve`, `ui.flightArc`) is applied only to card flights in
 > `TransitionLayer`; the zoom's frame comes from `Zoom.frame` under one spring, so the cause is
 > somewhere else. Candidates: the anchor blend from the previous aim to the cursor on the first
-> step (`ZoomAim`), the stand-in going up on the first input (a mismatch between the page and the
-> stand-in for a frame), or the spring's start. Measure with the 60 fps method from
-> docs/zoom-2026-09-17.md (per-frame position of the frame's edge and of a stroke inside the
-> picture) before changing anything, then remove whatever moves sideways or steps.
+> step (`ZoomAim`), the stack narrowing in the same turn as the first step, or the spring's start.
+> Measure with the 60 fps method from AGENTS.md (per-frame position of the frame's edge and of a
+> stroke inside the picture) before changing anything, then remove whatever moves sideways or
+> steps.
 
 Notes:
 
@@ -43,9 +45,10 @@ Notes:
   code does when the growth is zero), and a blend from that anchor to the cursor's during the
   spring would move the frame sideways at the start. If that is it, the first step from rest
   should start at the cursor's anchor with no blend.
-- Another: the stand-in goes up on the first input. If the stand-in's first frame differs from
-  the page's last (rounding of the web view's size, the overlay's cap, the picture's rect), that
-  is a one-frame step. The measurement will say.
+- Another: each zoom step sets the stack's width in the same turn as the frame
+  (`widthScale(clearing:visibleFrame:)`), and the stack drops frames while it narrows
+  (`docs/stack-narrowing-2026-09-23.md`). A dropped frame at the first step is a step on screen.
+  The measurement will say; the stack's files are `strip`'s, so report it rather than fix it.
 - Pete's own trackpad is the acceptance; say in the report exactly what he should try (pinch,
   cmd+wheel, Cmd+plus, smart zoom, from the corner and from the middle) and what he should see.
 

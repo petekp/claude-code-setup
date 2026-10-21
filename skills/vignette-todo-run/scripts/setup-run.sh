@@ -3,16 +3,20 @@
 #
 # Usage: setup-run.sh <run> <base> <name>...
 #   run   the branch prefix, e.g. todo6 (branches are <run>/<name>)
-#   base  the branch the worktrees start from, e.g. foundation
+#   base  the branch the worktrees start from, e.g. main
 #   name  one per agent
 #
 # Archives a previous run's briefs, reports, items, and scratch folders under
 # ~/Code/vignette-todo/<previous>-archive/ first, where <previous> is read from the archived
-# BRIEF.md's title. Never reads or writes anything of Pete's except one jq read of his settings
-# file to seed each scratch copy. Prints the settings mtime at the end; the run records it.
+# BRIEF.md's title. Puts test-copy.sh in ~/Code/vignette-todo/ for the agents. Never reads or
+# writes anything of Pete's except one jq read of his settings file to seed each scratch copy.
+# Prints the settings mtime at the end; the run records it.
 set -eu
 [ $# -ge 3 ] || { echo "usage: setup-run.sh <run> <base> <name>..." >&2; exit 2; }
 run=$1; base=$2; shift 2
+for name in "$@"; do
+    case $name in ""|[![:lower:]]*|*[![:lower:][:digit:]-]*) echo "agent names are lowercase letters, digits, and hyphens: $name" >&2; exit 2 ;; esac
+done
 repo=$HOME/Code/vignette
 todo=$HOME/Code/vignette-todo
 real=$HOME/.config/vignette/settings.json
@@ -34,6 +38,7 @@ if [ -f "$todo/BRIEF.md" ]; then
 fi
 [ -e "$todo/launch.lock" ] && echo "warning: $todo/launch.lock exists (owner: $(cat "$todo/launch.lock/owner" 2>/dev/null))" >&2
 mkdir -p "$todo/items" "$todo/reports"
+cp "$(dirname "$0")/test-copy.sh" "$todo/test-copy.sh"
 
 for name in "$@"; do
     wt=$todo/$name
@@ -42,10 +47,9 @@ for name in "$@"; do
     s=$todo/$name-scratch
     mkdir -p "$s/shots" "$s/captures"
     jq --arg shots "$s/shots" '.screenshotsFolder=$shots | .syncAppleSaveLocation=false | .debug=true
-        | .launchAtLogin=false | .copyOnCapture=false | .annotateOnCapture=false' "$real" > "$s/settings.json"
-    (cd "$wt/web" && pnpm install --silent) &
+        | .launchAtLogin=false | .copyOnCapture=false | .annotateOnCapture=false | .hideMenuBarIcon=true
+        | .agentSkill="off" | .setup="done" | .recentHotkey="ctrl+option+cmd+9"' "$real" > "$s/settings.json"
     echo "$name: $wt on $run/$name, scratch $s"
 done
-wait
 git -C "$repo" worktree list
 echo "settings mtime: $(stat -f %m "$real")"

@@ -1,6 +1,7 @@
 #!/bin/sh
-# End a Vignette TODO run: unregister every worktree build from LaunchServices, confirm Pete's
-# build answers vignette:// and is running on his real settings, and list what to prune.
+# End a Vignette TODO run: unregister every worktree build and test copy from LaunchServices,
+# confirm Pete's build answers vignette:// and is running on his real settings, and list what to
+# prune.
 #
 # Usage: finish-run.sh <run> [--prune]
 #   --prune  remove the run's worktrees and branches (only after Pete has merged)
@@ -12,7 +13,7 @@ todo=$HOME/Code/vignette-todo
 lsreg=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 mine=$repo/build/Build/Products/Debug/Vignette.app
 
-for app in "$todo"/*/build/Build/Products/Debug/Vignette.app; do
+for app in "$todo"/*/build/Build/Products/Debug/Vignette.app "$todo"/*-scratch/app/*.app; do
     [ -d "$app" ] || continue
     "$lsreg" -u "$app" >/dev/null 2>&1 && echo "unregistered $app"
 done
@@ -31,7 +32,7 @@ else
     echo "warning: Pete's build is not running; relaunch with: open -g $mine" >&2
 fi
 other=$(pgrep -fl "vignette-todo/.*/MacOS/Vignette" || true)
-[ -z "$other" ] || echo "warning: a worktree instance is still running: $other" >&2
+[ -z "$other" ] || echo "warning: a worktree build or test copy is still running: $other" >&2
 [ -e "$todo/launch.lock" ] && echo "warning: launch.lock still exists" >&2
 echo "settings mtime: $(stat -f %m "$HOME/.config/vignette/settings.json")"
 
