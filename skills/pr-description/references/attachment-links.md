@@ -38,11 +38,17 @@ python3 "$HOME/.codex/skills/pr-description/scripts/check_attachment_urls.py" "$
 
 The script checks known GitHub delivery hosts and signed attachment URLs. It
 does not prove that a file exists, is accessible, or renders. Confirm that every
-expected attachment is still present with its original URL, then reload the PR
-in an authenticated browser and inspect the images or videos. Use the in-app
-browser if the operator needs to sign in. Do not use an unauthenticated 404 on a
-private attachment as proof that its link is broken, or copy the authenticated
-delivery URL back into the description.
+expected attachment is still present with its original URL. Then check the
+rendered PR with the `gh` CLI, not a browser:
+
+```bash
+gh api repos/<owner/repo>/pulls/<number> -H "Accept: application/vnd.github.html+json" --jq .body_html > "$TMPDIR/pr-body.html" || exit 1
+```
+
+Download each rendered `<img>` `src` from that HTML, confirm it opens as an
+image with the uploaded file's dimensions, and read it back to inspect it.
+Those `src` values are expiring delivery URLs. Never copy one back into the
+description.
 
 If the check fails, stop before publishing or claiming completion. Recover the
 canonical URL from the upload result, editor Markdown, or a saved raw body.

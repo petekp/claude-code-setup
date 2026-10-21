@@ -42,9 +42,16 @@ def compose(spec_path, output, regular=None, bold=None):
     spec = json.loads(spec_path.read_text())
     panels = spec['panels']
     require(len(panels) in (2, 3), 'Use two or three panels per comparison.')
-    expected = ['Before', 'After'] if len(panels) == 2 else [
-        'Before', 'After at rest', 'After activated']
-    require([p['label'] for p in panels] == expected, 'Panel labels/order do not match the comparison states.')
+    mode = spec.get('mode', 'comparison')
+    require(mode in ('comparison', 'states'), 'mode must be "comparison" or "states".')
+    states_mode = mode == 'states'
+    if states_mode:
+        expected = [p.get('label', '') for p in panels]
+        require(all(expected), 'Give every state panel a label.')
+    else:
+        expected = ['Before', 'After'] if len(panels) == 2 else [
+            'Before', 'After at rest', 'After activated']
+        require([p['label'] for p in panels] == expected, 'Panel labels/order do not match the comparison states.')
     vw, vh = spec['viewport']
     x, y, w, h = spec['crop']
     require(all(isinstance(v, (int, float)) and math.isfinite(v)
@@ -67,8 +74,11 @@ def compose(spec_path, output, regular=None, bold=None):
             'Image dimensions do not match the recorded viewport; supply full viewport captures, not clipped or resized images.')
     require(sx >= .99, 'Capture is smaller than the CSS viewport; recapture without downscaling.')
     require(len({p['route'] for p in panels}) == 1, 'Comparison routes differ; capture the same product route.')
-    require(panels[0]['commit'] != panels[1]['commit'], 'Before and after must name distinct commits.')
-    if len(panels) == 3:
+    if states_mode:
+        require(len({p['commit'] for p in panels}) == 1, 'State panels must use the same commit.')
+    else:
+        require(panels[0]['commit'] != panels[1]['commit'], 'Before and after must name distinct commits.')
+    if not states_mode and len(panels) == 3:
         require(panels[1]['commit'] == panels[2]['commit'], 'After states must use the same commit.')
     require(bool(regular) == bool(bold), 'Supply both --font and --bold-font.')
     if not regular:

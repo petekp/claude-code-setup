@@ -1,6 +1,6 @@
 # Writing author notes
 
-A useful note saves the reviewer a lookup or clarifies an effect outside the changed lines. Investigate these questions when they apply:
+Author-context comments explain the change to reviewers. They do not evaluate the PR or announce a review verdict. A useful note saves a lookup or clarifies an effect outside the changed lines. Investigate these questions when they apply:
 
 | Change | Useful context |
 | --- | --- |
@@ -12,7 +12,7 @@ A useful note saves the reviewer a lookup or clarifies an effect outside the cha
 | Domain terminology | What product distinction might a teammate misunderstand? |
 | Validation or limitation | What case was checked, or what uncertainty affects the review? |
 
-Keep distinct useful explanations even when they concern the same feature. Explain a shared mechanism once, then describe separate effects on callers where needed. Skip formatting, obvious renames, duplicate answers, and comments that only repeat the diff. A PR-body overview does not replace useful inline context.
+Keep distinct useful explanations even when they concern the same feature. Explain a shared mechanism once, then describe separate effects on callers where needed. Skip formatting, obvious renames, duplicate answers, and comments that only repeat the diff. A PR-body overview does not replace useful context at the affected code.
 
 Use one or two short sentences, allowing another when a condition matters. Start with the fact, then its consequence. Prefer neutral, pronoun-light wording. Use `we` only for a documented shared decision and `I` only for a personal choice Pete explicitly stated. Do not announce that an agent wrote the note.
 

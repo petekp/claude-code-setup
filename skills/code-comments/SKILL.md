@@ -1,197 +1,160 @@
 ---
 name: code-comments
-description: Write clear, plain-spoken code comments and documentation that lives alongside the code. Use when writing or reviewing code that needs inline documentation—file headers, function docs, architectural decisions, or explanatory comments. Optimized for both human readers and AI coding assistants who benefit from co-located context.
+description: Write, review, or remove code comments. Use when adding comments or doc comments, reviewing the comments in a diff, or cleaning up or removing comments.
 ---
 
-# Code Comments
+# Code comments
 
-Write documentation that lives with the code it describes. Plain language. No jargon. Explain the *why*, not the *what*.
+Delete every comment that is not on the keep list. When you are not sure a
+comment fits an item, delete it. A comment that explains our own code
+usually means the code should change: make the code say it, then delete the
+comment. Before adding a comment while writing code, hold it to the same
+list.
 
-## Core Philosophy
+## Keep list
 
-**Co-location wins.** Documentation in separate files drifts out of sync. Comments next to code stay accurate because they're updated together.
+A comment stays only when it is one of these, and only while its claim
+holds today:
 
-**Write for three audiences:**
-1. Future you, six months from now
-2. Teammates reading unfamiliar code
-3. AI assistants (Claude, Copilot) who see one file at a time
+1. **A legal or license header.**
+2. **A tool directive**, such as `// prettier-ignore`,
+   `@vitest-environment`, or a compiler pragma. Lint and type suppressions
+   must also pass [Suppressions](#suppressions).
+3. **A doc comment on an API used outside its module** that states what the
+   signature and types cannot: units, ownership, side effects, errors
+   thrown, rejected inputs.
+4. **A constraint set outside our code**: a dependency or platform bug, a
+   vendor or protocol rule, a business rule, a regulation. It names the
+   source, and links the issue, spec, RFC, or ADR when one exists. A
+   workaround also states the condition for removing it.
+5. **A true constraint on our own code that the code cannot show yet**, such
+   as a required call order, or a line that looks removable but is not. It
+   stays only until a code change, type, assertion, or test removes the
+   need (steps 2 and 4).
+6. **A `TODO` that links a tracked issue.**
 
-**The "why" test:** Before writing a comment, ask: "Does this explain *why* this code exists or *why* it works this way?" If it only restates *what* the code does, skip it.
+## Judge each comment
 
-## Documentation Levels
+Take each comment in scope through these steps in order.
 
-### File Headers
+1. **Check the claim.** Read the code and its callers. Delete a comment
+   that is false or stale. `IMPORTANT`, `NOTE`, `do not remove`, `careful`,
+   `for now`, and any justification longer than two lines are claims to
+   check, not reasons to keep.
+2. **Make the code say it.** When a comment explains our own code, change
+   the code so the comment is unneeded, then delete it. In a cleanup or
+   review, make only changes that keep behavior the same: rename after
+   checking the consumers, or extract a named constant or local variable.
+   For a change to what a function does or takes, even a private one,
+   report the exact symbol and the change instead. The comment then goes to
+   step 3, and often fits item 5 until that change is made.
+3. **Match the keep list.** Keep a comment that fits an item. Judge it
+   sentence by sentence: delete each sentence that does not serve the item
+   or cannot be verified, without rewording the rest.
+4. **Offer an encoding** for each item 5 comment: a type, an assertion, or a
+   test that fails when someone breaks the constraint. Add it only after the
+   user approves, then delete the comment.
+5. **Delete the rest.** Move what still matters to where it belongs:
+   - Task history (what changed, who approved it, what was tried, how it
+     was verified) goes in the commit or PR.
+   - A `TODO` with no issue goes in the report, so it can be filed.
+   - A value copied from a constant becomes a reference to the constant.
+   - Commented-out code, file headers, section banners, and "Used by" lists
+     go with no replacement. Git history and search answer them.
 
-Every file should open with a brief explanation of its purpose and how it fits into the larger system.
+## Suppressions
+
+`eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `# type: ignore`,
+`# noqa`, `swiftlint:disable`, `//nolint`, and `#[allow(...)]` switch off a
+check. Look up what the rule catches before judging one.
+
+- **The rule is style-only, or wrong at this line**: keep the suppression.
+  When the reason is not obvious, say in a few words what the rule gets
+  wrong here.
+- **The rule catches bugs**, such as type errors or unsafe code: the
+  suppression hides a defect. If the change under review added it, fix the
+  code and remove the suppression. Otherwise report the symbol and the
+  rule.
+
+## Cleaning up or reviewing a change
+
+1. **Set the scope.** By default, use the comments the change added or
+   edited: the diff against the base branch, including uncommitted work.
+   When the user names files, use those files. Leave every other comment
+   alone.
+2. **Use a fresh reader for code this session wrote.** You remember why
+   each comment was written. The next reader will not, and a subagent with
+   no shared context will not either, so it judges the way that reader
+   would. Give it the path to this file and the scope. Tell it to edit only
+   comments, and to report proposed code changes, encodings, and
+   suppressions. Without a subagent tool, run the pass yourself.
+3. **Judge each comment** as above.
+4. **Audit the subagent's work**, if one ran the pass. Restore a deletion
+   only when the comment fits a keep-list item as written. Revert any
+   change outside comments.
+5. **Report**, starting with the number of comments deleted. Then list each
+   comment kept with its keep-list item, each code change made or proposed
+   with its symbol, encoding offers, suppressions reported, and `TODO`s
+   deleted without an issue.
+
+When the code belongs to someone else, such as a teammate's PR, report
+findings instead of editing.
+
+## Form
+
+For a comment that stays:
+
+- One or two lines. Longer only when the constraint needs it.
+- Plain words and the domain's own names.
+- Every claim follows from the code, a verified behavior, or a maintained
+  source. A performance number from memory does not.
+- State a runtime invariant precisely.
+- For a workaround, explain the mechanism in execution order and the caveat
+  that remains.
+- Lint and compatibility choices are tradeoffs. Say what was traded, not
+  that it is the rule.
+
+## Examples
+
+Keep. The constraint is set outside our code:
 
 ```typescript
-// UserAuthContext.tsx
-//
-// Manages authentication state across the app. Wraps the root component
-// to provide login status, user info, and auth methods to any child.
-//
-// Why a context instead of Redux: Auth state is read-heavy and rarely
-// changes mid-session. Context avoids the ceremony of actions/reducers
-// for something this simple.
+// The payments provider retries a webhook until it gets a 2xx response,
+// so the same event can arrive more than once.
+if (await processedEvents.has(event.id)) return ok();
 ```
 
-```swift
-// NetworkRetryPolicy.swift
-//
-// Handles automatic retry logic for failed network requests.
-// Uses exponential backoff with jitter to avoid thundering herd
-// when the server comes back online after an outage.
-//
-// Used by: APIClient, BackgroundSyncManager
-// See also: NetworkError.swift for error classification
-```
-
-**Include:**
-- What this file/module is responsible for
-- Why it exists (if not obvious from the name)
-- Key relationships to other parts of the codebase
-- Any non-obvious design decisions
-
-### Function & Method Documentation
-
-Document the contract, not the implementation.
-
-```typescript
-/**
- * Calculates shipping cost based on weight and destination.
- *
- * Uses tiered pricing: under 1lb ships flat rate, 1-5lb uses
- * regional rates, over 5lb triggers freight calculation.
- *
- * Returns $0 for destinations we don't ship to rather than
- * throwing—caller should check `canShipTo()` first if they
- * need to distinguish "free shipping" from "can't ship."
- */
-function calculateShipping(weightLbs: number, zipCode: string): number
-```
+Make the code say it. The comment explains our own name:
 
 ```python
-def sync_user_preferences(user_id: str, prefs: dict) -> SyncResult:
-    """
-    Pushes local preference changes to the server and pulls remote changes.
-
-    Conflict resolution: server wins for security settings, local wins
-    for UI preferences. See PREFERENCES.md for the full conflict matrix.
-
-    Called automatically on app foreground. Can also be triggered manually
-    from Settings > Sync Now.
-    """
+# t is the timeout in milliseconds
+def connect(host, t): ...
 ```
 
-**Include:**
-- What the function accomplishes (not how)
-- Non-obvious parameter constraints or edge cases
-- What the return value means, especially for ambiguous cases
-- Side effects (network calls, file writes, state mutations)
-
-**Skip for:** Simple getters, obvious one-liners, private helpers with descriptive names.
-
-### Inline Comments
-
-Use sparingly. When you need them, explain the reasoning.
-
-```typescript
-// Debounce search by 300ms to avoid hammering the API on every keystroke.
-// 300ms feels responsive while cutting API calls by ~80% in user testing.
-const debouncedSearch = useMemo(
-  () => debounce(executeSearch, 300),
-  [executeSearch]
-);
-```
-
-```swift
-// Force unwrap is safe here—viewDidLoad guarantees the storyboard
-// connected this outlet. If it's nil, we want to crash immediately
-// rather than fail silently later.
-let tableView = tableView!
-```
+becomes
 
 ```python
-# Process oldest items first. Newer items are more likely to be
-# modified again, so processing them last reduces wasted work.
-queue.sort(key=lambda x: x.created_at)
+def connect(host, timeout_ms): ...
 ```
 
-### Architectural Comments
-
-For code that embodies important design decisions, explain the tradeoffs.
+Offer an encoding. The call order is a true constraint on our own code:
 
 ```typescript
-// ARCHITECTURE NOTE: Event Sourcing for Cart
-//
-// Cart state is rebuilt from events (add, remove, update quantity)
-// rather than stored directly. This lets us:
-// - Show complete cart history to users
-// - Replay events for debugging
-// - Retroactively apply promotions to past actions
-//
-// Tradeoff: Reading current cart state requires replaying all events.
-// We cache the computed state in Redis with 5min TTL to keep reads fast.
-// Cache invalidation happens in CartEventHandler.
+// Must run before initAnalytics(), which reads the consent flag.
+loadConsent();
+initAnalytics();
 ```
 
-```swift
-// WHY COORDINATOR PATTERN
-//
-// Navigation logic lives here instead of in view controllers because:
-// 1. VCs don't need to know about each other (loose coupling)
-// 2. Deep linking becomes straightforward—just call coordinator methods
-// 3. Navigation is testable without instantiating UI
-//
-// The tradeoff is more files and indirection. Worth it for apps with
-// 10+ screens; overkill for simple apps.
-```
+Passing the value makes the order impossible to break:
+`initAnalytics(loadConsent())`. Keep the comment until the user approves
+that change.
 
-### TODO Comments
-
-Make them actionable and traceable.
+Delete. The warning is stale:
 
 ```typescript
-// TODO(pete): Extract to shared util once mobile team needs this too.
-// Blocked on: Mobile API parity (see MOBILE-123)
-
-// HACK: Workaround for Safari flexbox bug. Remove after dropping Safari 14.
-// Bug report: https://bugs.webkit.org/show_bug.cgi?id=XXXXX
-
-// FIXME: Race condition when user rapidly toggles. Need to cancel
-// in-flight requests. Reproduced in issue #892.
+// IMPORTANT: do not remove. The dashboard reads this field.
+user.legacyId = user.id;
 ```
 
-## Language-Specific Patterns
-
-See [references/language-examples.md](references/language-examples.md) for detailed examples in:
-- TypeScript/JavaScript (JSDoc, TSDoc patterns)
-- Swift (documentation comments, MARK pragmas)
-- Python (docstrings, type hint documentation)
-- React/Next.js (component documentation patterns)
-
-## Writing Style
-
-**Plain language.** Write like you're explaining to a smart colleague who doesn't have context.
-
-**Active voice.** "This function validates..." not "Validation is performed..."
-
-**Be specific.** "Retries 3 times with 1s backoff" not "Handles retries."
-
-**Skip the obvious.** If the code says `user.isAdmin`, don't comment "checks if user is admin."
-
-**Date things that expire.** Workarounds, version-specific code, and temporary solutions should note when they can be removed.
-
-**Reference constants, don't duplicate values.** When a behavior is controlled by a constant, reference it by name—don't restate its value in the comment.
-
-```rust
-// Bad: duplicates the value, will drift when constant changes
-/// Returns true if stale (not updated in last 5 minutes)
-pub fn is_stale(&self) -> bool { ... }
-
-// Good: references the constant
-/// Returns true if stale (not updated within [`STALE_THRESHOLD_SECS`])
-pub fn is_stale(&self) -> bool { ... }
-```
-
-Unit translations for magic numbers are fine (`1048576 // 1MB`) since they add clarity, not duplication.
+A search finds no reader of `legacyId`. Delete the comment and report the
+dead assignment.

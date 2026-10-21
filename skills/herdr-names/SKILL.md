@@ -57,7 +57,7 @@ This skill reads what each agent is actually doing and gives the tab, its pane, 
 ## What to leave alone
 
 - Workspace labels. They are the project layer and the user sets them on purpose. Change one only when asked.
-- Tabs with no agent, such as a shell prompt or a dev server. Rename one only if its label is a bare number; then name what the shell is doing ("evercars backend shell"). List them in the report either way.
+- Tabs with no agent, such as a shell prompt or a dev server. Rename one only if its label is a bare number; then name what the shell is doing ("api server shell"). List them in the report either way.
 - The panes themselves. Never send text or keys, never focus, never close. Reading is the only contact, and CLI reads do not disturb an agent or mark its work as seen.
 
 ## If the names will not show
@@ -79,7 +79,7 @@ If they say yes, back the file up, make the edit, and run `herdr server reload-c
 ```json
 [
   {"pane_id": "wA:p1", "tab": "touch pinch-to-zoom", "pane": "touch pinch-to-zoom", "agent": "pinch-zoom"},
-  {"tab_id": "w5:tP", "tab": "evercars backend shell"}
+  {"tab_id": "w5:tP", "tab": "api server shell"}
 ]
 ```
 

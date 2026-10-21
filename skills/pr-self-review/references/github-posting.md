@@ -1,10 +1,8 @@
-# Publish approved PR self-review notes
+# Publish approved author-context comments
 
-Read this file only after the user approves every public word and anchor.
+Read this file only after the user approves the wording, comment format, and locations.
 
-## 1. Recheck the target
-
-Fetch the current account and PR again:
+## Recheck the target and discussion
 
 ```bash
 gh api user --jq .login
@@ -13,137 +11,98 @@ gh pr view <number> --repo <owner/repo> \
 ```
 
 Stop if the signed-in account is no longer the author, the PR is not open, or
-the current `headRefOid` differs from the SHA used to draft the notes. When the
-head changes, re-read the diff, rebuild every affected anchor, and show the
-revised review for approval.
+the head differs from the approved SHA. Re-read the diff and show any revised
+wording, anchors, or links for approval before posting.
 
-Check for comments or general points added since drafting:
+Check for comments added since drafting:
 
 ```bash
-gh api --paginate \
-  "repos/<owner>/<repo>/pulls/<number>/comments?per_page=100"
-gh api --paginate \
-  "repos/<owner>/<repo>/pulls/<number>/reviews?per_page=100"
-gh api --paginate \
-  "repos/<owner>/<repo>/issues/<number>/comments?per_page=100"
+gh api --paginate "repos/<owner>/<repo>/pulls/<number>/comments?per_page=100"
+gh api --paginate "repos/<owner>/<repo>/pulls/<number>/reviews?per_page=100"
+gh api --paginate "repos/<owner>/<repo>/issues/<number>/comments?per_page=100"
 ```
 
 Compare ideas, not just exact text. If an approved note is now redundant, show
 the updated set before posting.
 
-## 2. Build one valid review payload
+## Use the approved comment format
 
-Write plain JSON to a scratch file with a file-editing tool. Do not include JSON
-comments, and do not interpolate review text into a shell command.
+Write each payload as plain JSON in a scratch file. Keep comment text out of
+shell arguments, and validate the file with `jq -e . <payload-file>`.
 
-Use the review body only for a useful approved point spanning several files.
-Never add filler text that only announces or counts the inline notes.
+**Do not create a pending review or submit a grouped review.** Never use
+`POST /pulls/<number>/reviews` or `POST /reviews/<id>/events` for this workflow.
+Approval to post author context does not authorize either operation.
 
-For an inline-only review, omit both `body` and `event` when creating the review.
-GitHub will create one pending review containing all of the inline comments.
-Submit that review in a second request with `event: "COMMENT"` and no body. This
-keeps the comments grouped without creating a review-summary comment.
+### PR conversation comment
 
-Pin the review to the approved head with `commit_id`:
+Use the issue-comments endpoint for an ordinary PR conversation comment.
+Include approved links to the exact committed code when relevant:
+
+```json
+{
+  "body": "[src/components/table.tsx:84](https://github.com/OWNER/REPO/blob/COMMIT/src/components/table.tsx#L84)\n\nThis size applies to the header action. Existing row actions keep their current size."
+}
+```
+
+```bash
+gh api --method POST \
+  "repos/<owner>/<repo>/issues/<number>/comments" \
+  --input <payload-file> --jq '{id, html_url, body}'
+```
+
+This format has no review association. Use it when that is the user's requirement.
+
+### Single inline comment
+
+Use the individual pull-request-comments endpoint for an approved inline note,
+equivalent to **Add single comment**. Pin it to the approved head:
 
 ```json
 {
   "commit_id": "<approved-head-sha>",
-  "comments": [
-    {
-      "path": "src/components/table.tsx",
-      "line": 84,
-      "side": "RIGHT",
-      "body": "this size only applies to table selection. existing checkboxes keep their current size."
-    }
-  ]
+  "path": "src/components/table.tsx",
+  "line": 84,
+  "side": "RIGHT",
+  "body": "This size applies to the header action. Existing row actions keep their current size."
 }
 ```
 
-When the user approved a real cross-file summary, include its exact text as
-`body` and include `event: "COMMENT"` in the creation payload instead.
-
-Use `side: "RIGHT"` with the new-file line number for added or changed lines.
-Use `side: "LEFT"` with the old-file line number only for removed lines. Every
-anchor must appear in the captured diff.
-
-If there are no inline notes, omit `comments`. If there is no useful summary or
-inline note, post nothing.
-
-## 3. Validate and post
-
-Validate the payload before sending it:
-
-```bash
-jq -e . <review-file> >/dev/null
-```
-
-Create the review:
-
 ```bash
 gh api --method POST \
-  -H "Accept: application/vnd.github+json" \
-  "repos/<owner>/<repo>/pulls/<number>/reviews" \
-  --input <review-file> \
-  --jq '{id, html_url, state, commit_id, body}'
+  "repos/<owner>/<repo>/pulls/<number>/comments" \
+  --input <payload-file> --jq '{id, html_url, path, line, side, body}'
 ```
 
-When the creation response is `PENDING`, write a second scratch JSON file:
+Post one request per approved inline note. Do not wrap notes in a `comments`
+array or follow up with a review-submission request. Use `RIGHT` for new-file
+lines and `LEFT` for removed old-file lines; each anchor must be in the diff.
 
-```json
-{
-  "event": "COMMENT"
-}
-```
+GitHub's API calls these [review comments](https://docs.github.com/en/rest/pulls/comments)
+and may return a `pull_request_review_id`. Posting individually does not make
+them ordinary conversation comments. Do not promise that inline notes have no
+review metadata or substitute them when the user approved conversation comments.
 
-Validate it, then submit the existing pending review:
+## Verify and handle failures
+
+Record each returned ID and URL. Fetch the stored comment from the endpoint
+matching its format:
 
 ```bash
-jq -e . <submit-file> >/dev/null
-gh api --method POST \
-  -H "Accept: application/vnd.github+json" \
-  "repos/<owner>/<repo>/pulls/<number>/reviews/<review-id>/events" \
-  --input <submit-file> \
-  --jq '{id, html_url, state, commit_id, body}'
+gh api "repos/<owner>/<repo>/issues/comments/<comment-id>"
+gh api "repos/<owner>/<repo>/pulls/comments/<comment-id>"
 ```
 
-Do not create a second review during this submission step.
+Verify the author and exact body. For inline comments, also verify the commit,
+path, side, and line; for conversation comments, verify the approved code links.
+Report the posted comment links, not a review URL.
 
-Keep backticks and other punctuation inside the JSON file. Never pass a comment
-body through a shell argument.
+If a POST fails, inspect the existing comments before retrying. Match the
+approved text and location, and retry only notes confirmed missing. Do not
+repost successful comments or change their format to work around an error.
 
-## 4. Verify what GitHub stored
-
-Record the returned review ID and URL, then fetch its inline comments:
-
-```bash
-gh api --paginate \
-  "repos/<owner>/<repo>/pulls/<number>/reviews/<review-id>/comments?per_page=100" \
-  --jq 'map({path, line, side, body, html_url})'
-```
-
-Compare the stored review with the approval: review body, comment count, path,
-line, side, and comment body must match. When no summary was approved, confirm
-that the stored review body is empty. Report the note count and review URL.
-
-## 5. Handle failures without guessing
-
-If either POST fails, do not assume that nothing landed and do not retry at
-once. Fetch the PR reviews and comments, then look for the exact approved text.
-If an inline-only review exists in `PENDING`, submit that review instead of
-creating another one.
-
-If an anchor or body must change, show the revision and get approval again. Only
-retry notes confirmed missing. Report anything that could not be posted.
-
-To revise an existing inline comment, fetch its ID and send the approved body
-from a JSON file:
-
-```bash
-gh api --method PATCH \
-  "repos/<owner>/<repo>/pulls/comments/<comment-id>" \
-  --input <body-file>
-```
-
-Use `{"body":"<approved text>"}` in the body file. Verify the stored result
-after the update.
+If wording or location must change, show the revision and get approval first.
+Use the matching comment endpoint with `PATCH` and a JSON body file for an
+approved edit, then verify the stored result. Deleting or moving existing
+comments requires authorization. GitHub [does not allow deletion of a submitted review](https://docs.github.com/en/rest/pulls/reviews#delete-a-pending-review-for-a-pull-request);
+do not promise to erase that record when correcting an accidental review submission.

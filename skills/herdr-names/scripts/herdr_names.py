@@ -15,7 +15,7 @@ Snapshot and rename Herdr tabs, panes, and agents.
 Plan: a JSON list. Every name field is optional; omit one to leave it alone.
   {"pane_id": "wA:p1", "tab": "touch pinch-to-zoom",
    "pane": "touch pinch-to-zoom", "agent": "pinch-zoom"}
-  {"tab_id": "w5:tP", "tab": "evercars backend shell"}
+  {"tab_id": "w5:tP", "tab": "api server shell"}
 A pane_id entry renames that pane's own tab. Use tab_id for a tab with no
 agent pane. An empty string for "pane" or "agent" clears that label.
 
