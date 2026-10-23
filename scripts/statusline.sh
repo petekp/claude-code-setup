@@ -100,7 +100,7 @@ if [ "$cache_hit" -eq 0 ]; then
   if git -C "$cwd" rev-parse --is-inside-work-tree >/dev/null; then
     cache_is_git=1
     cache_branch=$(git -C "$cwd" rev-parse --abbrev-ref HEAD)
-    cache_changed=$(git -C "$cwd" status --porcelain | wc -l | tr -d ' ')
+    cache_changed=$(git -C "$cwd" --no-optional-locks status --porcelain | wc -l | tr -d ' ')
   fi
 
   cache_proc_count=$(pgrep -f 'agent-browser.*daemon' | wc -l | tr -d ' ')
