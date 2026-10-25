@@ -14,7 +14,7 @@ Read the actual diff and enough context to establish the problem, the resulting 
 Put the evidence that shows the change faster than words at the top, above the first heading:
 
 - **A visible change** gets an actual-product before-and-after image from `pr-screenshot-comparison`. Capture it with seeded or test data, and crop out customer names and contact details. When you can't capture one, say so under the tests.
-- **A change to a flow, a sequence, or how parts connect** gets a Mermaid diagram, which GitHub renders. Draw one only when it shows a relationship that two sentences can't.
+- **A change to a flow, a sequence, a contract, or a state** gets a Mermaid diagram, which GitHub renders. That covers a new API or command, a request path, a race, a lifecycle, and data moving between services. Skip it only when the change is a single step that one sentence states in full. Draw the change itself, not the system around it.
 - **Any other change** starts with the text. [Evidence selection](references/evidence.md) covers recordings, command output, and data shapes.
 
 ## Plain text
@@ -30,7 +30,7 @@ Link evidence from the sentence it supports, such as docs, a dashboard query, or
 
 ## Cold read
 
-Before publishing, give only the description text to a reader with no other context. Ask them what changed, what to check, and which terms they would have to ask the author about. Rewrite when an answer is wrong or takes more than two sentences. Also rewrite each flagged term that comes from the code rather than the product. Then ask again. Terms the team uses every day, such as the names of its tools and people, can stay. When you have no way to hand the text to a separate reader, skip this step and say so in your handoff.
+Before publishing, give only the description text to a reader with no other context. Ask them what changed, what to check, which terms they would have to ask the author about, and whether a picture would have shown the change faster than the text. A yes to the last means add one. Rewrite when an answer is wrong or takes more than two sentences. Also rewrite each flagged term that comes from the code rather than the product. Then ask again. Terms the team uses every day, such as the names of its tools and people, can stay. When you have no way to hand the text to a separate reader, skip this step and say so in your handoff.
 
 ## Example
 
