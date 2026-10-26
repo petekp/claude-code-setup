@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: "Write or update a GitHub PR description a teammate understands in one quick read: a picture when one fits, then a few plain sentences grounded in the diff and real verification. Use when opening a PR or editing its description."
+description: "Write or update a GitHub PR description a teammate understands in one quick read: a picture first by default, then a few plain sentences grounded in the diff and real verification. Use when opening a PR or editing its description."
 ---
 
 # PR description
@@ -11,11 +11,14 @@ Read the actual diff and enough context to establish the problem, the resulting 
 
 ## Picture first
 
-Put the evidence that shows the change faster than words at the top, above the first heading:
+Start every description with a picture, above the first heading. Leave it out only when it would repeat what one sentence already says.
 
 - **A visible change** gets an actual-product before-and-after image from `pr-screenshot-comparison`. Capture it with seeded or test data, and crop out customer names and contact details. When you can't capture one, say so under the tests.
-- **A change to a flow, a sequence, a contract, or a state** gets a Mermaid diagram, which GitHub renders. That covers a new API or command, a request path, a race, a lifecycle, and data moving between services. Skip it only when the change is a single step that one sentence states in full. Draw the change itself, not the system around it.
-- **Any other change** starts with the text. [Evidence selection](references/evidence.md) covers recordings, command output, and data shapes.
+- **Every other change** gets a Mermaid diagram, which GitHub renders. Draw the behavior before and after, or the flow, sequence, contract or state the change touches. That covers a rule change, a new API or command, a request path, a race, a lifecycle, and data moving between services. Draw the change itself, not the system around it.
+- **A visible change that also changes a flow** gets both: the image first, then the diagram.
+- **Skip the picture** for a change a diagram can't add to, such as a copy fix, a dependency bump, a rename, or a comment-only change.
+
+[Evidence selection](references/evidence.md) covers recordings, command output, and data shapes. Put them under the picture, or use one in its place when it shows the change better.
 
 ## Plain text
 
@@ -30,7 +33,7 @@ Link evidence from the sentence it supports, such as docs, a dashboard query, or
 
 ## Cold read
 
-Before publishing, give only the description text to a reader with no other context. Ask them what changed, what to check, which terms they would have to ask the author about, and whether a picture would have shown the change faster than the text. A yes to the last means add one. Rewrite when an answer is wrong or takes more than two sentences. Also rewrite each flagged term that comes from the code rather than the product. Then ask again. Terms the team uses every day, such as the names of its tools and people, can stay. When you have no way to hand the text to a separate reader, skip this step and say so in your handoff.
+Before publishing, give only the description text to a reader with no other context. Ask them what changed, what to check, which terms they would have to ask the author about, and, when the description has no picture, whether one would have shown the change faster than the text. A yes to the last means add one. Rewrite when an answer is wrong or takes more than two sentences. Also rewrite each flagged term that comes from the code rather than the product. Then ask again. Terms the team uses every day, such as the names of its tools and people, can stay. When you have no way to hand the text to a separate reader, skip this step and say so in your handoff.
 
 ## Example
 
