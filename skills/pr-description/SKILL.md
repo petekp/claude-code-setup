@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: "Write or update a GitHub PR description a teammate understands in one quick read: a picture first by default, then a few plain sentences grounded in the diff and real verification. Use when opening a PR or editing its description."
+description: "Write or update a GitHub PR description a teammate understands in one quick read: clear before/after behavior, useful visual evidence, and plain sentences grounded in the diff and real verification. Use when opening a PR or editing its description."
 ---
 
 # PR description
@@ -17,20 +17,19 @@ This comparison is preparation, not a required published inventory or separate a
 
 ## Picture first
 
-Start every description with a picture, above the first heading. Leave it out only when it would repeat what one sentence already says.
+Include a picture when it makes the change easier to assess than the text or diff alone. Put it above the first heading.
 
-- **A visible change** gets an actual-product before-and-after image from `pr-screenshot-comparison`. Capture it with seeded or test data, and crop out customer names and contact details. When you can't capture one, say so under the tests.
-- **Every other change** gets a Mermaid diagram, which GitHub renders. Draw the behavior before and after, or the flow, sequence, contract or state the change touches. That covers a rule change, a new API or command, a request path, a race, a lifecycle, and data moving between services. Draw the change itself, not the system around it.
-- **A visible change that also changes a flow** gets both: the image first, then the diagram.
-- **Skip the picture** for a change a diagram can't add to, such as a copy fix, a dependency bump, a rename, or a comment-only change.
+- **Visible behavior or layout:** use an actual-product before-and-after image from `pr-screenshot-comparison`. Capture with seeded or test data and crop out customer names and contact details. If a useful capture is unavailable, state that verification gap under Tests.
+- **A flow, contract or state change:** use a Mermaid diagram when it clarifies the changed behavior. If both appearance and flow need explanation, put the screenshot first and the diagram second.
+- **A copy-only fix:** the text diff can be enough. Capture the product when layout, wrapping, truncation or interaction also changes. Apply the same usefulness test to dependency bumps, renames and comment-only changes.
 
 [Evidence selection](references/evidence.md) covers recordings, command output, and data shapes. Put them under the picture, or use one in its place when it shows the change better.
 
 ## Plain text
 
-- **Size the text to the change.** A change with one or two points gets two to four sentences. Aim for about 200 words for ordinary changes, using the repository's template headings. Preserve meaningful before/after differences, exceptions and verification limits. Use prose or bullets for simple distinctions; use a table when it makes comparison easier. Publish an exhaustive inventory when requested. Cut repetition and implementation detail before cutting distinctions; a small change needs no matrix or extra sections.
-- **Describe what the user sees, in the words the team uses about the product:** screens, features, and customer situations. Write "the Team Chat message box", not the component's name, and "a rep turned Eve off", not the field value that records it. Name code only where the reviewer has to act on it. Explain how the code works in inline author notes instead.
-- **Make every sentence state an effect, a risk, or a check.** Cover these in order, as far as they apply: what was wrong, what the change does, what else behaves differently after merge, what the reviewer should check, and what's not in this PR when a reader would assume it is.
+- **Size the text to the change.** A change with one or two points gets two to four sentences. Aim for about 200 words for ordinary changes, using the repository's template headings. Preserve meaningful differences, exceptions, unchanged cases readers could assume changed, and verification limits even when they require a longer description. Use prose or bullets for simple distinctions; use a table when it makes comparison easier. Publish an exhaustive inventory when requested. Cut repeated explanation; a small change needs no matrix or extra sections.
+- **Describe what the user sees, in the words the team uses about the product:** screens, features, and customer situations. Write "the Team Chat message box", not the component's name, and "a rep turned Eve off", not the field value that records it. Name code only where the reviewer has to act on it. Keep technical explanation needed to assess the change in the description. Optional inline author notes can add context when that workflow is authorized.
+- **Make every sentence state an effect, a risk, or a check.** Cover these in order, as far as they apply: what was wrong, what the change does, what else behaves differently and when it takes effect, including any deployment or feature-flag dependency, what the reviewer should check, and what's not in this PR when a reader would assume it is.
 - **Bold one line, the takeaway, or none.**
 - **Tests list what a person checked by hand and what wasn't checked.** CI results already show on the PR.
 - **When revising, rewrite the whole body.** Replace a wrong line instead of appending a section for each new finding.
@@ -39,7 +38,7 @@ Link evidence from the sentence it supports, such as docs, a dashboard query, or
 
 ## Cold read
 
-Before publishing, give only the description text to a reader with no other context. Ask them what changed, what to check, and which terms they would have to ask the author about. For changes with multiple cases or surfaces, ask them to explain a meaningful case before and after and identify any important unchanged behavior. When the description has no picture, ask whether one would have shown the change faster than the text. A yes to the last means add one. Rewrite when an answer is wrong or takes more than two sentences. Also rewrite each flagged term that comes from the code rather than the product. Then ask again. Terms the team uses every day, such as the names of its tools and people, can stay. When you have no way to hand the text to a separate reader, skip this step and say so in your handoff.
+Before publishing, give only the description text to a reader with no other context. Ask them what changed, what to check, and which terms they would have to ask the author about. For changes with multiple cases or surfaces, ask them to explain a meaningful case before and after and identify any important unchanged behavior. When the description has no picture, ask whether one would have shown the change faster than the text. Use that answer to revisit the picture decision above, including any capture limitation. Rewrite when an answer is wrong or takes more than two sentences. Also rewrite each flagged term that comes from the code rather than the product. Then ask again. Terms the team uses every day, such as the names of its tools and people, can stay. When you have no way to hand the text to a separate reader, skip this step and say so in your handoff.
 
 ## Example
 
@@ -54,12 +53,11 @@ Fixes PAD-2336.
 
 **Starting a list in the Team Chat message box left the placeholder showing behind the bullet.** The placeholder now hides once a list or quote starts, and comes back when it's removed.
 
-The post edit form and the recon notes box use the same editor, so they get the fix too.
+The post edit form and the recon notes box use the same editor, so the fix is expected to apply there too. Neither surface was checked by hand.
 
 ## Tests
 
 - Checked by hand in Team Chat: typing `- `, `1. ` and `> `, the list button, and backspacing out of a list.
-- Not checked by hand in the post edit form or the recon notes box.
 - No automated test added.
 ```
 
