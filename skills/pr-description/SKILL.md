@@ -7,7 +7,13 @@ description: "Write or update a GitHub PR description a teammate understands in 
 
 Write for a teammate who knows the product, hasn't followed the work, and is reading between other tasks. After one quick read they should know what changed and what to check. A dense description goes unread even when it's accurate.
 
-Read the actual diff and enough context to establish the problem, the resulting behavior, and the review risks. Don't invent motivation or claim verification you haven't done.
+## Establish the behavior before drafting
+
+Read the diff and its affected callers. Compare the base and head behavior before choosing the summary. For a change spanning several types, roles, states or delivery channels, identify the relevant cases and establish each one's before and after. Separate stored data from what people see, and distinguish surfaces such as an in-app pop-up and a desktop notification.
+
+Include unchanged cases when readers could reasonably assume they changed. For a rule that selects cases, check its exceptions and its default for unrecognized cases. Group cases only when their baseline, outcome and conditions match; name the members when a broad label would hide the scope.
+
+This comparison is preparation, not a required published inventory or separate artifact. Investigate the affected behavior, not the whole system. Mark unknowns and distinguish source inspection from observed behavior. Don't invent motivation or claim verification you haven't done.
 
 ## Picture first
 
@@ -22,7 +28,7 @@ Start every description with a picture, above the first heading. Leave it out on
 
 ## Plain text
 
-- **Size the text to the change.** A change with one or two points gets two to four sentences. Use bullets once there are three or more separate points. Use the repository's PR template headings when it has them. Keep your own text, tests included, under about 200 words. The template's checklist and other required sections don't count. Over budget, cut reasons before points, then the least important points.
+- **Size the text to the change.** A change with one or two points gets two to four sentences. Aim for about 200 words for ordinary changes, using the repository's template headings. Preserve meaningful before/after differences, exceptions and verification limits. Use a compact table when several cases behave differently, or an exhaustive inventory when requested. Include unchanged behavior only where it clarifies scope. Cut repetition and implementation detail before cutting distinctions; a small change needs no matrix or extra sections.
 - **Describe what the user sees, in the words the team uses about the product:** screens, features, and customer situations. Write "the Team Chat message box", not the component's name, and "a rep turned Eve off", not the field value that records it. Name code only where the reviewer has to act on it. Explain how the code works in inline author notes instead.
 - **Make every sentence state an effect, a risk, or a check.** Cover these in order, as far as they apply: what was wrong, what the change does, what else behaves differently after merge, what the reviewer should check, and what's not in this PR when a reader would assume it is.
 - **Bold one line, the takeaway, or none.**
@@ -33,7 +39,7 @@ Link evidence from the sentence it supports, such as docs, a dashboard query, or
 
 ## Cold read
 
-Before publishing, give only the description text to a reader with no other context. Ask them what changed, what to check, which terms they would have to ask the author about, and, when the description has no picture, whether one would have shown the change faster than the text. A yes to the last means add one. Rewrite when an answer is wrong or takes more than two sentences. Also rewrite each flagged term that comes from the code rather than the product. Then ask again. Terms the team uses every day, such as the names of its tools and people, can stay. When you have no way to hand the text to a separate reader, skip this step and say so in your handoff.
+Before publishing, give only the description text to a reader with no other context. Ask them what changed, what to check, and which terms they would have to ask the author about. For changes with multiple cases or surfaces, ask them to explain a meaningful case before and after and identify any important unchanged behavior. When the description has no picture, ask whether one would have shown the change faster than the text. A yes to the last means add one. Rewrite when an answer is wrong or takes more than two sentences. Also rewrite each flagged term that comes from the code rather than the product. Then ask again. Terms the team uses every day, such as the names of its tools and people, can stay. When you have no way to hand the text to a separate reader, skip this step and say so in your handoff.
 
 ## Example
 
