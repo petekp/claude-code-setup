@@ -1,6 +1,6 @@
 ---
 name: clean-copy
-description: Cut interface copy that should not exist. Captions that restate a label, hints that pre-empt a worry the user never had, warnings that are scar tissue from a fixed bug. Use when writing or reviewing any user-facing string (labels, hints, empty states, toasts, confirmations, button text), or when asked to clean up or tighten copy.
+description: Cut interface copy and review-process UI that do not serve the product user's task. Use when writing or reviewing labels, hints, empty states, toasts, confirmations, prototype copy or button text, or when asked to clean up or tighten copy.
 ---
 
 # Clean copy
@@ -12,7 +12,7 @@ Most bad copy is not badly written. It is copy that should not be on the screen.
 Walk each string down these rungs in order. Stop at the first one that fires and delete.
 
 **1. Does this need to surface at all?**
-Would the user ever have wondered about this, unprompted? If not, you are not answering a question. You are planting one. Nobody opens an avatar cropper wondering whether the circle is a true circle. A caption reading "the preview is rendered at the exact size used on your profile" makes them wonder whether it might not be.
+Would the person using the product need this to do their task? Keep development progress, unresolved design decisions and notes for this implementation's reviewers in the brief or handoff. Add a review interface only when it is part of the requested product workflow. "Keep open questions explicit for review" does not itself request an in-app decision form. Apply the same test to prototype badges, mock-data warnings and demo controls. Operational approvals, blockers and evidence notes can belong in the product when they affect what its users should do.
 
 **2. Does the label need to exist?**
 A caption earns its place only when the value is meaningless without it. If the label, the field, or the value beside it already says the thing, the caption is noise. A field labelled "Retry limit" does not need "how many times we retry" beneath it. A bare "30" does need "seconds" beside it. That one stays.
@@ -26,7 +26,7 @@ The tell: copy that rules out a failure rather than describing a behaviour.
 That second sentence exists because of a bug. The user does not know about the bug, does not share your memory of fixing it, and now has a worry they arrived without. The fix for a fixed bug is the fix. Not a caption about the fix. The same goes for copy defending a design decision, or hedging about something that simply works: "this may look slow but it is not", "don't worry if the count seems off for a moment".
 
 **4. Rewrite to remove the offending part. If nothing is left, delete the element.**
-Do not preserve a hint because there was a hint there. An empty `hint` prop comes off the component. An explanatory `<p>` gets deleted, not shortened to a stub.
+Remove unrequested controls for reviewing this implementation along with their copy; renaming them does not give them a product task. An empty `hint` prop comes off the component. An explanatory `<p>` gets deleted, not shortened to a stub.
 
 ## What survives
 
