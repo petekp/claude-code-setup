@@ -69,4 +69,4 @@ Publish with `gh pr create --body-file` or `gh pr edit --body-file` using actual
 
 For any existing or new image or video attachment, read [attachment links](references/attachment-links.md). Preserve original permanent upload URLs, run the checker before publishing and on the fetched raw body afterward, and inspect the rendered PR. A successful preview alone does not establish URL permanence. Keep PR screenshots out of Git, and upload them only with the author's authorization. Standing authorization counts.
 
-Author self-review notes are a separate optional workflow using `pr-self-review`. Publishing the description does not authorize review comments or replies to teammates.
+Publishing the description does not authorize review comments or replies to teammates.
