@@ -1,0 +1,5 @@
+interface:
+  display_name: "Away"
+  short_description: "Plan and run work while the user is away"
+policy:
+  allow_implicit_invocation: false
