@@ -48,8 +48,7 @@ archives a previous run's briefs, reports, and scratch folders into
 Fill the templates into `~/Code/vignette-todo/`: `BRIEF.md`, one `items/<name>.md` per agent,
 `INTEGRATOR.md`, `REVIEWER.md`, and `ARCHITECTURE.md` when a sweep is wanted. Placeholders:
 `{{RUN}}`, `{{BASE}}`, `{{BASE_SHA}}`, `{{DATE}}`, `{{PREVIOUS_RUN}}` (the last run's tag;
-its reports are in `~/Code/vignette-todo/<tag>-archive/reports/`), `{{SESSION_URL}}` (this
-session's Claude-Session URL, or the equivalent), `{{HOME}}`, `{{BRANCH_COUNT}}`,
+its reports are in `~/Code/vignette-todo/<tag>-archive/reports/`), `{{HOME}}`, `{{BRANCH_COUNT}}`,
 `{{MERGE_ORDER}}`, `{{SHARED_FILES}}`, `{{CROSS_BRANCH_PATHS}}` (the smoke round: paths that cross
 branches, not what each agent proved), `{{ITEM_SPECIFIC_CHECKS}}` (what the reviewer should attack
 for these items), `{{SWEEP_BASELINE}}`, `{{RUN_REPORTS}}` (the integration reports of the runs
@@ -99,5 +98,4 @@ edge and cannot use the double tap. One driving round at a time behind
 Synthetic input reaches whatever is frontmost: `[state]` first, keys to the copy's pid, every press
 checked against the window server, a level-1 catcher only over the rect of timed presses, and never
 Escape or Cmd+Q. Done, Copy, Copy Drawing, and `stitch` write Pete's clipboard. The settings mtime
-is recorded around every test run and round. `references/bootstrap-prompt-2026-09-17.md` is the
-prompt this skill was written from.
+is recorded around every test run and round.

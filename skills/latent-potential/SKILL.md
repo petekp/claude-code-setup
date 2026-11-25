@@ -95,7 +95,7 @@ How to run it:
 
 The report is the deliverable. When a filesystem is available, write it as a markdown file named `latent-potential-<project>.md`, placed where the user asks (default: the working area for this conversation, not inside the target repo uninvited). In the conversation itself, give the short version: the thesis and the top opportunities in a few sentences, pointing at the file.
 
-ALWAYS use this exact structure:
+Use this structure:
 
 ```
 # Latent Potential: <project>

@@ -22,7 +22,7 @@ unverified.
 Order: {{MERGE_ORDER}}. For each:
 
 1. `git merge --no-ff {{RUN}}/<name>` with the message
-   `Merge {{RUN}}/<name>: <one sentence saying what the branch does>` and the Claude-Session line.
+   `Merge {{RUN}}/<name>: <one sentence saying what the branch does>`.
 2. Resolve conflicts by intent: read both branches' commits and reports, keep both behaviors,
    and never drop one side to make the build pass.
 3. Read by hand, in full, every file more than one branch changed, even when git auto-merged

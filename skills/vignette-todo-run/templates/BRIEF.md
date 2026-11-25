@@ -45,8 +45,7 @@ is the authority on how the app works.
 - One commit per item. The message is one sentence saying what the change does, present tense,
   no prefix, no trailing period, in the style of `git log` (e.g. "Nothing takes a flight's place
   until it has arrived, and a card casts the same shadow in the stack as in flight"). A body may
-  follow with the mechanism and the reasons. The message ends with a blank line and this line:
-  `Claude-Session: {{SESSION_URL}}`
+  follow with the mechanism and the reasons. Commits carry no attribution lines.
   Never amend, rebase, squash, cherry-pick, or push. Commit only on your branch.
 - Numbers a user would tune go in `UITweaks` (`Settings.swift`) with bounds (`Bound`) and a
   slider in the tweak panel (`DebugPanel.swift`). Their defaults are the tuned UI, so a fresh
