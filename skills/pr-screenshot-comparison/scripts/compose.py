@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pillow"]
+# ///
 """Compose aligned product captures without changing their contents. Requires Pillow."""
 import argparse
 import json

@@ -51,7 +51,7 @@ Keep annotations outside the product pixels. The compositor is the default visua
 
 ### Standard compositor
 
-Requires Python 3 and Pillow in the available artifact environment. Do not install dependencies into the product repo. Store the capture manifest, images, and output outside Git. Paths in the manifest are relative to the manifest file or absolute.
+Run it with `uv run`, which installs Pillow for that run; the Mac's `python3` has no Pillow. Do not install dependencies into the product repo. Store the capture manifest, images, and output outside Git. Paths in the manifest are relative to the manifest file or absolute.
 
 ```json
 {
@@ -71,10 +71,20 @@ Requires Python 3 and Pillow in the available artifact environment. Do not insta
 To show states of one commit instead of a before-and-after, such as a component's offline and stalled states, add `"mode": "states"`. Each panel then takes its own label, and all panels must name the same commit.
 
 ```bash
-python3 <skill-directory>/scripts/compose.py /tmp/comparison.json /tmp/comparison.png
+uv run <skill-directory>/scripts/compose.py /tmp/comparison.json /tmp/comparison.png
 ```
 
 The compositor rejects mismatched image sizes, nonuniform scale, downscaled captures, out-of-bounds crops, overlong captions, and crops wider than 680 CSS px. This width leaves room for the frame within a roughly 720 px review column. It preserves native image density in the upload PNG and writes a separate `-preview.png` for inspection. It cannot verify commit provenance, content readiness, privacy, or whether the crop shows the right controls; those require inspecting the actual product and both outputs.
+
+### Frame grids
+
+To review an animation, lay its captured frames out as one labelled grid instead of reading each frame. [scripts/frames.py](scripts/frames.py) takes a folder of PNG frames, sorted by name, and writes one grid. Each tile is labelled with its frame number and file name.
+
+```bash
+uv run <skill-directory>/scripts/frames.py <frames folder> -o <grid.png> --changed
+```
+
+`--changed` drops frames identical to the one before. `--crop x,y,width,height` (image pixels) cuts every frame to the region that moves. `--pick 3,7,12` keeps the numbered frames. `--cols` and `--max-width` set the layout. The grid is for review, not for a PR image, so it skips the comparison rules above.
 
 ## Rules
 
