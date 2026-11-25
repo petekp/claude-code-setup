@@ -19,10 +19,12 @@ cd claude-code-setup
 | `~/.claude/scripts` | `scripts/` |
 | `~/.claude/skills/<name>` | each skill in `skills/` and in `~/.agents/skills` |
 | `~/.codex/skills/<name>` | each skill in `skills/` |
+| `~/.gemini/skills/<name>` | each skill in `skills/` |
+| `~/.gemini/config/skills/<name>` | each skill in `skills/` and in `~/.agents/skills` |
 
-Codex reads `~/.agents/skills` itself, so those skills are linked only for
-Claude Code. `./setup.sh --undo` removes the links.
-`./scripts/skill-doctor.sh` checks them.
+Codex and Gemini CLI read `~/.agents/skills` themselves, so those skills are
+linked only for Claude Code and Antigravity (`~/.gemini/config/skills`).
+`./setup.sh --undo` removes the links. `./scripts/skill-doctor.sh` checks them.
 
 ## Skills
 
@@ -93,7 +95,7 @@ The hooks and status line these scripts are written for:
 
 | Script | What it does |
 |---|---|
-| `link-skills.sh` | Links skills into `~/.claude/skills` and `~/.codex/skills`. |
+| `link-skills.sh` | Links skills into `~/.claude/skills`, `~/.codex/skills`, `~/.gemini/skills`, and `~/.gemini/config/skills`. |
 | `skill-doctor.sh` | Runs `link-skills.sh`, then reports anything that needs a decision: broken links, skills with no `SKILL.md`, settings that differ from the snapshot. Prints nothing when healthy. |
 | `validate.sh` | Checks each skill's frontmatter and the formatting of `mods/` and `skills/`, then validates, type checks and tests each mod. Needs PyYAML. |
 | `skill-usage.sh` | Counts how often each skill was used, from Claude Code and Codex session logs. |

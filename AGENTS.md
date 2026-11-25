@@ -1,4 +1,4 @@
-This repo is Pete's configuration for Claude Code and Codex: skills, hook scripts, and the setup that links them into `~/.claude` and `~/.codex`. It is shell scripts and Markdown, plus the TypeScript of the Claude Code mods in `mods/`. README.md describes the layout.
+This repo is Pete's configuration for Claude Code, Codex, Gemini CLI, and Antigravity: skills, hook scripts, and the setup that links them into `~/.claude`, `~/.codex`, and `~/.gemini`. It is shell scripts and Markdown, plus the TypeScript of the Claude Code mods in `mods/`. README.md describes the layout.
 
 - The repo is public. Do not commit employer or client names, customer data, private file paths, or session state. Private configuration belongs in `~/.agents`, which is a private repo.
 - Scripts with a `#!/bin/sh` shebang must be POSIX sh. macOS runs them with bash 3.2 in POSIX mode. shellcheck misses two of its failures:

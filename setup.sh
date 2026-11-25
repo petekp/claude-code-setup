@@ -1,10 +1,12 @@
 #!/bin/sh
 #
-# Wires this repo into Claude Code and Codex.
+# Wires this repo into Claude Code, Codex, Gemini CLI, and Antigravity.
 #
-#   ~/.claude/scripts        -> repo/scripts
-#   ~/.claude/skills/<name>  -> repo/skills/<name>, and each skill in ~/.agents/skills
-#   ~/.codex/skills/<name>   -> repo/skills/<name>
+#   ~/.claude/scripts               -> repo/scripts
+#   ~/.claude/skills/<name>         -> repo/skills/<name>, and each skill in ~/.agents/skills
+#   ~/.codex/skills/<name>          -> repo/skills/<name>
+#   ~/.gemini/skills/<name>         -> repo/skills/<name>
+#   ~/.gemini/config/skills/<name>  -> repo/skills/<name>, and each skill in ~/.agents/skills
 #
 # ~/.claude/settings.json belongs to Claude Code and is never linked. When it
 # is missing, setup copies the snapshot written by scripts/settings-snapshot.sh.
@@ -46,7 +48,7 @@ fi
 
 # Older versions of this repo linked the whole skills directory. Each agent
 # directory now has to be real so other tools can install into it.
-for dir in "$HOME/.claude/skills" "$HOME/.codex/skills"; do
+for dir in "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.gemini/skills" "$HOME/.gemini/config/skills"; do
     if [ -L "$dir" ]; then
         rm "$dir"
         echo "removed the directory link $dir"

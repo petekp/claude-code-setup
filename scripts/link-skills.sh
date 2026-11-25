@@ -2,13 +2,15 @@
 #
 # Links skills into each agent's skills directory.
 #
-#   repo skills/<name>         -> ~/.claude/skills/<name> and ~/.codex/skills/<name>
-#   ~/.agents/skills/<name>    -> ~/.claude/skills/<name>
+#   repo skills/<name>         -> ~/.claude/skills/<name>, ~/.codex/skills/<name>,
+#                                 ~/.gemini/skills/<name>, and ~/.gemini/config/skills/<name>
+#   ~/.agents/skills/<name>    -> ~/.claude/skills/<name> and ~/.gemini/config/skills/<name>
 #
-# Codex reads ~/.agents/skills on its own, so store skills only need linking
-# for Claude. Each agent directory stays a real directory that its own tools
-# also write to (skills.sh installs, Claude Code's synced/ folder), so this
-# script only touches links that point into the repo or the store.
+# Codex and Gemini CLI read ~/.agents/skills on their own, so store skills only
+# need linking for Claude and Antigravity (~/.gemini/config/skills). Each agent
+# directory stays a real directory that its own tools also write to (skills.sh
+# installs, Claude Code's synced/ folder), so this script only touches links
+# that point into the repo or the store.
 #
 # Prints nothing when there is nothing to do: SessionStart hook output goes
 # into the model's context.
@@ -22,6 +24,8 @@ REPO_SKILLS=$(CDPATH='' cd "$(dirname "$0")/../skills" && pwd -P)
 STORE=$HOME/.agents/skills
 CLAUDE_DIR=${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}
 CODEX_DIR=${CODEX_SKILLS_DIR:-$HOME/.codex/skills}
+GEMINI_DIR=${GEMINI_SKILLS_DIR:-$HOME/.gemini/skills}
+ANTIGRAVITY_DIR=${ANTIGRAVITY_SKILLS_DIR:-$HOME/.gemini/config/skills}
 STORE_REAL=$(CDPATH='' cd "$STORE" 2>/dev/null && pwd -P || echo "$STORE")
 
 REMOVE=0
@@ -36,7 +40,7 @@ is_skill() { [ -f "$1/SKILL.md" ]; }
 is_managed_link() {
     [ -L "$1" ] || return 1
     case "$(readlink "$1")" in
-        "$REPO_SKILLS"/*|"$STORE"/*|"$STORE_REAL"/*|../../.agents/skills/*) return 0 ;;
+        "$REPO_SKILLS"/*|"$STORE"/*|"$STORE_REAL"/*|../../.agents/skills/*|../../../.agents/skills/*) return 0 ;;
     esac
     return 1
 }
@@ -76,7 +80,7 @@ prune() {
     done
 }
 
-for dir in "$CLAUDE_DIR" "$CODEX_DIR"; do
+for dir in "$CLAUDE_DIR" "$CODEX_DIR" "$GEMINI_DIR" "$ANTIGRAVITY_DIR"; do
     if [ -L "$dir" ]; then
         say "WARN $dir is a symlink; it must be a real directory. Run ./setup.sh"
         exit 0
@@ -86,6 +90,8 @@ done
 
 prune "$CLAUDE_DIR" 1
 prune "$CODEX_DIR" 0
+prune "$GEMINI_DIR" 0
+prune "$ANTIGRAVITY_DIR" 1
 [ "$REMOVE" = "1" ] && exit 0
 
 for src in "$REPO_SKILLS"/*/; do
@@ -94,6 +100,8 @@ for src in "$REPO_SKILLS"/*/; do
     name=$(basename "$src")
     ensure_link "$CLAUDE_DIR" "$name" "$src"
     ensure_link "$CODEX_DIR" "$name" "$src"
+    ensure_link "$GEMINI_DIR" "$name" "$src"
+    ensure_link "$ANTIGRAVITY_DIR" "$name" "$src"
 done
 
 for src in "$STORE"/*; do
@@ -104,4 +112,5 @@ for src in "$STORE"/*; do
         continue
     fi
     ensure_link "$CLAUDE_DIR" "$name" "$STORE/$name"
+    ensure_link "$ANTIGRAVITY_DIR" "$name" "$STORE/$name"
 done

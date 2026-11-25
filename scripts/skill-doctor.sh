@@ -27,7 +27,7 @@ warn() { printf '  WARN  %s\n' "$1"; problems=$((problems + 1)); }
 
 # Links that point nowhere. link-skills.sh already removed its own, so these
 # belong to another tool or were made by hand.
-for dir in "$HOME/.claude/skills" "$HOME/.codex/skills" "$STORE"; do
+for dir in "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.gemini/skills" "$HOME/.gemini/config/skills" "$STORE"; do
     for link in "$dir"/*; do
         [ -L "$link" ] && [ ! -e "$link" ] && warn "dangling link: $link -> $(readlink "$link")"
     done
